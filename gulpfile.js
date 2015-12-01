@@ -20,6 +20,7 @@ gulp.task( 'js', function()
 		.pipe( plugins.plumber() )
 		.pipe( plugins.sourcemaps.init() )
 		.pipe( plugins.typescript( typescript ) )
+		.pipe( plugins.babel() )
 		.pipe( plugins.sourcemaps.write() )
 		.pipe( gulp.dest( './build' ) );
 } );
