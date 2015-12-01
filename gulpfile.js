@@ -21,7 +21,9 @@ gulp.task( 'js', function()
 		.pipe( plugins.sourcemaps.init() )
 		.pipe( plugins.typescript( typescript ) )
 		.pipe( plugins.babel() )
-		.pipe( plugins.sourcemaps.write() )
+		.pipe( plugins.sourcemaps.write( '.', {
+			sourceRoot: '../src/',
+		} ) )
 		.pipe( gulp.dest( './build' ) );
 } );
 
