@@ -3,6 +3,7 @@
 let gulp = require( 'gulp' );
 let sequence = require( 'run-sequence' );
 let plugins = require( 'gulp-load-plugins' )();
+let path = require( 'path' );
 
 let typescript = plugins.typescript.createProject( './src/tsconfig.json', {
 	typescript: require( 'typescript' ),
@@ -25,7 +26,14 @@ gulp.task( 'js', function()
 			plugins: [ 'transform-runtime' ],
 		} ) )
 		.pipe( plugins.sourcemaps.write( '.', {
-			sourceRoot: '../src/',
+			sourceRoot: function( file )
+			{
+				// Gotta return a relative path from the build file to the source folder.
+				return path.relative(
+					path.join( __dirname, file.relative ),
+					path.join( __dirname, 'src' )
+				) + path.sep;
+			}
 		} ) )
 		.pipe( gulp.dest( './build' ) );
 } );
