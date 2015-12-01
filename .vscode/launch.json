@@ -9,7 +9,7 @@
 			"stopOnEntry": false,
 			"args": [],
 			"cwd": ".",
-			"runtimeExecutable": "/home/yariv/.nvm/versions/node/v4.2.1/bin/node",
+			"runtimeExecutable": "${env.HOME}/.nvm/versions/node/v4.2.1/bin/node",
 			"runtimeArgs": [
 				"--nolazy"
 			],
