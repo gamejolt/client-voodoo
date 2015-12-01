@@ -20,7 +20,10 @@ gulp.task( 'js', function()
 		.pipe( plugins.plumber() )
 		.pipe( plugins.sourcemaps.init() )
 		.pipe( plugins.typescript( typescript ) )
-		.pipe( plugins.babel() )
+		.pipe( plugins.babel( {
+			presets: [ 'es2015' ],
+			plugins: [ 'transform-runtime' ],
+		} ) )
 		.pipe( plugins.sourcemaps.write( '.', {
 			sourceRoot: '../src/',
 		} ) )
