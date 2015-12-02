@@ -1,6 +1,6 @@
-import Downloader from './Downloader';
+import Downloader from './downloader';
 
-let handle = Downloader.download( 'test', 'test' );
+let handle = Downloader.download( 'https://az764295.vo.msecnd.net/public/0.10.3/VSCode-linux64.zip', 'VSCode-linux64.zip' );
 
 handle.onProgress( function( progress )
 {
