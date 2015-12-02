@@ -23,21 +23,38 @@ abstract class Downloader
 	}
 }
 
+export enum DownloadHandleState
+{
+	STARTED,
+	STARTING,
+	STOPPED,
+	STOPPING,
+	FINISHED,
+}
+
 class DownloadHandle
 {
+	private _state: DownloadHandleState;
 	private _emitter: EventEmitter;
 	private _promise: Promise<void>;
 	private _resolver: () => void;
 	private _rejecter: ( err: NodeJS.ErrnoException ) => void;
+	private _peakSpeed: number;
+	private _lowSpeed: number;
+	private _avgSpeed: number;
+	private _speedTicksCount: number;
+	private _curSpeed: number;
+	private _curSpeedTicks: Array<number>;
+	private _curSpeedInterval: number;
+	private _totalSize: number;
+	private _totalDownloaded: number;
+	private destStream: fs.WriteStream;
+	private request: http.ClientRequest;
+	private response: http.IncomingMessage;
 
 	constructor( private _from: string, private _to: string )
 	{
-		this._promise = new Promise<void>( ( resolve, reject ) =>
-		{
-			this._resolver = resolve;
-			this._rejecter = reject;
-		} );
-
+		this._state = DownloadHandleState.STOPPED;
 		this._emitter = new EventEmitter();
 		this.start();
 	}
@@ -52,109 +69,201 @@ class DownloadHandle
 		return this._to;
 	}
 
+	get peakKbps(): number
+	{
+		return this._peakSpeed / 1024;
+	}
+
+	get lowKbps(): number
+	{
+		return this._lowSpeed / 1024;
+	}
+
+	get avgKbps(): number
+	{
+		return this._avgSpeed / 1024;
+	}
+
+	get currentKbps(): number
+	{
+		return this._curSpeed / 1024;
+	}
+
+	get currentAveragedSpeed(): number
+	{
+		if ( this._curSpeedTicks.length === 0 ) {
+			return this.currentKbps;
+		}
+
+		let sum = this._curSpeedTicks.reduce( function( accumulated, current )
+		{
+			return accumulated + current / 1024;
+		}, 0 );
+
+		return sum / this._curSpeedTicks.length;
+	}
+
 	get promise(): Promise<void>
 	{
+		if ( !this._promise ) {
+			this._promise = new Promise<void>( ( resolve, reject ) =>
+			{
+				this._resolver = resolve;
+				this._rejecter = reject;
+			} );
+		}
 		return this._promise;
 	}
 
-	onProgress( fn: ( progress: number ) => void ): DownloadHandle
+	async start()
 	{
-		this._emitter.addListener( 'progress', fn );
-		return this;
-	}
-
-	private async start()
-	{
-		let exists = await fsExists( this._to );
-		if ( !exists ) {
-			return this.download( 0 );
+		if ( this._state !== DownloadHandleState.STOPPED ) {
+			return false;
 		}
 
-		let stat = await fsStat( this._to );
-		console.log( util.inspect( stat ) );
-		if ( !stat.isFile() ) {
-			let unlinkResult = await fsUnlink( this._to );
-			if ( unlinkResult ) {
-				throw unlinkResult;
+		this._state = DownloadHandleState.STARTING;
+
+		this._promise = this.promise; // Make sure a promise exists when starting.
+
+		this._peakSpeed = 0;
+		this._lowSpeed = 0;
+		this._avgSpeed = 0;
+		this._speedTicksCount = 0;
+		this._curSpeed = 0;
+		this._curSpeedTicks = [];
+		this._totalSize = 0;
+		this._totalDownloaded = 0;
+
+		try {
+			let exists = await fsExists( this._to );
+			if ( await fsExists( this._to ) ) {
+				let stat = await fsStat( this._to );
+				this._totalDownloaded = stat.size;
 			}
-			return this.download( 0 );
+		}
+		catch ( err ) {
+			this.onError( err );
 		}
 
-		return this.download( stat.size );
+		this.download();
+		return true;
 	}
 
-	private download( alreadyDownloaded: number )
+	async stop()
+	{
+		if ( this._state !== DownloadHandleState.STARTED ) {
+			return false;
+		}
+
+		this._state = DownloadHandleState.STOPPING;
+
+		clearInterval( this._curSpeedInterval );
+		this.response.removeAllListeners();
+		this.destStream.removeAllListeners();
+		this.response.unpipe( this.destStream );
+		this.destStream.close();
+		this.request.abort();
+
+		this._state = DownloadHandleState.STOPPED;
+
+		return true;
+	}
+
+	private download()
 	{
 		let hostUrl = url.parse( this._from );
 		let httpOptions = {
 			host: hostUrl.host,
 			path: hostUrl.path,
 			headers: {
-				'Range': 'bytes=' + alreadyDownloaded.toString() + '-',
+				'Range': 'bytes=' + this._totalDownloaded.toString() + '-',
 			}
 		};
 
-		let stream = fs.createWriteStream( this._to, {
+		this.destStream = fs.createWriteStream( this._to, {
 			encoding: 'binary',
 			flags: 'a',
-			// start: alreadyDownloaded,
 		} );
 
-		let request = http.request( httpOptions, ( response ) =>
+		this.request = http.request( httpOptions, ( response ) =>
 		{
-			function onError( err: NodeJS.ErrnoException )
-			{
-				stream.close();
-				this._rejecter( err );
-				response.removeAllListeners();
-			};
+			this.response = response;
+			this._curSpeedInterval = setInterval( this.onTick.bind( this ), 1000 );
+			this._state = DownloadHandleState.STARTED;
 
 			// Unsatisfiable request - most likely we've downloaded the whole thing already.
 			// TODO - send HEAD request to get content-length and compare.
-			if ( response.statusCode == 416 ) {
-				stream.close();
-				this._resolver();
-				return;
+			if ( this.response.statusCode == 416 ) {
+				return this.onFinished();
 			}
 
 			// Expecting the partial response status code
-			if ( !( response.statusCode == 206 ) ) {
-				onError( new Error( 'Bad status code ' + response.statusCode ) );
-				return;
+			if ( this.response.statusCode != 206 ) {
+				return this.onError( new Error( 'Bad status code ' + this.response.statusCode ) );
 			}
 
-			if ( !response.headers || !response.headers[ 'content-range' ] ) {
-				onError( new Error( 'Missing or invalid content-range response header' ) );
-				return;
+			if ( !this.response.headers || !this.response.headers[ 'content-range' ] ) {
+				return this.onError( new Error( 'Missing or invalid content-range response header' ) );
 			}
 
-			let totalSize;
 			try {
-				totalSize = parseInt( response.headers[ 'content-range' ].split( '/' )[1] );
+				this._totalSize = parseInt( this.response.headers[ 'content-range' ].split( '/' )[1] );
 			}
 			catch ( err ) {
-				onError( new Error( 'Invalid content-range header: ' + response.headers[ 'content-range' ] ) );
-				return;
+				return this.onError( new Error( 'Invalid content-range header: ' + this.response.headers[ 'content-range' ] ) );
 			}
 
-			response.setEncoding( 'binary' );
-			response.pipe( stream );
-			response.on( 'data', ( data ) =>
+			this.response.setEncoding( 'binary' );
+			this.response.pipe( this.destStream );
+			this.response.on( 'data', ( data ) =>
 			{
-				alreadyDownloaded += data.length;
-				this._emitter.emit( 'progress', alreadyDownloaded / totalSize );
+				this._totalDownloaded += data.length;
+				this._curSpeed += data.length;
 			} );
 
-			stream.on( 'finish', () =>
-			{
-				stream.close();
-				this._resolver();
-			} );
+			this.destStream.on( 'finish', () => this.onFinished() );
 
-			response.on( 'error', onError );
-			stream.on( 'error', onError );
+			this.response.on( 'error', ( err ) => this.onError( err ) );
+			this.destStream.on( 'error', ( err ) => this.onError( err ) );
 		} );
-		request.end();
+		this.request.on( 'error', ( err ) => this.onError( err ) );
+		this.request.end();
+	}
+
+	onProgress( fn: ( progress: number, curKbps: number, peakKbps: number, lowKbps: number, avgKbps: number ) => void ): DownloadHandle
+	{
+		this._emitter.addListener( 'progress', fn );
+		return this;
+	}
+
+	private onTick()
+	{
+		this._curSpeedTicks.unshift( this._curSpeed );
+		this._speedTicksCount += 1;
+		this._avgSpeed += ( this._curSpeed - this._avgSpeed ) / this._speedTicksCount;
+		this._peakSpeed = Math.max( this._peakSpeed, this._curSpeed );
+		this._lowSpeed = Math.min( this._lowSpeed || Infinity, this._curSpeed );
+		this._curSpeed = 0;
+
+		if ( this._curSpeedTicks.length > 5 ) { // Save only the 5 last seconds for average speed
+			this._curSpeedTicks.pop();
+		}
+
+		this._emitter.emit( 'progress', this._totalDownloaded / this._totalSize, this.currentKbps,  this.peakKbps, this.lowKbps, this.avgKbps );
+	}
+
+	private onError( err: NodeJS.ErrnoException )
+	{
+		this.stop();
+		this._rejecter( err );
+		this._promise = null;
+	}
+
+	private onFinished()
+	{
+		this.stop();
+		this._state = DownloadHandleState.FINISHED;
+		this._resolver();
 	}
 }
 
