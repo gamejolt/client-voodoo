@@ -1,10 +1,15 @@
 {
   "name": "client-voodoo",
   "version": "0.0.0",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --debug-brk --reporter list --colors --slow 400 --timeout 50000 \"./build/**/*-spec.js\""
+  },
   "devDependencies": {
     "babel-plugin-transform-runtime": "6.1.18",
     "babel-preset-es2015": "6.1.18",
     "babel-runtime": "5.8.34",
+    "chai": "^3.4.1",
+    "express": "^4.13.3",
     "gulp": "3.9.0",
     "gulp-babel": "6.1.1",
     "gulp-load-plugins": "1.1.0",
@@ -12,6 +17,7 @@
     "gulp-rimraf": "0.2.0",
     "gulp-sourcemaps": "1.6.0",
     "gulp-typescript": "2.9.2",
+    "mocha": "^2.3.4",
     "run-sequence": "1.1.4",
     "typescript": "1.7.3"
   },
