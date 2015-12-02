@@ -5,7 +5,7 @@ describe( 'Downloader', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	
+
 	before( function( done )
 	{
 		app = express();
@@ -15,14 +15,14 @@ describe( 'Downloader', function()
 			done();
 		} );
 	} );
-	
+
 	after( function( done )
 	{
 		server.close( function()
 		{
 			done();
 		} );
-		
+
 		app = null;
 		server = null;
 	} );
