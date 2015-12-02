@@ -15,7 +15,7 @@ let fsExists = function( path: string ): Promise<boolean>
 }
 let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
 
-abstract class Downloader
+export abstract class Downloader
 {
 	static download( from: string, to: string ): DownloadHandle
 	{
@@ -266,5 +266,3 @@ class DownloadHandle
 		this._resolver();
 	}
 }
-
-export default Downloader;

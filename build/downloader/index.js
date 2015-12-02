@@ -74,6 +74,7 @@ var Downloader = (function () {
     return Downloader;
 })();
 
+exports.Downloader = Downloader;
 (function (DownloadHandleState) {
     DownloadHandleState[DownloadHandleState["STARTED"] = 0] = "STARTED";
     DownloadHandleState[DownloadHandleState["STARTING"] = 1] = "STARTING";
@@ -350,6 +351,4 @@ var DownloadHandle = (function () {
     }]);
     return DownloadHandle;
 })();
-
-exports.default = Downloader;
 //# sourceMappingURL=index.js.map
