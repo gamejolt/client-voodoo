@@ -66,9 +66,14 @@ export abstract class Extractor
 			extractStream.on( 'error', ( err ) => reject( err ) );
 			stream.on( 'error', ( err ) => reject( err ) );
 
-			stream
-				.pipe( decompressStream() )
-				.pipe( extractStream );
+			if ( options.brotli ) {
+				stream
+					.pipe( decompressStream() )
+					.pipe( extractStream );
+			}
+			else {
+				stream.pipe( extractStream );
+			}
 		} );
 
 		if ( result && options.deleteSource ) {

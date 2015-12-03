@@ -155,7 +155,11 @@ var Extractor = (function () {
                                     stream.on('error', function (err) {
                                         return reject(err);
                                     });
-                                    stream.pipe(decompressStream()).pipe(extractStream);
+                                    if (options.brotli) {
+                                        stream.pipe(decompressStream()).pipe(extractStream);
+                                    } else {
+                                        stream.pipe(extractStream);
+                                    }
                                 });
 
                             case 24:
