@@ -7,7 +7,7 @@ declare module "tar-stream"
 	export function pack( options?: stream.ReadableOptions ): Pack;
 	export function extract( options?: stream.WritableOptions ): Extract;
 
-	export interface EntryHeader
+	export interface IEntryHeader
 	{
 		name?: string;
 		size?: number;
@@ -26,7 +26,7 @@ declare module "tar-stream"
 	class Pack extends stream.Readable
 	{
 		constructor( options?: stream.ReadableOptions );
-		entry( header: EntryHeader, buffer?: string | Buffer, callback?: ( err?: NodeJS.ErrnoException ) => any ): stream.Writable;
+		entry( header: IEntryHeader, buffer?: string | Buffer, callback?: ( err?: NodeJS.ErrnoException ) => any ): stream.Writable;
 	}
 
 	class Extract extends stream.Writable

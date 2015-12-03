@@ -11,8 +11,8 @@ declare module "tar-fs"
 		fs?: any; // fs polyfill, sheesh
 		ignore?: ( name: string ) => boolean;
 		filter?: ( name: string ) => boolean;
-		map?: ( header: tarStream.EntryHeader ) => tarStream.EntryHeader;
-		mapStream?: ( fileStream: stream.Readable, header: tarStream.EntryHeader ) => stream.Readable;
+		map?: ( header: tarStream.IEntryHeader ) => tarStream.IEntryHeader;
+		mapStream?: ( fileStream: stream.Readable, header: tarStream.IEntryHeader ) => stream.Readable;
 		dereference?: boolean;
 		strict?: boolean;
 		dmode?: number;
@@ -27,8 +27,8 @@ declare module "tar-fs"
 		fs?: any; // fs polyfill, sheesh
 		ignore?: ( name: string ) => boolean;
 		filter?: ( name: string ) => boolean;
-		map?: ( header: tarStream.EntryHeader ) => tarStream.EntryHeader;
-		mapStream?: ( fileStream: stream.Readable, header: tarStream.EntryHeader ) => stream.Readable;
+		map?: ( header: tarStream.IEntryHeader ) => tarStream.IEntryHeader;
+		mapStream?: ( fileStream: stream.Readable, header: tarStream.IEntryHeader ) => stream.Readable;
 		chown?: boolean;
 		umask?: number;
 		dmode?: number;
