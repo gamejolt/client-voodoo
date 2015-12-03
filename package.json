@@ -2,7 +2,7 @@
   "name": "client-voodoo",
   "version": "0.0.0",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --debug-brk --reporter list --colors --slow 400 --timeout 50000 \"./build/**/*-spec.js\""
+    "test": "./node_modules/.bin/mocha --reporter list --colors --slow 400 --timeout 50000 \"./build/**/*-spec.js\""
   },
   "main": "build/index.js",
   "devDependencies": {
@@ -24,6 +24,8 @@
   "dependencies": {
     "bluebird": "3.0.5",
     "mkdirp": "^0.5.1",
-    "babel-runtime": "5.8.34"
+    "babel-runtime": "5.8.34",
+    "iltorb": "^1.0.7",
+    "lodash": "^3.10.1"
   }
 }

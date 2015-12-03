@@ -4,6 +4,9 @@ import * as url from 'url';
 import * as util from 'util';
 import * as path from 'path';
 import { EventEmitter } from 'events';
+import * as _ from 'lodash';
+
+let decompressStream = require('iltorb').decompressStream;
 
 let Bluebird = require( 'bluebird' );
 var mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
@@ -17,11 +20,16 @@ let fsExists = function( path: string ): Promise<boolean>
 }
 let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
 
+export interface  IDownloadOptions
+{
+	brotli?: boolean
+}
+
 export abstract class Downloader
 {
-	static download( from: string, to: string ): DownloadHandle
+	static download( from: string, to: string, options?: IDownloadOptions ): DownloadHandle
 	{
-		return new DownloadHandle( from, to );
+		return new DownloadHandle( from, to, options );
 	}
 }
 
@@ -48,11 +56,13 @@ const TICKS_PER_SECOND = 2;
 class DownloadHandle
 {
 	private _state: DownloadHandleState;
+	private _useBrotli: boolean;
 	private _emitter: EventEmitter;
-	private _filename: string;
+	private _toFile: string;
+	private _toFilename: string;
 	private _promise: Promise<void>;
 	private _resolver: () => void;
-	private _rejecter: ( err: NodeJS.ErrnoException ) => void;
+	private _rejector: ( err: NodeJS.ErrnoException ) => void;
 	private _peakSpeed: number;
 	private _lowSpeed: number;
 	private _avgSpeed: number;
@@ -62,12 +72,18 @@ class DownloadHandle
 	private _curSpeedInterval: number;
 	private _totalSize: number;
 	private _totalDownloaded: number;
-	private destStream: fs.WriteStream;
-	private request: http.ClientRequest;
-	private response: http.IncomingMessage;
+	private _destStream: fs.WriteStream;
+	private _request: http.ClientRequest;
+	private _response: http.IncomingMessage;
 
-	constructor( private _from: string, private _to: string )
+	constructor( private _from: string, private _to: string, options: IDownloadOptions )
 	{
+		options = _.defaults( options || {}, {
+			brotli: true,
+		} );
+
+		this._useBrotli = options.brotli;
+
 		this._state = DownloadHandleState.STOPPED;
 		this._emitter = new EventEmitter();
 		this.start();
@@ -123,7 +139,7 @@ class DownloadHandle
 			this._promise = new Promise<void>( ( resolve, reject ) =>
 			{
 				this._resolver = resolve;
-				this._rejecter = reject;
+				this._rejector = reject;
 			} );
 		}
 		return this._promise;
@@ -150,10 +166,11 @@ class DownloadHandle
 
 		try {
 			let parsedDownloadUrl = url.parse( this._from, true );
-			this._filename = path.parse( parsedDownloadUrl.pathname ).base;
-			let exists = await fsExists( this._to + this._filename );
-			if ( await fsExists( this._to ) ) {
-				let stat = await fsStat( this._to );
+			this._toFilename = path.parse( parsedDownloadUrl.pathname ).base;
+			this._toFile = path.join( this._to, this._toFilename );
+			let exists = await fsExists( this._toFile );
+			if ( await fsExists( this._toFile ) ) {
+				let stat = await fsStat( this._toFile );
 				this._totalDownloaded = stat.size;
 			}
 			else if ( !( await mkdirp( this._to ) ) ) {
@@ -177,11 +194,11 @@ class DownloadHandle
 		this._state = DownloadHandleState.STOPPING;
 
 		clearInterval( this._curSpeedInterval );
-		this.response.removeAllListeners();
-		this.destStream.removeAllListeners();
-		this.response.unpipe( this.destStream );
-		this.destStream.close();
-		this.request.abort();
+		this._response.removeAllListeners();
+		this._destStream.removeAllListeners();
+		this._response.unpipe( this._destStream );
+		this._destStream.close();
+		this._request.abort();
 
 		this._state = DownloadHandleState.STOPPED;
 
@@ -199,54 +216,62 @@ class DownloadHandle
 			}
 		};
 
-		this.destStream = fs.createWriteStream( this._to + this._filename, {
+		this._destStream = fs.createWriteStream( this._toFile, {
 			encoding: 'binary',
 			flags: 'a',
 		} );
 
-		this.request = http.request( httpOptions, ( response ) =>
+		this._request = http.request( httpOptions, ( response ) =>
 		{
-			this.response = response;
+			this._response = response;
 			this._curSpeedInterval = setInterval( this.onTick.bind( this ), 1000 / TICKS_PER_SECOND );
 			this._state = DownloadHandleState.STARTED;
 
 			// Unsatisfiable request - most likely we've downloaded the whole thing already.
 			// TODO - send HEAD request to get content-length and compare.
-			if ( this.response.statusCode == 416 ) {
+			if ( this._response.statusCode == 416 ) {
 				return this.onFinished();
 			}
 
 			// Expecting the partial response status code
-			if ( this.response.statusCode != 206 ) {
-				return this.onError( new Error( 'Bad status code ' + this.response.statusCode ) );
+			if ( this._response.statusCode != 206 ) {
+				return this.onError( new Error( 'Bad status code ' + this._response.statusCode ) );
 			}
 
-			if ( !this.response.headers || !this.response.headers[ 'content-range' ] ) {
+			if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
 				return this.onError( new Error( 'Missing or invalid content-range response header' ) );
 			}
 
 			try {
-				this._totalSize = parseInt( this.response.headers[ 'content-range' ].split( '/' )[1] );
+				this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
 			}
 			catch ( err ) {
-				return this.onError( new Error( 'Invalid content-range header: ' + this.response.headers[ 'content-range' ] ) );
+				return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
 			}
 
-			this.response.setEncoding( 'binary' );
-			this.response.pipe( this.destStream );
-			this.response.on( 'data', ( data ) =>
+			this._response.setEncoding( 'binary' );
+			// if ( this._useBrotli ) {
+			// 	this._response
+			// 		.pipe( decompressStream() )
+			// 		.pipe( this._destStream );
+			// }
+			// else {
+			// 	this._response.pipe( this._destStream );
+			// }
+			this._response.pipe( this._destStream );
+			this._response.on( 'data', ( data ) =>
 			{
 				this._totalDownloaded += data.length;
 				this._curSpeed += data.length;
 			} );
 
-			this.destStream.on( 'finish', () => this.onFinished() );
+			this._destStream.on( 'finish', () => this.onFinished() );
 
-			this.response.on( 'error', ( err ) => this.onError( err ) );
-			this.destStream.on( 'error', ( err ) => this.onError( err ) );
+			this._response.on( 'error', ( err ) => this.onError( err ) );
+			this._destStream.on( 'error', ( err ) => this.onError( err ) );
 		} );
-		this.request.on( 'error', ( err ) => this.onError( err ) );
-		this.request.end();
+		this._request.on( 'error', ( err ) => this.onError( err ) );
+		this._request.end();
 	}
 
 	onProgress( fn: ( DownloadProgress ) => void ): DownloadHandle
@@ -262,7 +287,6 @@ class DownloadHandle
 		this._avgSpeed += ( this._curSpeed - this._avgSpeed ) / this._speedTicksCount;
 		this._peakSpeed = Math.max( this._peakSpeed, this._curSpeed );
 		this._lowSpeed = Math.min( this._lowSpeed || Infinity, this._curSpeed );
-		this._curSpeed = 0;
 
 		if ( this._curSpeedTicks.length > 5 * TICKS_PER_SECOND ) { // Save only the 5 last seconds for average speed
 			this._curSpeedTicks.pop();
@@ -275,12 +299,13 @@ class DownloadHandle
 			lowKbps: this.lowKbps,
 			avgKbps: this.avgKbps,
 		} );
+		this._curSpeed = 0;
 	}
 
 	private onError( err: NodeJS.ErrnoException )
 	{
 		this.stop();
-		this._rejecter( err );
+		this._rejector( err );
 		this._promise = null;
 	}
 

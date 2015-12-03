@@ -52,6 +52,8 @@ var http = require('http');
 var url = require('url');
 var path = require('path');
 var events_1 = require('events');
+var _ = require('lodash');
+var decompressStream = require('iltorb').decompressStream;
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
@@ -69,8 +71,8 @@ var Downloader = (function () {
 
     (0, _createClass3.default)(Downloader, null, [{
         key: "download",
-        value: function download(from, to) {
-            return new DownloadHandle(from, to);
+        value: function download(from, to, options) {
+            return new DownloadHandle(from, to, options);
         }
     }]);
     return Downloader;
@@ -88,11 +90,15 @@ var DownloadHandleState = exports.DownloadHandleState;
 var TICKS_PER_SECOND = 2;
 
 var DownloadHandle = (function () {
-    function DownloadHandle(_from, _to) {
+    function DownloadHandle(_from, _to, options) {
         (0, _classCallCheck3.default)(this, DownloadHandle);
 
         this._from = _from;
         this._to = _to;
+        options = _.defaults(options || {}, {
+            brotli: true
+        });
+        this._useBrotli = options.brotli;
         this._state = DownloadHandleState.STOPPED;
         this._emitter = new events_1.EventEmitter();
         this.start();
@@ -128,63 +134,64 @@ var DownloadHandle = (function () {
                                 _context.prev = 12;
                                 parsedDownloadUrl = url.parse(this._from, true);
 
-                                this._filename = path.parse(parsedDownloadUrl.pathname).base;
-                                _context.next = 17;
-                                return fsExists(this._to + this._filename);
+                                this._toFilename = path.parse(parsedDownloadUrl.pathname).base;
+                                this._toFile = path.join(this._to, this._toFilename);
+                                _context.next = 18;
+                                return fsExists(this._toFile);
 
-                            case 17:
+                            case 18:
                                 exists = _context.sent;
-                                _context.next = 20;
-                                return fsExists(this._to);
+                                _context.next = 21;
+                                return fsExists(this._toFile);
 
-                            case 20:
+                            case 21:
                                 if (!_context.sent) {
-                                    _context.next = 27;
+                                    _context.next = 28;
                                     break;
                                 }
 
-                                _context.next = 23;
-                                return fsStat(this._to);
+                                _context.next = 24;
+                                return fsStat(this._toFile);
 
-                            case 23:
+                            case 24:
                                 stat = _context.sent;
 
                                 this._totalDownloaded = stat.size;
-                                _context.next = 31;
+                                _context.next = 32;
                                 break;
 
-                            case 27:
-                                _context.next = 29;
+                            case 28:
+                                _context.next = 30;
                                 return mkdirp(this._to);
 
-                            case 29:
+                            case 30:
                                 if (_context.sent) {
-                                    _context.next = 31;
+                                    _context.next = 32;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the destination folder path');
 
-                            case 31:
-                                _context.next = 36;
+                            case 32:
+                                _context.next = 37;
                                 break;
 
-                            case 33:
-                                _context.prev = 33;
+                            case 34:
+                                _context.prev = 34;
                                 _context.t0 = _context["catch"](12);
 
                                 this.onError(_context.t0);
 
-                            case 36:
+                            case 37:
                                 this.download();
                                 return _context.abrupt("return", true);
 
-                            case 38:
+                            case 39:
                             case "end":
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[12, 33]]);
+                }, _callee, this, [[12, 34]]);
             }));
         }
     }, {
@@ -205,11 +212,11 @@ var DownloadHandle = (function () {
                             case 2:
                                 this._state = DownloadHandleState.STOPPING;
                                 clearInterval(this._curSpeedInterval);
-                                this.response.removeAllListeners();
-                                this.destStream.removeAllListeners();
-                                this.response.unpipe(this.destStream);
-                                this.destStream.close();
-                                this.request.abort();
+                                this._response.removeAllListeners();
+                                this._destStream.removeAllListeners();
+                                this._response.unpipe(this._destStream);
+                                this._destStream.close();
+                                this._request.abort();
                                 this._state = DownloadHandleState.STOPPED;
                                 return _context2.abrupt("return", true);
 
@@ -234,51 +241,59 @@ var DownloadHandle = (function () {
                     'Range': 'bytes=' + this._totalDownloaded.toString() + '-'
                 }
             };
-            this.destStream = fs.createWriteStream(this._to + this._filename, {
+            this._destStream = fs.createWriteStream(this._toFile, {
                 encoding: 'binary',
                 flags: 'a'
             });
-            this.request = http.request(httpOptions, function (response) {
-                _this.response = response;
+            this._request = http.request(httpOptions, function (response) {
+                _this._response = response;
                 _this._curSpeedInterval = setInterval(_this.onTick.bind(_this), 1000 / TICKS_PER_SECOND);
                 _this._state = DownloadHandleState.STARTED;
                 // Unsatisfiable request - most likely we've downloaded the whole thing already.
                 // TODO - send HEAD request to get content-length and compare.
-                if (_this.response.statusCode == 416) {
+                if (_this._response.statusCode == 416) {
                     return _this.onFinished();
                 }
                 // Expecting the partial response status code
-                if (_this.response.statusCode != 206) {
-                    return _this.onError(new Error('Bad status code ' + _this.response.statusCode));
+                if (_this._response.statusCode != 206) {
+                    return _this.onError(new Error('Bad status code ' + _this._response.statusCode));
                 }
-                if (!_this.response.headers || !_this.response.headers['content-range']) {
+                if (!_this._response.headers || !_this._response.headers['content-range']) {
                     return _this.onError(new Error('Missing or invalid content-range response header'));
                 }
                 try {
-                    _this._totalSize = parseInt(_this.response.headers['content-range'].split('/')[1]);
+                    _this._totalSize = parseInt(_this._response.headers['content-range'].split('/')[1]);
                 } catch (err) {
-                    return _this.onError(new Error('Invalid content-range header: ' + _this.response.headers['content-range']));
+                    return _this.onError(new Error('Invalid content-range header: ' + _this._response.headers['content-range']));
                 }
-                _this.response.setEncoding('binary');
-                _this.response.pipe(_this.destStream);
-                _this.response.on('data', function (data) {
+                _this._response.setEncoding('binary');
+                // if ( this._useBrotli ) {
+                // 	this._response
+                // 		.pipe( decompressStream() )
+                // 		.pipe( this._destStream );
+                // }
+                // else {
+                // 	this._response.pipe( this._destStream );
+                // }
+                _this._response.pipe(_this._destStream);
+                _this._response.on('data', function (data) {
                     _this._totalDownloaded += data.length;
                     _this._curSpeed += data.length;
                 });
-                _this.destStream.on('finish', function () {
+                _this._destStream.on('finish', function () {
                     return _this.onFinished();
                 });
-                _this.response.on('error', function (err) {
+                _this._response.on('error', function (err) {
                     return _this.onError(err);
                 });
-                _this.destStream.on('error', function (err) {
+                _this._destStream.on('error', function (err) {
                     return _this.onError(err);
                 });
             });
-            this.request.on('error', function (err) {
+            this._request.on('error', function (err) {
                 return _this.onError(err);
             });
-            this.request.end();
+            this._request.end();
         }
     }, {
         key: "onProgress",
@@ -294,7 +309,6 @@ var DownloadHandle = (function () {
             this._avgSpeed += (this._curSpeed - this._avgSpeed) / this._speedTicksCount;
             this._peakSpeed = Math.max(this._peakSpeed, this._curSpeed);
             this._lowSpeed = Math.min(this._lowSpeed || Infinity, this._curSpeed);
-            this._curSpeed = 0;
             if (this._curSpeedTicks.length > 5 * TICKS_PER_SECOND) {
                 this._curSpeedTicks.pop();
             }
@@ -305,12 +319,13 @@ var DownloadHandle = (function () {
                 lowKbps: this.lowKbps,
                 avgKbps: this.avgKbps
             });
+            this._curSpeed = 0;
         }
     }, {
         key: "onError",
         value: function onError(err) {
             this.stop();
-            this._rejecter(err);
+            this._rejector(err);
             this._promise = null;
         }
     }, {
@@ -369,7 +384,7 @@ var DownloadHandle = (function () {
             if (!this._promise) {
                 this._promise = new _promise2.default(function (resolve, reject) {
                     _this2._resolver = resolve;
-                    _this2._rejecter = reject;
+                    _this2._rejector = reject;
                 });
             }
             return this._promise;

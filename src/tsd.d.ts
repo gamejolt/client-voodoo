@@ -6,3 +6,4 @@
 /// <reference path="./../typings/mocha/mocha.d.ts" />
 /// <reference path="./../typings/assertion-error/assertion-error.d.ts" />
 /// <reference path="./../typings/chai/chai.d.ts" />
+/// <reference path="./../typings/lodash/lodash.d.ts" />
