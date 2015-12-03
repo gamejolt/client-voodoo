@@ -2,9 +2,11 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as url from 'url';
 import * as util from 'util';
+import * as path from 'path';
 import { EventEmitter } from 'events';
 
 let Bluebird = require( 'bluebird' );
+var mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
 let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
 let fsExists = function( path: string ): Promise<boolean>
 {
@@ -32,10 +34,22 @@ export enum DownloadHandleState
 	FINISHED,
 }
 
+export interface DownloadProgress
+{
+	progress: number;
+	curKbps: number;
+	peakKbps: number;
+	lowKbps: number;
+	avgKbps: number;
+}
+
+const TICKS_PER_SECOND = 2;
+
 class DownloadHandle
 {
 	private _state: DownloadHandleState;
 	private _emitter: EventEmitter;
+	private _filename: string;
 	private _promise: Promise<void>;
 	private _resolver: () => void;
 	private _rejecter: ( err: NodeJS.ErrnoException ) => void;
@@ -71,22 +85,22 @@ class DownloadHandle
 
 	get peakKbps(): number
 	{
-		return this._peakSpeed / 1024;
+		return this._peakSpeed / 1024 / TICKS_PER_SECOND;
 	}
 
 	get lowKbps(): number
 	{
-		return this._lowSpeed / 1024;
+		return this._lowSpeed / 1024 / TICKS_PER_SECOND;
 	}
 
 	get avgKbps(): number
 	{
-		return this._avgSpeed / 1024;
+		return this._avgSpeed / 1024 / TICKS_PER_SECOND;
 	}
 
 	get currentKbps(): number
 	{
-		return this._curSpeed / 1024;
+		return this._curSpeed / 1024 / TICKS_PER_SECOND;
 	}
 
 	get currentAveragedSpeed(): number
@@ -97,7 +111,7 @@ class DownloadHandle
 
 		let sum = this._curSpeedTicks.reduce( function( accumulated, current )
 		{
-			return accumulated + current / 1024;
+			return accumulated + current / 1024 / TICKS_PER_SECOND;
 		}, 0 );
 
 		return sum / this._curSpeedTicks.length;
@@ -135,10 +149,15 @@ class DownloadHandle
 		this._totalDownloaded = 0;
 
 		try {
-			let exists = await fsExists( this._to );
+			let parsedDownloadUrl = url.parse( this._from, true );
+			this._filename = path.parse( parsedDownloadUrl.pathname ).base;
+			let exists = await fsExists( this._to + this._filename );
 			if ( await fsExists( this._to ) ) {
 				let stat = await fsStat( this._to );
 				this._totalDownloaded = stat.size;
+			}
+			else if ( !( await mkdirp( this._to ) ) ) {
+				throw new Error( 'Couldn\'t create the destination folder path' );
 			}
 		}
 		catch ( err ) {
@@ -180,7 +199,7 @@ class DownloadHandle
 			}
 		};
 
-		this.destStream = fs.createWriteStream( this._to, {
+		this.destStream = fs.createWriteStream( this._to + this._filename, {
 			encoding: 'binary',
 			flags: 'a',
 		} );
@@ -188,7 +207,7 @@ class DownloadHandle
 		this.request = http.request( httpOptions, ( response ) =>
 		{
 			this.response = response;
-			this._curSpeedInterval = setInterval( this.onTick.bind( this ), 1000 );
+			this._curSpeedInterval = setInterval( this.onTick.bind( this ), 1000 / TICKS_PER_SECOND );
 			this._state = DownloadHandleState.STARTED;
 
 			// Unsatisfiable request - most likely we've downloaded the whole thing already.
@@ -230,7 +249,7 @@ class DownloadHandle
 		this.request.end();
 	}
 
-	onProgress( fn: ( progress: number, curKbps: number, peakKbps: number, lowKbps: number, avgKbps: number ) => void ): DownloadHandle
+	onProgress( fn: ( DownloadProgress ) => void ): DownloadHandle
 	{
 		this._emitter.addListener( 'progress', fn );
 		return this;
@@ -245,11 +264,17 @@ class DownloadHandle
 		this._lowSpeed = Math.min( this._lowSpeed || Infinity, this._curSpeed );
 		this._curSpeed = 0;
 
-		if ( this._curSpeedTicks.length > 5 ) { // Save only the 5 last seconds for average speed
+		if ( this._curSpeedTicks.length > 5 * TICKS_PER_SECOND ) { // Save only the 5 last seconds for average speed
 			this._curSpeedTicks.pop();
 		}
 
-		this._emitter.emit( 'progress', this._totalDownloaded / this._totalSize, this.currentKbps,  this.peakKbps, this.lowKbps, this.avgKbps );
+		this._emitter.emit( 'progress', {
+			progress: this._totalDownloaded / this._totalSize,
+			curKbps: this.currentKbps,
+			peakKbps: this.peakKbps,
+			lowKbps: this.lowKbps,
+			avgKbps: this.avgKbps,
+		} );
 	}
 
 	private onError( err: NodeJS.ErrnoException )
