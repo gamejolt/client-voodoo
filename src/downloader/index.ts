@@ -188,7 +188,7 @@ class DownloadHandle
 		};
 
 		this._destStream = fs.createWriteStream( this._toFile, {
-			encoding: 'binary',
+			//encoding: 'binary',
 			flags: 'a',
 		} );
 
@@ -224,7 +224,7 @@ class DownloadHandle
 				return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
 			}
 
-			this._response.setEncoding( 'binary' );
+			//this._response.setEncoding( 'binary' );
 			this._response.pipe( this._streamSpeed );
 			this._response.pipe( this._destStream );
 			this._response.on( 'data', ( data ) =>
