@@ -32,6 +32,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 var express = require('express');
 var downloader_1 = require('../downloader');
 var index_1 = require('./index');
+var stream_speed_1 = require('../downloader/stream-speed');
 var path = require('path');
 describe('Extractor', function () {
     var app = undefined;
@@ -53,9 +54,9 @@ describe('Extractor', function () {
     });
     it('Should work', function (done) {
         var handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c79c01300a/cabinvania.zip.tar.bro', downloadDir);
-        handle.onProgress(function (data) {
+        handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
             console.log('Download progress: ' + Math.floor(data.progress * 100) + '%');
-            console.log('Current speed: ' + Math.floor(data.curKbps) + ' kbps, peak: ' + Math.floor(data.peakKbps) + ' kbps, low: ' + Math.floor(data.lowKbps) + ', average: ' + Math.floor(data.avgKbps) + ' kbps');
+            console.log('Current speed: ' + Math.floor(data.sample.current) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor(data.sample.peak) + ' kbps, low: ' + Math.floor(data.sample.low) + ', average: ' + Math.floor(data.sample.average) + ' kbps');
         });
         handle.promise.then(function () {
             return index_1.Extractor.extract(handle.toFullpath, path.join('test-files', 'extracted', handle.toFilename), {
