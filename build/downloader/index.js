@@ -50,8 +50,10 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 var fs = require('fs');
 var http = require('http');
 var url = require('url');
+var path = require('path');
 var events_1 = require('events');
 var Bluebird = require('bluebird');
+var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
 var fsExists = function fsExists(path) {
     return new _promise2.default(function (resolve) {
@@ -83,6 +85,7 @@ exports.Downloader = Downloader;
     DownloadHandleState[DownloadHandleState["FINISHED"] = 4] = "FINISHED";
 })(exports.DownloadHandleState || (exports.DownloadHandleState = {}));
 var DownloadHandleState = exports.DownloadHandleState;
+var TICKS_PER_SECOND = 2;
 
 var DownloadHandle = (function () {
     function DownloadHandle(_from, _to) {
@@ -99,7 +102,7 @@ var DownloadHandle = (function () {
         key: "start",
         value: function start() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var exists, stat;
+                var parsedDownloadUrl, exists, stat;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -123,48 +126,65 @@ var DownloadHandle = (function () {
                                 this._totalSize = 0;
                                 this._totalDownloaded = 0;
                                 _context.prev = 12;
-                                _context.next = 15;
-                                return fsExists(this._to);
+                                parsedDownloadUrl = url.parse(this._from, true);
 
-                            case 15:
+                                this._filename = path.parse(parsedDownloadUrl.pathname).base;
+                                _context.next = 17;
+                                return fsExists(this._to + this._filename);
+
+                            case 17:
                                 exists = _context.sent;
-                                _context.next = 18;
+                                _context.next = 20;
                                 return fsExists(this._to);
 
-                            case 18:
+                            case 20:
                                 if (!_context.sent) {
-                                    _context.next = 23;
+                                    _context.next = 27;
                                     break;
                                 }
 
-                                _context.next = 21;
+                                _context.next = 23;
                                 return fsStat(this._to);
 
-                            case 21:
+                            case 23:
                                 stat = _context.sent;
 
                                 this._totalDownloaded = stat.size;
-
-                            case 23:
-                                _context.next = 28;
+                                _context.next = 31;
                                 break;
 
-                            case 25:
-                                _context.prev = 25;
+                            case 27:
+                                _context.next = 29;
+                                return mkdirp(this._to);
+
+                            case 29:
+                                if (_context.sent) {
+                                    _context.next = 31;
+                                    break;
+                                }
+
+                                throw new Error('Couldn\'t create the destination folder path');
+
+                            case 31:
+                                _context.next = 36;
+                                break;
+
+                            case 33:
+                                _context.prev = 33;
                                 _context.t0 = _context["catch"](12);
 
                                 this.onError(_context.t0);
 
-                            case 28:
+                            case 36:
                                 this.download();
                                 return _context.abrupt("return", true);
 
-                            case 30:
+                            case 38:
                             case "end":
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[12, 25]]);
+                }, _callee, this, [[12, 33]]);
             }));
         }
     }, {
@@ -214,13 +234,13 @@ var DownloadHandle = (function () {
                     'Range': 'bytes=' + this._totalDownloaded.toString() + '-'
                 }
             };
-            this.destStream = fs.createWriteStream(this._to, {
+            this.destStream = fs.createWriteStream(this._to + this._filename, {
                 encoding: 'binary',
                 flags: 'a'
             });
             this.request = http.request(httpOptions, function (response) {
                 _this.response = response;
-                _this._curSpeedInterval = setInterval(_this.onTick.bind(_this), 1000);
+                _this._curSpeedInterval = setInterval(_this.onTick.bind(_this), 1000 / TICKS_PER_SECOND);
                 _this._state = DownloadHandleState.STARTED;
                 // Unsatisfiable request - most likely we've downloaded the whole thing already.
                 // TODO - send HEAD request to get content-length and compare.
@@ -275,10 +295,16 @@ var DownloadHandle = (function () {
             this._peakSpeed = Math.max(this._peakSpeed, this._curSpeed);
             this._lowSpeed = Math.min(this._lowSpeed || Infinity, this._curSpeed);
             this._curSpeed = 0;
-            if (this._curSpeedTicks.length > 5) {
+            if (this._curSpeedTicks.length > 5 * TICKS_PER_SECOND) {
                 this._curSpeedTicks.pop();
             }
-            this._emitter.emit('progress', this._totalDownloaded / this._totalSize, this.currentKbps, this.peakKbps, this.lowKbps, this.avgKbps);
+            this._emitter.emit('progress', {
+                progress: this._totalDownloaded / this._totalSize,
+                curKbps: this.currentKbps,
+                peakKbps: this.peakKbps,
+                lowKbps: this.lowKbps,
+                avgKbps: this.avgKbps
+            });
         }
     }, {
         key: "onError",
@@ -307,22 +333,22 @@ var DownloadHandle = (function () {
     }, {
         key: "peakKbps",
         get: function get() {
-            return this._peakSpeed / 1024;
+            return this._peakSpeed / 1024 / TICKS_PER_SECOND;
         }
     }, {
         key: "lowKbps",
         get: function get() {
-            return this._lowSpeed / 1024;
+            return this._lowSpeed / 1024 / TICKS_PER_SECOND;
         }
     }, {
         key: "avgKbps",
         get: function get() {
-            return this._avgSpeed / 1024;
+            return this._avgSpeed / 1024 / TICKS_PER_SECOND;
         }
     }, {
         key: "currentKbps",
         get: function get() {
-            return this._curSpeed / 1024;
+            return this._curSpeed / 1024 / TICKS_PER_SECOND;
         }
     }, {
         key: "currentAveragedSpeed",
@@ -331,7 +357,7 @@ var DownloadHandle = (function () {
                 return this.currentKbps;
             }
             var sum = this._curSpeedTicks.reduce(function (accumulated, current) {
-                return accumulated + current / 1024;
+                return accumulated + current / 1024 / TICKS_PER_SECOND;
             }, 0);
             return sum / this._curSpeedTicks.length;
         }
