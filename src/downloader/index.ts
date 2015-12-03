@@ -9,7 +9,7 @@ import * as _ from 'lodash';
 let decompressStream = require('iltorb').decompressStream;
 
 let Bluebird = require( 'bluebird' );
-var mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
+let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
 let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
 let fsExists = function( path: string ): Promise<boolean>
 {
@@ -99,6 +99,16 @@ class DownloadHandle
 		return this._to;
 	}
 
+	get toFilename(): string
+	{
+		return this._toFilename;
+	}
+
+	get toFullpath(): string
+	{
+		return this._toFile;
+	}
+
 	get peakKbps(): number
 	{
 		return this._peakSpeed / 1024 / TICKS_PER_SECOND;
@@ -168,13 +178,31 @@ class DownloadHandle
 			let parsedDownloadUrl = url.parse( this._from, true );
 			this._toFilename = path.parse( parsedDownloadUrl.pathname ).base;
 			this._toFile = path.join( this._to, this._toFilename );
+
+			// If the actual file already exists, we resume download.
 			let exists = await fsExists( this._toFile );
 			if ( await fsExists( this._toFile ) ) {
+
+				// Make sure the destination is a file.
 				let stat = await fsStat( this._toFile );
+				if ( !stat.isFile() ) {
+					throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
+				}
+
 				this._totalDownloaded = stat.size;
 			}
-			else if ( !( await mkdirp( this._to ) ) ) {
-				throw new Error( 'Couldn\'t create the destination folder path' );
+			// Otherwise, we validate the folder path.
+			else {
+				if ( await fsExists( this._to ) ) {
+					let dirStat = await fsStat( this._to );
+					if ( !dirStat.isDirectory() ) {
+						throw new Error( 'Can\'t download to destination because the path is invalid.' );
+					}
+				}
+				// Create the folder path.
+				else if ( !( await mkdirp( this._to ) ) ) {
+					throw new Error( 'Couldn\'t create the destination folder path' );
+				}
 			}
 		}
 		catch ( err ) {

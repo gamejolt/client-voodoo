@@ -1,11 +1,5 @@
 "use strict";
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
     return new Promise(function (resolve, reject) {
         generator = generator.call(thisArg, _arguments);
@@ -36,9 +30,10 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
     });
 };
 var express = require('express');
+var downloader_1 = require('../downloader');
 var index_1 = require('./index');
 var path = require('path');
-describe('Downloader', function () {
+describe('Extractor', function () {
     var app = undefined;
     var server = undefined;
     var downloadDir = path.join('test-files', 'downloaded');
@@ -57,25 +52,19 @@ describe('Downloader', function () {
         server = null;
     });
     it('Should work', function (done) {
-        var handle = index_1.Downloader.download('https://az764295.vo.msecnd.net/public/0.10.3/VSCode-linux64.zip', downloadDir);
-        var waited = false;
+        var handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c79c01300a/cabinvania.zip.tar.bro', downloadDir);
         handle.onProgress(function (data) {
             console.log('Download progress: ' + Math.floor(data.progress * 100) + '%');
             console.log('Current speed: ' + Math.floor(data.curKbps) + ' kbps, peak: ' + Math.floor(data.peakKbps) + ' kbps, low: ' + Math.floor(data.lowKbps) + ', average: ' + Math.floor(data.avgKbps) + ' kbps');
-            if (data.progress > 0.5 && !waited) {
-                console.log('Having a comic relief..');
-                handle.stop().then(function () {
-                    return new _promise2.default(function (resolve) {
-                        return setTimeout(resolve, 5000);
-                    });
-                }).then(function () {
-                    return handle.start();
-                }).then(function () {
-                    waited = true;console.log('Had a comic relief!');
-                });
-            }
         });
-        handle.promise.then(done).catch(done);
+        handle.promise.then(function () {
+            return index_1.Extractor.extract(handle.toFullpath, path.join('test-files', 'extracted', handle.toFilename), {
+                deleteSource: true,
+                overwrite: true
+            });
+        }).then(function () {
+            return done();
+        }).catch(done);
     });
 });
 //# sourceMappingURL=index-spec.js.map

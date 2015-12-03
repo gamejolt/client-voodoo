@@ -7,3 +7,4 @@
 /// <reference path="./../typings/assertion-error/assertion-error.d.ts" />
 /// <reference path="./../typings/chai/chai.d.ts" />
 /// <reference path="./../typings/lodash/lodash.d.ts" />
+/// <reference path="./../typings/tar-fs/tar-fs.d.ts" />
