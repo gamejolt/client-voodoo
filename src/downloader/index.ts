@@ -50,7 +50,7 @@ export interface IDownloadProgress
 	sample: StreamSpeed.ISampleData;
 }
 
-class DownloadHandle
+export class DownloadHandle
 {
 	private _state: DownloadHandleState;
 

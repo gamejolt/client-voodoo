@@ -415,4 +415,6 @@ var DownloadHandle = (function () {
     }]);
     return DownloadHandle;
 })();
+
+exports.DownloadHandle = DownloadHandle;
 //# sourceMappingURL=index.js.map

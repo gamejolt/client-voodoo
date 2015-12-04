@@ -49,7 +49,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 };
 var fs = require('fs');
 var _ = require('lodash');
-var tar = require('tar-fs');
+var tarFS = require('tar-fs');
 var decompressStream = require('iltorb').decompressStream;
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
@@ -71,7 +71,7 @@ var Extractor = (function () {
         key: "extract",
         value: function extract(from, to, options) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var destExists, destStat, filesInDest, result, unlinked;
+                var destExists, destStat, filesInDest, files, result, unlinked;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -142,10 +142,24 @@ var Extractor = (function () {
                                 throw new Error('Couldn\'t create destination folder path');
 
                             case 22:
-                                _context.next = 24;
+                                files = [];
+                                _context.next = 25;
                                 return new _promise2.default(function (resolve, reject) {
                                     var stream = fs.createReadStream(from);
-                                    var extractStream = tar.extract(to);
+                                    var optionsMap = options.map;
+                                    var extractStream = tarFS.extract(to, _.assign(options, {
+                                        map: function map(header) {
+                                            console.log(header);
+                                            // TODO: fuggin symlinks and the likes.
+                                            if (header.type === 'file') {
+                                                files.push(header.name);
+                                            }
+                                            if (optionsMap) {
+                                                return optionsMap(header);
+                                            }
+                                            return header;
+                                        }
+                                    }));
                                     extractStream.on('finish', function () {
                                         return resolve(true);
                                     });
@@ -162,44 +176,47 @@ var Extractor = (function () {
                                     }
                                 });
 
-                            case 24:
+                            case 25:
                                 result = _context.sent;
 
                                 if (!(result && options.deleteSource)) {
-                                    _context.next = 36;
+                                    _context.next = 37;
                                     break;
                                 }
 
-                                _context.next = 28;
+                                _context.next = 29;
                                 return fsUnlink(from);
 
-                            case 28:
+                            case 29:
                                 unlinked = _context.sent;
                                 _context.t0 = unlinked;
 
                                 if (!_context.t0) {
-                                    _context.next = 34;
+                                    _context.next = 35;
                                     break;
                                 }
 
-                                _context.next = 33;
+                                _context.next = 34;
                                 return fsExists(from);
 
-                            case 33:
+                            case 34:
                                 _context.t0 = _context.sent;
 
-                            case 34:
+                            case 35:
                                 if (!_context.t0) {
-                                    _context.next = 36;
+                                    _context.next = 37;
                                     break;
                                 }
 
                                 throw unlinked;
 
-                            case 36:
-                                return _context.abrupt("return", result);
-
                             case 37:
+                                return _context.abrupt("return", {
+                                    success: result,
+                                    files: files
+                                });
+
+                            case 38:
                             case "end":
                                 return _context.stop();
                         }
