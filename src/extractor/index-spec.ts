@@ -34,7 +34,10 @@ describe( 'Extractor', function()
 
 	it( 'Should work', function( done )
 	{
-		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c79c01300a/cabinvania.zip.tar.bro', downloadDir );
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadDir, {
+			brotli: true,
+			overwrite: true,
+		} );
 
 		handle.onProgress( SampleUnit.KBps, function( data )
 		{
@@ -44,6 +47,7 @@ describe( 'Extractor', function()
 
 		handle.promise
 			.then( () => Extractor.extract( handle.toFullpath, path.join( 'test-files', 'extracted', handle.toFilename ), {
+				brotli: false,
 				deleteSource: true,
 				overwrite: true,
 			} ) )

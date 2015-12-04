@@ -65,19 +65,18 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
     }, {
         key: '_takeSample',
         value: function _takeSample(onDemand) {
-            var _this2 = this;
-
             this.samplesTaken += 1;
-            this.average += (this.current - this.average) / this.samplesTaken * this.samplesPerSecond;
-            this.peak = Math.max(this.peak, this.current) * this.samplesPerSecond;
-            this.low = Math.min(this.low || Infinity, this.current) * this.samplesPerSecond;
+            this.current *= this.samplesPerSecond;
+            this.average += (this.current - this.average) / this.samplesTaken;
+            this.peak = Math.max(this.peak, this.current);
+            this.low = Math.min(this.low === -1 ? this.current : this.low, this.current);
             this.samples.unshift(this.current);
             this.currentAverage = this.samples.reduce(function (accumulate, value) {
-                return accumulate + value * _this2.samplesPerSecond;
+                return accumulate + value;
             }, 0);
             this.currentAverage /= Math.min(this.samples.length, this.samplesForAverage);
             var sampleData = StreamSpeed.convertSample({
-                current: this.current * this.samplesPerSecond,
+                current: this.current,
                 currentAverage: this.currentAverage,
                 peak: this.peak,
                 low: this.low,
@@ -90,11 +89,11 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
                     this.samples.pop();
                 }
                 this.emitSample(sampleData);
-                this.current = 0;
             } else {
                 this.samples = this.samples.slice(1);
                 this.samplesTaken -= 1;
             }
+            this.current = 0;
             return sampleData;
         }
     }, {
@@ -105,20 +104,20 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
     }, {
         key: 'start',
         value: function start(options) {
-            var _this3 = this;
+            var _this2 = this;
 
             this.samples = [];
             this.samplesTaken = 0;
             this.current = 0;
             this.currentAverage = 0;
             this.peak = 0;
-            this.low = 0;
+            this.low = -1;
             this.average = 0;
             options = options || {};
             this.samplesPerSecond = options.samplesPerSecond || 2;
             this.samplesForAverage = options.samplesForAverage || 5 * this.samplesPerSecond;
             this.interval = setInterval(function () {
-                return _this3._takeSample();
+                return _this2._takeSample();
             }, 1000 / this.samplesPerSecond);
         }
     }, {

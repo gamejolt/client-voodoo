@@ -57,8 +57,11 @@ describe('Downloader', function () {
         app = null;
         server = null;
     });
-    it('Should work', function (done) {
-        var handle = index_1.Downloader.download('https://az764295.vo.msecnd.net/public/0.10.3/VSCode-linux64.zip', downloadDir);
+    it('Should download a resumable non-brotli file', function (done) {
+        var handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadDir, {
+            brotli: false,
+            overwrite: true
+        });
         var waited = false;
         handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
             console.log('Download progress: ' + Math.floor(data.progress * 100) + '%');
@@ -67,7 +70,7 @@ describe('Downloader', function () {
                 console.log('Having a comic relief..');
                 handle.stop().then(function () {
                     return new _promise2.default(function (resolve) {
-                        return setTimeout(resolve, 5000);
+                        return setTimeout(resolve, 1000);
                     });
                 }).then(function () {
                     return handle.start();
@@ -75,6 +78,17 @@ describe('Downloader', function () {
                     waited = true;console.log('Had a comic relief!');
                 });
             }
+        });
+        handle.promise.then(done).catch(done);
+    });
+    it('Should download a non-resumable brotli file', function (done) {
+        var handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadDir, {
+            brotli: true,
+            overwrite: true
+        });
+        handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
+            console.log('Download progress: ' + Math.floor(data.progress * 100) + '%');
+            console.log('Current speed: ' + Math.floor(data.sample.current) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor(data.sample.peak) + ' kbps, low: ' + Math.floor(data.sample.low) + ', average: ' + Math.floor(data.sample.average) + ' kbps');
         });
         handle.promise.then(done).catch(done);
     });

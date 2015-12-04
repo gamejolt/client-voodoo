@@ -97,20 +97,21 @@ export class StreamSpeed extends PassThrough
 	{
 		this.samplesTaken += 1;
 
-		this.average += ( this.current - this.average ) / this.samplesTaken * this.samplesPerSecond;
-		this.peak = Math.max( this.peak, this.current ) * this.samplesPerSecond;
-		this.low = Math.min( this.low || Infinity, this.current ) * this.samplesPerSecond;
+		this.current *= this.samplesPerSecond;
+		this.average += ( this.current - this.average ) / this.samplesTaken;
+		this.peak = Math.max( this.peak, this.current );
+		this.low = Math.min( this.low === -1 ? this.current : this.low, this.current );
 
 		this.samples.unshift( this.current );
 
 		this.currentAverage = this.samples.reduce( ( accumulate, value ) =>
 		{
-			return accumulate + value * this.samplesPerSecond;
+			return accumulate + value;
 		}, 0 );
 		this.currentAverage /= Math.min( this.samples.length, this.samplesForAverage );
 
 		let sampleData = StreamSpeed.convertSample( {
-			current: this.current * this.samplesPerSecond,
+			current: this.current,
 			currentAverage: this.currentAverage,
 			peak: this.peak,
 			low: this.low,
@@ -126,7 +127,6 @@ export class StreamSpeed extends PassThrough
 			}
 
 			this.emitSample( sampleData );
-			this.current = 0;
 		}
 		// If were doing an on demand we need to roll back some data so we wouldn't screw up the next sample
 		else {
@@ -134,6 +134,7 @@ export class StreamSpeed extends PassThrough
 			this.samplesTaken -= 1;
 		}
 
+		this.current = 0;
 		return sampleData;
 	}
 
@@ -149,7 +150,7 @@ export class StreamSpeed extends PassThrough
 		this.current = 0;
 		this.currentAverage = 0;
 		this.peak = 0;
-		this.low = 0;
+		this.low = -1;
 		this.average = 0;
 
 		options = options || {};

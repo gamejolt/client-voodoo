@@ -7,6 +7,8 @@ import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 import * as StreamSpeed from './stream-speed';
 
+let decompressStream = require( 'iltorb' ).decompressStream;
+
 let Bluebird = require( 'bluebird' );
 let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
 let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
@@ -21,6 +23,8 @@ let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat )
 
 export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
 {
+	brotli?: boolean;
+	overwrite?: boolean;
 }
 
 export abstract class Downloader
@@ -68,6 +72,11 @@ class DownloadHandle
 
 	constructor( private _from: string, private _to: string, private _options: IDownloadOptions )
 	{
+		this._options = _.defaults( this._options || {}, {
+			brotli: true,
+			overwrite: false,
+		} );
+
 		this._state = DownloadHandleState.STOPPED;
 		this._emitter = new EventEmitter();
 		this.start();
@@ -131,8 +140,15 @@ class DownloadHandle
 				if ( !stat.isFile() ) {
 					throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
 				}
-
-				this._totalDownloaded = stat.size;
+				else if ( this._options.overwrite ) {
+					let unlinked = await fsUnlink( this._toFile );
+					if ( unlinked ) {
+						throw new Error( 'Can\'t download because destination cannot be overwritten.' );
+					}
+				}
+				else {
+					this._totalDownloaded = stat.size;
+				}
 			}
 			// Otherwise, we validate the folder path.
 			else {
@@ -188,7 +204,6 @@ class DownloadHandle
 		};
 
 		this._destStream = fs.createWriteStream( this._toFile, {
-			//encoding: 'binary',
 			flags: 'a',
 		} );
 
@@ -224,9 +239,18 @@ class DownloadHandle
 				return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
 			}
 
-			//this._response.setEncoding( 'binary' );
-			this._response.pipe( this._streamSpeed );
-			this._response.pipe( this._destStream );
+			if ( this._options.brotli ) {
+				this._response
+					.pipe( this._streamSpeed )
+					.pipe( decompressStream() )
+					.pipe( this._destStream );
+			}
+			else {
+				this._response
+					.pipe( this._streamSpeed )
+					.pipe( this._destStream );
+			}
+
 			this._response.on( 'data', ( data ) =>
 			{
 				this._totalDownloaded += data.length;
