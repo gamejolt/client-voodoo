@@ -4,6 +4,7 @@ let gulp = require( 'gulp' );
 let sequence = require( 'run-sequence' );
 let plugins = require( 'gulp-load-plugins' )();
 let path = require( 'path' );
+let del = require( 'del' );
 
 let typescript = plugins.typescript.createProject( './src/tsconfig.json', {
 	typescript: require( 'typescript' ),
@@ -11,8 +12,7 @@ let typescript = plugins.typescript.createProject( './src/tsconfig.json', {
 
 gulp.task( 'clean', function()
 {
-	return gulp.src( './build/**/*', { read: false } )
-		.pipe( plugins.rimraf() );
+	return del( './build/**/*' );
 } );
 
 gulp.task( 'js', function()

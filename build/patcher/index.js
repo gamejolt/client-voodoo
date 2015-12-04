@@ -1,9 +1,5 @@
 "use strict";
 
-var _stringify = require("babel-runtime/core-js/json/stringify");
-
-var _stringify2 = _interopRequireDefault(_stringify);
-
 var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -55,8 +51,6 @@ var fs = require('fs');
 var _ = require('lodash');
 var path = require('path');
 var events_1 = require('events');
-var StreamSpeed = require('../downloader/stream-speed');
-var downloader_1 = require('../downloader');
 var extractor_1 = require('../extractor');
 var decompressStream = require('iltorb').decompressStream;
 var Bluebird = require('bluebird');
@@ -74,10 +68,8 @@ var fsReadDir = Bluebird.promisify(fs.readdir);
 var fsReadDirRecursively = Bluebird.promisify(require('recursive-readdir'));
 (function (PatchHandleState) {
     PatchHandleState[PatchHandleState["STOPPED"] = 0] = "STOPPED";
-    PatchHandleState[PatchHandleState["STOPPING"] = 1] = "STOPPING";
-    PatchHandleState[PatchHandleState["DOWNLOADING"] = 2] = "DOWNLOADING";
-    PatchHandleState[PatchHandleState["PATCHING"] = 3] = "PATCHING";
-    PatchHandleState[PatchHandleState["FINISHED"] = 4] = "FINISHED";
+    PatchHandleState[PatchHandleState["PATCHING"] = 1] = "PATCHING";
+    PatchHandleState[PatchHandleState["FINISHED"] = 2] = "FINISHED";
 })(exports.PatchHandleState || (exports.PatchHandleState = {}));
 var PatchHandleState = exports.PatchHandleState;
 
@@ -99,6 +91,8 @@ exports.Patcher = Patcher;
 
 var PatchHandle = (function () {
     function PatchHandle(_from, _to, _options) {
+        var _this = this;
+
         (0, _classCallCheck3.default)(this, PatchHandle);
 
         this._from = _from;
@@ -108,182 +102,190 @@ var PatchHandle = (function () {
             brotli: true
         });
         this._state = PatchHandleState.STOPPED;
-        this._downloadHandle = null;
         this._emitter = new events_1.EventEmitter();
-        this.start();
+        this._promise = this.promise;
+        this.patch().then(function () {
+            return _this.onFinished();
+        }).catch(function (err) {
+            return _this.onError(err);
+        });
     }
 
     (0, _createClass3.default)(PatchHandle, [{
-        key: "start",
-        value: function start() {
-            var _this = this;
-
-            if (this._state !== PatchHandleState.STOPPED) {
-                return false;
-            }
-            this._promise = this.promise;
-            this._state = PatchHandleState.DOWNLOADING;
-            this._downloadHandle = this._downloadHandle || downloader_1.Downloader.download(this._from, this._options.tempDir, {
-                brotli: this._options.brotli
-            });
-            this._downloadHandle.onProgress(StreamSpeed.SampleUnit.Bps, function (progress) {
-                return _this.emitProgress(progress);
-            }).promise.then(function () {
-                return _this.patch();
-            }).then(function () {
-                return _this.onFinished();
-            }).catch(function (err) {
-                return _this.onError(err);
-            });
-            return true;
-        }
-    }, {
-        key: "stop",
-        value: function stop() {
+        key: "patch",
+        value: function patch() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+                var _this2 = this;
+
+                var currentFiles, exists, stat, archiveListFileDir, dirStat, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                if (!(this._state !== PatchHandleState.DOWNLOADING)) {
-                                    _context.next = 2;
-                                    break;
-                                }
-
-                                return _context.abrupt("return", false);
-
-                            case 2:
-                                this._state = PatchHandleState.STOPPING;
-                                _context.next = 5;
-                                return this._downloadHandle.stop();
-
-                            case 5:
-                                if (_context.sent) {
-                                    _context.next = 8;
-                                    break;
-                                }
-
-                                this._state = PatchHandleState.DOWNLOADING;
-                                return _context.abrupt("return", false);
-
-                            case 8:
-                                this._state = PatchHandleState.STOPPED;
-                                return _context.abrupt("return", true);
-
-                            case 10:
-                            case "end":
-                                return _context.stop();
-                        }
-                    }
-                }, _callee, this);
-            }));
-        }
-    }, {
-        key: "patch",
-        value: function patch() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
-                var _this2 = this;
-
-                var currentFiles, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
-                return _regenerator2.default.wrap(function _callee2$(_context2) {
-                    while (1) {
-                        switch (_context2.prev = _context2.next) {
-                            case 0:
                                 // TODO: restrict operations to the given directories.
                                 this._state = PatchHandleState.PATCHING;
                                 currentFiles = undefined;
-                                _context2.next = 4;
+                                _context.next = 4;
                                 return fsExists(this._to);
 
                             case 4:
-                                _context2.t0 = !_context2.sent;
+                                _context.t0 = !_context.sent;
 
-                                if (_context2.t0) {
-                                    _context2.next = 9;
+                                if (_context.t0) {
+                                    _context.next = 9;
                                     break;
                                 }
 
-                                _context2.next = 8;
+                                _context.next = 8;
                                 return fsStat(this._to);
 
                             case 8:
-                                _context2.t0 = !_context2.sent.isDirectory();
+                                _context.t0 = !_context.sent.isDirectory();
 
                             case 9:
-                                if (!_context2.t0) {
-                                    _context2.next = 13;
+                                if (!_context.t0) {
+                                    _context.next = 13;
                                     break;
                                 }
 
                                 currentFiles = [];
-                                _context2.next = 17;
+                                _context.next = 17;
                                 break;
 
                             case 13:
-                                _context2.next = 15;
+                                _context.next = 15;
                                 return fsReadDirRecursively(this._to);
 
                             case 15:
-                                _context2.t1 = function (file) {
+                                _context.t1 = function (file) {
                                     return './' + path.relative(_this2._to, file);
                                 };
 
-                                currentFiles = _context2.sent.map(_context2.t1);
+                                currentFiles = _context.sent.map(_context.t1);
 
                             case 17:
-                                console.log('Current files: ' + (0, _stringify2.default)(currentFiles));
-                                oldBuildFiles = undefined;
-                                _context2.next = 21;
+                                _context.next = 19;
                                 return fsExists(this._options.archiveListFile);
 
-                            case 21:
-                                if (_context2.sent) {
-                                    _context2.next = 25;
+                            case 19:
+                                exists = _context.sent;
+                                _context.next = 22;
+                                return fsExists(this._options.archiveListFile);
+
+                            case 22:
+                                if (!_context.sent) {
+                                    _context.next = 30;
+                                    break;
+                                }
+
+                                _context.next = 25;
+                                return fsStat(this._options.archiveListFile);
+
+                            case 25:
+                                stat = _context.sent;
+
+                                if (stat.isFile()) {
+                                    _context.next = 28;
+                                    break;
+                                }
+
+                                throw new Error('Can\'t patch because the archive file list isn\'t a file.');
+
+                            case 28:
+                                _context.next = 45;
+                                break;
+
+                            case 30:
+                                archiveListFileDir = path.dirname(this._options.archiveListFile);
+                                _context.next = 33;
+                                return fsExists(archiveListFileDir);
+
+                            case 33:
+                                if (!_context.sent) {
+                                    _context.next = 41;
+                                    break;
+                                }
+
+                                _context.next = 36;
+                                return fsStat(archiveListFileDir);
+
+                            case 36:
+                                dirStat = _context.sent;
+
+                                if (dirStat.isDirectory()) {
+                                    _context.next = 39;
+                                    break;
+                                }
+
+                                throw new Error('Can\'t patch because the path to the archive file list is invalid.');
+
+                            case 39:
+                                _context.next = 45;
+                                break;
+
+                            case 41:
+                                _context.next = 43;
+                                return mkdirp(archiveListFileDir);
+
+                            case 43:
+                                if (_context.sent) {
+                                    _context.next = 45;
+                                    break;
+                                }
+
+                                throw new Error('Couldn\'t create the patch archive file list folder path');
+
+                            case 45:
+                                oldBuildFiles = undefined;
+                                _context.next = 48;
+                                return fsExists(this._options.archiveListFile);
+
+                            case 48:
+                                if (_context.sent) {
+                                    _context.next = 52;
                                     break;
                                 }
 
                                 oldBuildFiles = currentFiles;
-                                _context2.next = 28;
+                                _context.next = 55;
                                 break;
 
-                            case 25:
-                                _context2.next = 27;
+                            case 52:
+                                _context.next = 54;
                                 return fsReadFile(this._options.archiveListFile, 'utf8');
 
-                            case 27:
-                                oldBuildFiles = _context2.sent.split("\n");
+                            case 54:
+                                oldBuildFiles = _context.sent.split("\n");
 
-                            case 28:
-                                console.log('Old files: ' + (0, _stringify2.default)(oldBuildFiles));
-                                _context2.next = 31;
-                                return extractor_1.Extractor.extract(this._downloadHandle.toFullpath, this._to, {
-                                    brotli: false,
-                                    overwrite: true
+                            case 55:
+                                _context.next = 57;
+                                return extractor_1.Extractor.extract(this._from, this._to, {
+                                    brotli: this._options.brotli,
+                                    overwrite: true,
+                                    deleteSource: true
                                 });
 
-                            case 31:
-                                extractResult = _context2.sent;
+                            case 57:
+                                extractResult = _context.sent;
 
                                 if (extractResult.success) {
-                                    _context2.next = 34;
+                                    _context.next = 60;
                                     break;
                                 }
 
                                 throw new Error('Failed to extract patch file');
 
-                            case 34:
+                            case 60:
                                 newBuildFiles = extractResult.files;
-
-                                console.log('New files: ' + (0, _stringify2.default)(newBuildFiles));
                                 // Files that the old build created are files in the file system that are not listed in the old build files
+
                                 createdByOldBuild = _.difference(currentFiles, oldBuildFiles);
-
-                                console.log('Created by old files: ' + (0, _stringify2.default)(createdByOldBuild));
                                 // Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
-                                filesToRemove = _.difference(currentFiles, newBuildFiles, createdByOldBuild);
 
-                                console.log('Removing ' + (0, _stringify2.default)(filesToRemove));
-                                _context2.next = 42;
+                                filesToRemove = _.difference(currentFiles, newBuildFiles, createdByOldBuild);
+                                // TODO: use del lib
+
+                                _context.next = 65;
                                 return _promise2.default.all(filesToRemove.map(function (file) {
                                     return fsUnlink(path.resolve(_this2._to, file)).then(function (err) {
                                         if (err) {
@@ -293,68 +295,44 @@ var PatchHandle = (function () {
                                     });
                                 }));
 
-                            case 42:
-                                unlinks = _context2.sent;
-                                _context2.next = 45;
+                            case 65:
+                                unlinks = _context.sent;
+                                _context.next = 68;
                                 return fsWriteFile(this._options.archiveListFile, newBuildFiles.join("\n"));
 
-                            case 45:
-                                return _context2.abrupt("return", true);
+                            case 68:
+                                return _context.abrupt("return", true);
 
-                            case 46:
+                            case 69:
                             case "end":
-                                return _context2.stop();
+                                return _context.stop();
                         }
                     }
-                }, _callee2, this);
+                }, _callee, this);
             }));
-        }
-    }, {
-        key: "onProgress",
-        value: function onProgress(unit, fn) {
-            var _this3 = this;
-
-            this._emitter.addListener('progress', function (progress) {
-                progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
-                fn(_this3._state, progress);
-            });
-            return this;
-        }
-    }, {
-        key: "emitProgress",
-        value: function emitProgress(progress) {
-            this._emitter.emit('progress', this._state, progress);
         }
     }, {
         key: "onError",
         value: function onError(err) {
-            var _this4 = this;
-
-            this.stop().then(function () {
-                _this4._state = PatchHandleState.STOPPED;
-                _this4._rejector(err);
-                _this4._promise = null;
-            });
+            this._state = PatchHandleState.STOPPED;
+            this._rejector(err);
+            this._promise = null;
         }
     }, {
         key: "onFinished",
         value: function onFinished() {
-            var _this5 = this;
-
-            this.stop().then(function () {
-                _this5._state = PatchHandleState.FINISHED;
-                _this5._resolver();
-            });
+            this._state = PatchHandleState.FINISHED;
+            this._resolver();
         }
     }, {
         key: "promise",
         get: function get() {
-            var _this6 = this;
+            var _this3 = this;
 
             if (!this._promise) {
                 this._promise = new _promise2.default(function (resolve, reject) {
-                    _this6._resolver = resolve;
-                    _this6._rejector = reject;
+                    _this3._resolver = resolve;
+                    _this3._rejector = reject;
                 });
             }
             return this._promise;

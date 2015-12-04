@@ -25,6 +25,7 @@ export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
 {
 	brotli?: boolean;
 	overwrite?: boolean;
+	destIsFolder?: boolean
 }
 
 export abstract class Downloader
@@ -75,6 +76,7 @@ export class DownloadHandle
 		this._options = _.defaults( this._options || {}, {
 			brotli: true,
 			overwrite: false,
+			destIsFolder: true,
 		} );
 
 		this._state = DownloadHandleState.STOPPED;
@@ -127,8 +129,14 @@ export class DownloadHandle
 		this._totalDownloaded = 0;
 
 		try {
-			let parsedDownloadUrl = url.parse( this._from, true );
-			this._toFilename = path.parse( parsedDownloadUrl.pathname ).base;
+			if ( this._options.destIsFolder ) {
+				let parsedDownloadUrl = url.parse( this._from, true );
+				this._toFilename = path.basename( parsedDownloadUrl.pathname );
+			}
+			else {
+				this._toFilename = path.basename( this._to );
+				this._to = path.dirname( this._to );
+			}
 			this._toFile = path.join( this._to, this._toFilename );
 
 			// If the actual file already exists, we resume download.

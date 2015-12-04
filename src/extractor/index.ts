@@ -73,7 +73,6 @@ export abstract class Extractor
 			let extractStream = tarFS.extract( to, _.assign( options, {
 				map: ( header: tar.IEntryHeader ) =>
 				{
-					console.log( header );
 					// TODO: fuggin symlinks and the likes.
 					if ( header.type === 'file' ) {
 						files.push( header.name );

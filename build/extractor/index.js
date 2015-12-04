@@ -149,7 +149,6 @@ var Extractor = (function () {
                                     var optionsMap = options.map;
                                     var extractStream = tarFS.extract(to, _.assign(options, {
                                         map: function map(header) {
-                                            console.log(header);
                                             // TODO: fuggin symlinks and the likes.
                                             if (header.type === 'file') {
                                                 files.push(header.name);

@@ -35,4 +35,6 @@ function __export(m) {
     }
 }
 __export(require('./downloader'));
+__export(require('./extractor'));
+__export(require('./patcher'));
 //# sourceMappingURL=index.js.map

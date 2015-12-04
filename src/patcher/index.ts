@@ -36,8 +36,6 @@ export interface IPatcherOptions
 export enum PatchHandleState
 {
 	STOPPED,
-	STOPPING,
-	DOWNLOADING,
 	PATCHING,
 	FINISHED,
 }
@@ -53,7 +51,6 @@ export abstract class Patcher
 export class PatchHandle
 {
 	private _state: PatchHandleState;
-	private _downloadHandle: DownloadHandle;
 
 	private _promise: Promise<void>;
 	private _resolver: () => void;
@@ -67,9 +64,13 @@ export class PatchHandle
 		} );
 
 		this._state = PatchHandleState.STOPPED;
-		this._downloadHandle = null;
 		this._emitter = new EventEmitter();
-		this.start();
+
+		this._promise = this.promise;
+
+		this.patch()
+			.then( () => this.onFinished() )
+			.catch( ( err ) => this.onError( err ) );
 	}
 
 	get promise(): Promise<void>
@@ -82,46 +83,6 @@ export class PatchHandle
 			} );
 		}
 		return this._promise;
-	}
-
-	start()
-	{
-		if ( this._state !== PatchHandleState.STOPPED ) {
-			return false;
-		}
-
-		this._promise = this.promise;
-
-		this._state = PatchHandleState.DOWNLOADING;
-
-		this._downloadHandle = this._downloadHandle || Downloader.download( this._from, this._options.tempDir, {
-			brotli: this._options.brotli,
-		} );
-		this._downloadHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
-			.promise
-				.then( () => this.patch() )
-				.then( () => this.onFinished() )
-				.catch( ( err ) => this.onError( err ) );
-
-		return true;
-	}
-
-	async stop()
-	{
-		if ( this._state !== PatchHandleState.DOWNLOADING ) {
-			return false;
-		}
-
-		this._state = PatchHandleState.STOPPING;
-
-		if ( !( await this._downloadHandle.stop() ) ) {
-			this._state = PatchHandleState.DOWNLOADING;
-			return false;
-		}
-
-		this._state = PatchHandleState.STOPPED;
-
-		return true;
 	}
 
 	private async patch()
@@ -137,7 +98,31 @@ export class PatchHandle
 			// TODO: check if ./ is valid on windows platforms as well.
 			currentFiles = ( await fsReadDirRecursively( this._to ) ).map( ( file ) => './' + path.relative( this._to, file ) );
 		}
-		console.log( 'Current files: ' + JSON.stringify( currentFiles ) );
+
+		// If the destination already exists, make sure its valid.
+		let exists = await fsExists( this._options.archiveListFile );
+		if ( await fsExists( this._options.archiveListFile ) ) {
+
+			// Make sure the destination is a file.
+			let stat = await fsStat( this._options.archiveListFile );
+			if ( !stat.isFile() ) {
+				throw new Error( 'Can\'t patch because the archive file list isn\'t a file.' );
+			}
+		}
+		// Otherwise, we validate the folder path.
+		else {
+			let archiveListFileDir = path.dirname( this._options.archiveListFile );
+			if ( await fsExists( archiveListFileDir ) ) {
+				let dirStat = await fsStat( archiveListFileDir );
+				if ( !dirStat.isDirectory() ) {
+					throw new Error( 'Can\'t patch because the path to the archive file list is invalid.' );
+				}
+			}
+			// Create the folder path.
+			else if ( !( await mkdirp( archiveListFileDir ) ) ) {
+				throw new Error( 'Couldn\'t create the patch archive file list folder path' );
+			}
+		}
 
 		let oldBuildFiles;
 		if ( !( await fsExists( this._options.archiveListFile ) ) ) {
@@ -146,12 +131,11 @@ export class PatchHandle
 		else {
 			oldBuildFiles = ( await fsReadFile( this._options.archiveListFile, 'utf8' ) ).split( "\n" );
 		}
-		console.log( 'Old files: ' + JSON.stringify( oldBuildFiles ) );
 
-
-		let extractResult = await Extractor.extract( this._downloadHandle.toFullpath, this._to, {
-			brotli: false,
+		let extractResult = await Extractor.extract( this._from, this._to, {
+			brotli: this._options.brotli,
 			overwrite: true,
+			deleteSource: true,
 		} );
 
 		if ( !extractResult.success ) {
@@ -159,16 +143,14 @@ export class PatchHandle
 		}
 
 		let newBuildFiles = extractResult.files;
-		console.log( 'New files: ' + JSON.stringify( newBuildFiles ) );
 
 		// Files that the old build created are files in the file system that are not listed in the old build files
 		let createdByOldBuild = _.difference( currentFiles, oldBuildFiles );
-		console.log( 'Created by old files: ' + JSON.stringify( createdByOldBuild ) );
 
 		// Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
 		let filesToRemove = _.difference( currentFiles, newBuildFiles, createdByOldBuild );
-		console.log( 'Removing ' + JSON.stringify( filesToRemove ) );
 
+		// TODO: use del lib
 		let unlinks = await Promise.all( filesToRemove.map( ( file ) =>
 		{
 			return fsUnlink( path.resolve( this._to, file ) ).then( function( err )
@@ -184,37 +166,16 @@ export class PatchHandle
 		return true;
 	}
 
-	onProgress( unit: StreamSpeed.SampleUnit, fn: ( state: PatchHandleState, progress?: IDownloadProgress ) => void ): PatchHandle
-	{
-		this._emitter.addListener( 'progress', ( progress: IDownloadProgress ) =>
-		{
-			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
-			fn( this._state, progress );
-		} );
-		return this;
-	}
-
-	private emitProgress( progress?: IDownloadProgress )
-	{
-		this._emitter.emit( 'progress', this._state, progress );
-	}
-
 	private onError( err: NodeJS.ErrnoException )
 	{
-		this.stop().then( () =>
-		{
-			this._state = PatchHandleState.STOPPED;
-			this._rejector( err );
-			this._promise = null;
-		} );
+		this._state = PatchHandleState.STOPPED;
+		this._rejector( err );
+		this._promise = null;
 	}
 
 	private onFinished()
 	{
-		this.stop().then( () =>
-		{
-			this._state = PatchHandleState.FINISHED;
-			this._resolver();
-		} );
+		this._state = PatchHandleState.FINISHED;
+		this._resolver();
 	}
 }
