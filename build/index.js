@@ -35,6 +35,7 @@ function __export(m) {
     }
 }
 __export(require('./downloader'));
+__export(require('./downloader/stream-speed'));
 __export(require('./extractor'));
 __export(require('./patcher'));
 //# sourceMappingURL=index.js.map
