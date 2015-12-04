@@ -2,7 +2,7 @@
   "name": "client-voodoo",
   "version": "0.0.0",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter list --colors --slow 400 --timeout 100000 \"./build/**/extractor/**/*-spec.js\""
+    "test": "./node_modules/.bin/mocha --reporter list --colors --slow 400 --timeout 100000 \"./build/**/*-spec.js\""
   },
   "main": "build/index.js",
   "devDependencies": {

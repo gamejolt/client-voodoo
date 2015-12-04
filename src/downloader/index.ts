@@ -145,6 +145,7 @@ class DownloadHandle
 					if ( unlinked ) {
 						throw new Error( 'Can\'t download because destination cannot be overwritten.' );
 					}
+					this._options.overwrite = false;
 				}
 				else {
 					this._totalDownloaded = stat.size;
