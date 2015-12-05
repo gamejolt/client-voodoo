@@ -149,7 +149,7 @@ var DownloadHandle = (function () {
 
                             case 14:
                                 if (!_context.sent) {
-                                    _context.next = 34;
+                                    _context.next = 32;
                                     break;
                                 }
 
@@ -168,7 +168,7 @@ var DownloadHandle = (function () {
 
                             case 22:
                                 if (!this._options.overwrite) {
-                                    _context.next = 31;
+                                    _context.next = 29;
                                     break;
                                 }
 
@@ -187,75 +187,71 @@ var DownloadHandle = (function () {
 
                             case 28:
                                 this._options.overwrite = false;
-                                _context.next = 32;
-                                break;
 
-                            case 31:
+                            case 29:
                                 this._totalDownloaded = stat.size;
+                                _context.next = 46;
+                                break;
 
                             case 32:
-                                _context.next = 48;
-                                break;
-
-                            case 34:
-                                _context.next = 36;
+                                _context.next = 34;
                                 return fsExists(this._to);
 
-                            case 36:
+                            case 34:
                                 if (!_context.sent) {
-                                    _context.next = 44;
+                                    _context.next = 42;
                                     break;
                                 }
 
-                                _context.next = 39;
+                                _context.next = 37;
                                 return fsStat(this._to);
 
-                            case 39:
+                            case 37:
                                 dirStat = _context.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 42;
+                                    _context.next = 40;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download to destination because the path is invalid.');
 
-                            case 42:
-                                _context.next = 48;
+                            case 40:
+                                _context.next = 46;
                                 break;
 
-                            case 44:
-                                _context.next = 46;
+                            case 42:
+                                _context.next = 44;
                                 return mkdirp(this._to);
 
-                            case 46:
+                            case 44:
                                 if (_context.sent) {
-                                    _context.next = 48;
+                                    _context.next = 46;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the destination folder path');
 
-                            case 48:
-                                _context.next = 53;
+                            case 46:
+                                _context.next = 51;
                                 break;
 
-                            case 50:
-                                _context.prev = 50;
+                            case 48:
+                                _context.prev = 48;
                                 _context.t0 = _context["catch"](6);
 
                                 this.onError(_context.t0);
 
-                            case 53:
+                            case 51:
                                 this.download();
                                 return _context.abrupt("return", true);
 
-                            case 55:
+                            case 53:
                             case "end":
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[6, 50]]);
+                }, _callee, this, [[6, 48]]);
             }));
         }
     }, {

@@ -35,7 +35,7 @@ describe( 'Downloader', function()
 	{
 		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadDir, {
 			brotli: false,
-			overwrite: true,
+			overwrite: false,
 		} );
 
 		let waited = false;

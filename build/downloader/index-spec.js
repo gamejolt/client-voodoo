@@ -60,7 +60,7 @@ describe('Downloader', function () {
     it('Should download a resumable non-brotli file', function (done) {
         var handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadDir, {
             brotli: false,
-            overwrite: true
+            overwrite: false
         });
         var waited = false;
         handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {

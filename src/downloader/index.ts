@@ -155,9 +155,7 @@ export class DownloadHandle
 					}
 					this._options.overwrite = false;
 				}
-				else {
-					this._totalDownloaded = stat.size;
-				}
+				this._totalDownloaded = stat.size;
 			}
 			// Otherwise, we validate the folder path.
 			else {
