@@ -263,7 +263,7 @@ var PatchHandle = (function () {
                                     brotli: this._options.brotli,
                                     overwrite: true,
                                     deleteSource: true
-                                });
+                                }).promise;
 
                             case 57:
                                 extractResult = _context.sent;

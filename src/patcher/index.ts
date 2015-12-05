@@ -136,7 +136,7 @@ export class PatchHandle
 			brotli: this._options.brotli,
 			overwrite: true,
 			deleteSource: true,
-		} );
+		} ).promise;
 
 		if ( !extractResult.success ) {
 			throw new Error( 'Failed to extract patch file' );

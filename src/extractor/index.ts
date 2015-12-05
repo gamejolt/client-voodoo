@@ -34,43 +34,73 @@ export interface IExtractResult
 
 export abstract class Extractor
 {
-	static async extract( from: string, to: string, options?: IExtractOptions ): Promise<IExtractResult>
+	static extract( from: string, to: string, options?: IExtractOptions ): ExtractHandle
 	{
-		options = _.defaults( options || {}, {
+		return new ExtractHandle( from, to, options );
+	}
+}
+
+export class ExtractHandle
+{
+	private _promise: Promise<IExtractResult>;
+
+	constructor( private _from: string, private _to: string, private _options?: IExtractOptions )
+	{
+		this._options = _.defaults( this._options || {}, {
 			deleteSource: false,
 			brotli: true,
 			overwrite: false,
 		} );
 
+		this._promise = this.start();
+	}
+
+	get from(): string
+	{
+		return this._from;
+	}
+
+	get to(): string
+	{
+		return this._to;
+	}
+
+	get promise(): Promise<IExtractResult>
+	{
+		return this._promise;
+	}
+
+	private async start(): Promise<IExtractResult>
+	{
 		// If the destination already exists, make sure its valid.
-		let destExists = await fsExists( to );
+		let destExists = await fsExists( this._to );
 		if ( destExists ) {
-			let destStat = await fsStat( to );
+			let destStat = await fsStat( this._to );
 			if ( !destStat.isDirectory() ) {
 				throw new Error( 'Can\'t extract to destination because its not a valid directory' );
 			}
 
 			// Don't extract to a non-empty directory.
-			let filesInDest = await fsReadDir( to );
+			let filesInDest = await fsReadDir( this._to );
 			if ( filesInDest && filesInDest.length > 0 ) {
 
 				// Allow extracting to a non empty directory only if the overwrite option is set.
-				if ( !options.overwrite ) {
+				if ( !this._options.overwrite ) {
 					throw new Error( 'Can\'t extract to destination because it isnt empty' );
 				}
 			}
 		}
 		// Create the folder path to extract to.
-		else if ( !( await mkdirp( to ) ) ) {
+		else if ( !( await mkdirp( this._to ) ) ) {
 			throw new Error( 'Couldn\'t create destination folder path' );
 		}
 
 		let files: string[] = [];
 		let result = await new Promise<boolean>( ( resolve, reject ) =>
 		{
-			let stream = fs.createReadStream( from )
-			let optionsMap = options.map;
-			let extractStream = tarFS.extract( to, _.assign( options, {
+			let stream = fs.createReadStream( this._from )
+			let optionsMap = this._options.map;
+			let extractStream = tarFS.extract( this._to, _.assign( this._options, {
 				map: ( header: tar.IEntryHeader ) =>
 				{
 					// TODO: fuggin symlinks and the likes.
@@ -89,7 +119,7 @@ export abstract class Extractor
 			extractStream.on( 'error', ( err ) => reject( err ) );
 			stream.on( 'error', ( err ) => reject( err ) );
 
-			if ( options.brotli ) {
+			if ( this._options.brotli ) {
 				stream
 					.pipe( decompressStream() )
 					.pipe( extractStream );
@@ -99,11 +129,11 @@ export abstract class Extractor
 			}
 		} );
 
-		if ( result && options.deleteSource ) {
+		if ( result && this._options.deleteSource ) {
 
 			// Remove the source file, but throw only if there was an error and the file still exists.
-			let unlinked = await fsUnlink( from );
-			if ( unlinked && ( await fsExists( from ) ) ) {
+			let unlinked = await fsUnlink( this._from );
+			if ( unlinked && ( await fsExists( this._from ) ) ) {
 				throw unlinked;
 			}
 		}

@@ -32,7 +32,7 @@ describe( 'Extractor', function()
 		server = null;
 	} );
 
-	it( 'Should work', function( done )
+	it( 'Should work', async () =>
 	{
 		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadDir, {
 			brotli: true,
@@ -45,13 +45,12 @@ describe( 'Extractor', function()
 			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
 		} );
 
-		handle.promise
-			.then( () => Extractor.extract( handle.toFullpath, path.join( 'test-files', 'extracted', handle.toFilename ), {
-				brotli: false,
-				deleteSource: true,
-				overwrite: true,
-			} ) )
-			.then( () => done() )
-			.catch( done );
+		await handle.promise;
+
+		return Extractor.extract( handle.toFullpath, path.join( 'test-files', 'extracted', handle.toFilename ), {
+			brotli: false,
+			deleteSource: true,
+			overwrite: true,
+		} ).promise;
 	} );
 } );

@@ -93,7 +93,7 @@ describe('Patcher', function () {
                                 tempDir: tempDir,
                                 archiveListFile: archiveListFile
                             });
-                            return _context.abrupt("return", patchHandle.promise.then(function () {}));
+                            return _context.abrupt("return", patchHandle.promise);
 
                         case 6:
                         case "end":

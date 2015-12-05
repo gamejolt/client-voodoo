@@ -57,7 +57,6 @@ describe( 'Patcher', function()
 			archiveListFile: archiveListFile,
 		} );
 
-		return patchHandle.promise
-			.then( () => {} )
+		return patchHandle.promise;
 	} );
 } );

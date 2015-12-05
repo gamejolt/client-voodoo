@@ -73,7 +73,7 @@ export class DownloadHandle
 
 	constructor( private _from: string, private _to: string, private _options: IDownloadOptions )
 	{
-		this._options = _.defaults( this._options || {}, {
+		this._options = _.defaults( _options || {}, {
 			brotli: true,
 			overwrite: false,
 			destIsFolder: true,
@@ -140,7 +140,6 @@ export class DownloadHandle
 			this._toFile = path.join( this._to, this._toFilename );
 
 			// If the actual file already exists, we resume download.
-			let exists = await fsExists( this._toFile );
 			if ( await fsExists( this._toFile ) ) {
 
 				// Make sure the destination is a file.
@@ -154,6 +153,7 @@ export class DownloadHandle
 						throw new Error( 'Can\'t download because destination cannot be overwritten.' );
 					}
 					this._options.overwrite = false;
+					stat.size = 0;
 				}
 				this._totalDownloaded = stat.size;
 			}
