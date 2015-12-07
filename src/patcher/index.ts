@@ -71,12 +71,6 @@ export class PatchHandle
 		this._state = PatchHandleState.STOPPED;
 		this._downloadHandle = null;
 		this._emitter = new EventEmitter();
-
-		this.start();
-
-		// this.patch()
-		// 	.then( () => this.onFinished() )
-		// 	.catch( ( err ) => this.onError( err ) );
 	}
 
 	get promise(): Promise<void>
@@ -115,6 +109,7 @@ export class PatchHandle
 		this._promise = this.promise;
 
 		this._state = PatchHandleState.DOWNLOADING;
+		this._emitter.emit( 'downloading' );
 
 		this._tempFile = path.join( this._build.library_dir, 'tempDownload' );
 		this._archiveListFile = path.join( this._build.library_dir, 'archive-file-list' );
@@ -155,7 +150,7 @@ export class PatchHandle
 	{
 		// TODO: restrict operations to the given directories.
 		this._state = PatchHandleState.PATCHING;
-		this.emitProgress( null );
+		this._emitter.emit( 'patching' );
 
 		let currentFiles: string[];
 		if ( !( await fsExists( this._to ) ) || !( await fsStat( this._to ) ).isDirectory() ) {
@@ -232,21 +227,31 @@ export class PatchHandle
 		return true;
 	}
 
-	onProgress( unit: StreamSpeed.SampleUnit, fn: ( state: PatchHandleState, progress?: IDownloadProgress ) => void ): PatchHandle
+	onDownloading( fn: Function ): PatchHandle
 	{
-		this._emitter.addListener( 'progress', ( state: PatchHandleState, progress: IDownloadProgress ) =>
+		this._emitter.addListener( 'downloading', fn );
+		return this;
+	}
+
+	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => any ): PatchHandle
+	{
+		this._emitter.addListener( 'progress', ( progress: IDownloadProgress ) =>
 		{
-			if ( progress ) {
-				progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
-			}
-			fn( state, progress );
+			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
+			fn( progress );
 		} );
 		return this;
 	}
 
-	private emitProgress( progress?: IDownloadProgress )
+	onPatching( fn: Function ): PatchHandle
 	{
-		this._emitter.emit( 'progress', this._state, progress );
+		this._emitter.addListener( 'downloading', fn );
+		return this;
+	}
+
+	private emitProgress( progress: IDownloadProgress )
+	{
+		this._emitter.emit( 'progress', progress );
 	}
 
 	private onError( err: NodeJS.ErrnoException )

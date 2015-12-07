@@ -106,10 +106,6 @@ var PatchHandle = (function () {
         this._state = PatchHandleState.STOPPED;
         this._downloadHandle = null;
         this._emitter = new events_1.EventEmitter();
-        this.start();
-        // this.patch()
-        // 	.then( () => this.onFinished() )
-        // 	.catch( ( err ) => this.onError( err ) );
     }
 
     (0, _createClass3.default)(PatchHandle, [{
@@ -135,6 +131,7 @@ var PatchHandle = (function () {
             }
             this._promise = this.promise;
             this._state = PatchHandleState.DOWNLOADING;
+            this._emitter.emit('downloading');
             this._tempFile = path.join(this._build.library_dir, 'tempDownload');
             this._archiveListFile = path.join(this._build.library_dir, 'archive-file-list');
             this._to = path.join(this._build.library_dir, 'game');
@@ -206,7 +203,7 @@ var PatchHandle = (function () {
                             case 0:
                                 // TODO: restrict operations to the given directories.
                                 this._state = PatchHandleState.PATCHING;
-                                this.emitProgress(null);
+                                this._emitter.emit('patching');
                                 currentFiles = undefined;
                                 _context2.next = 5;
                                 return fsExists(this._to);
@@ -390,20 +387,30 @@ var PatchHandle = (function () {
             }));
         }
     }, {
+        key: "onDownloading",
+        value: function onDownloading(fn) {
+            this._emitter.addListener('downloading', fn);
+            return this;
+        }
+    }, {
         key: "onProgress",
         value: function onProgress(unit, fn) {
-            this._emitter.addListener('progress', function (state, progress) {
-                if (progress) {
-                    progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
-                }
-                fn(state, progress);
+            this._emitter.addListener('progress', function (progress) {
+                progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
+                fn(progress);
             });
+            return this;
+        }
+    }, {
+        key: "onPatching",
+        value: function onPatching(fn) {
+            this._emitter.addListener('downloading', fn);
             return this;
         }
     }, {
         key: "emitProgress",
         value: function emitProgress(progress) {
-            this._emitter.emit('progress', this._state, progress);
+            this._emitter.emit('progress', progress);
         }
     }, {
         key: "onError",

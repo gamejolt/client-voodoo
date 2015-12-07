@@ -68,14 +68,21 @@ describe( 'Patcher', function()
 			decompressInDownload: false,
 		} );
 
-		patchHandle.onProgress( SampleUnit.KBps, function( state, data )
-		{
-			console.log( 'State: ' + state );
-			if ( data ) {
+		patchHandle
+			.onDownloading( function()
+			{
+				console.log( 'Downloading...' );
+			} )
+			.onProgress( SampleUnit.KBps, function( data )
+			{
 				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-			}
-		} );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + 'kbps' );
+			} )
+			.onPatching( function()
+			{
+				console.log( 'Patching...' );
+			} )
+			.start();
 
 		return patchHandle.promise;
 	} );
