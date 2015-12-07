@@ -53,6 +53,11 @@ describe( 'Patcher', function()
 				filesize: 1,
 				archive_type: 'brotli',
 			},
+			launch_options: [ {
+				id: 1,
+				os: 'linux',
+				executable_path: 'Bug_Bash.exe',
+			} ],
 			os_windows: false,
 			os_windows_64: false,
 			os_mac: false,

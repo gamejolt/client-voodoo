@@ -4,6 +4,10 @@ var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
+var _getIterator2 = require("babel-runtime/core-js/get-iterator");
+
+var _getIterator3 = _interopRequireDefault(_getIterator2);
+
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
@@ -66,8 +70,8 @@ var Launcher = (function () {
 
     (0, _createClass3.default)(Launcher, null, [{
         key: "launch",
-        value: function launch(file) {
-            return new LaunchHandle(file);
+        value: function launch(build, os, arch) {
+            return new LaunchHandle(build, os, arch);
         }
     }]);
     return Launcher;
@@ -76,78 +80,133 @@ var Launcher = (function () {
 exports.Launcher = Launcher;
 
 var LaunchHandle = (function () {
-    function LaunchHandle(_file) {
+    function LaunchHandle(_build, _os, _arch) {
         (0, _classCallCheck3.default)(this, LaunchHandle);
 
-        this._file = _file;
+        this._build = _build;
+        this._os = _os;
+        this._arch = _arch;
         this._promise = this.start();
     }
 
     (0, _createClass3.default)(LaunchHandle, [{
+        key: "findLaunchOption",
+        value: function findLaunchOption() {
+            var result = null;
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = (0, _getIterator3.default)(this._build.launch_options), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var launchOption = _step.value;
+
+                    var lOs = launchOption.os.split('_');
+                    if (lOs.length === 1) {
+                        lOs.push('32');
+                    }
+                    if (lOs[0] === this._os) {
+                        if (lOs[1] === this._arch) {
+                            return launchOption;
+                        }
+                        result = launchOption;
+                    }
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+
+            return result;
+        }
+    }, {
         key: "start",
         value: function start() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var stat, mode, uid, gid, launchableFile, child, pid;
+                var launchOption, executablePath, stat, mode, uid, gid, child, pid;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                _context.next = 2;
+                                launchOption = this.findLaunchOption();
+
+                                if (launchOption) {
+                                    _context.next = 3;
+                                    break;
+                                }
+
+                                throw new Error('Can\'t find valid launch options for the given os/arch');
+
+                            case 3:
+                                executablePath = launchOption.executable_path.replace(/\//, path.sep);
+
+                                this._file = path.join(this._build.library_dir, 'game', executablePath);
+                                // If the destination already exists, make sure its valid.
+                                _context.next = 7;
                                 return fsExists(this._file);
 
-                            case 2:
+                            case 7:
                                 if (_context.sent) {
-                                    _context.next = 4;
+                                    _context.next = 9;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file doesn\'t exist.');
 
-                            case 4:
-                                _context.next = 6;
+                            case 9:
+                                _context.next = 11;
                                 return fsStat(this._file);
 
-                            case 6:
+                            case 11:
                                 stat = _context.sent;
 
                                 if (stat.isFile()) {
-                                    _context.next = 9;
+                                    _context.next = 14;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file isn\'t valid.');
 
-                            case 9:
+                            case 14:
                                 if (!(process.platform !== 'win32')) {
-                                    _context.next = 18;
+                                    _context.next = 23;
                                     break;
                                 }
 
                                 mode = stat.mode;
 
                                 if (mode) {
-                                    _context.next = 13;
+                                    _context.next = 18;
                                     break;
                                 }
 
                                 throw new Error('Can\'t determine if the file is executable by the current user.');
 
-                            case 13:
+                            case 18:
                                 uid = stat.uid;
                                 gid = stat.gid;
 
                                 if (!(!(mode & parseInt('0001', 8)) && !(mode & parseInt('0010', 8)) && process.getgid && gid === process.getgid() && !(mode & parseInt('0100', 8)) && process.getuid && uid === process.getuid())) {
-                                    _context.next = 18;
+                                    _context.next = 23;
                                     break;
                                 }
 
-                                _context.next = 18;
+                                _context.next = 23;
                                 return fsChmod(this._file, '0777');
 
-                            case 18:
-                                launchableFile = path.resolve(process.cwd(), this._file);
-                                child = childProcess.spawn(launchableFile, [], {
-                                    cwd: path.dirname(launchableFile),
+                            case 23:
+                                child = childProcess.spawn(this._file, [], {
+                                    cwd: path.dirname(this._file),
                                     detached: true
                                 });
                                 pid = child.pid;
@@ -155,13 +214,18 @@ var LaunchHandle = (function () {
                                 child.unref();
                                 return _context.abrupt("return", pid);
 
-                            case 23:
+                            case 27:
                             case "end":
                                 return _context.stop();
                         }
                     }
                 }, _callee, this);
             }));
+        }
+    }, {
+        key: "build",
+        get: function get() {
+            return this._build;
         }
     }, {
         key: "file",

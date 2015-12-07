@@ -9,6 +9,7 @@ declare namespace GameJolt
 		package: IGamePackage;
 		release: IGameRelease;
 		file: IGameBuildFile;
+		launch_options: IGameBuildLaunchOptions[];
 		os_windows: boolean;
 		os_windows_64: boolean;
 		os_mac: boolean;
@@ -39,5 +40,12 @@ declare namespace GameJolt
 	{
 		id: number;
 		version_number: string;
+	}
+
+	export interface IGameBuildLaunchOptions
+	{
+		id: number;
+		os: string; // 'windows, windows_64, mac, mac_64, linux, linux_64, other
+		executable_path: string;
 	}
 }

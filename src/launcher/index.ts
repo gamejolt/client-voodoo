@@ -16,32 +16,65 @@ let fsChmod:( path: string, mode: string | number ) => Promise<void> = Bluebird.
 
 export abstract class Launcher
 {
-	static launch( file: string ): LaunchHandle
+	static launch( build: GameJolt.IGameBuild, os: string, arch: string ): LaunchHandle
 	{
-		return new LaunchHandle( file );
+		return new LaunchHandle( build, os, arch );
 	}
 }
 
 export class LaunchHandle
 {
 	private _promise: Promise<number>;
-	constructor( private _file: string )
+	private _file: string;
+
+	constructor( private _build: GameJolt.IGameBuild, private _os: string, private _arch: string )
 	{
 		this._promise = this.start();
 	}
 
-	get file(): string
+	get build()
+	{
+		return this._build;
+	}
+
+	get file()
 	{
 		return this._file;
 	}
 
-	get promise(): Promise<number>
+	get promise()
 	{
 		return this._promise;
 	}
 
+	private findLaunchOption()
+	{
+		let result: GameJolt.IGameBuildLaunchOptions = null;
+		for ( let launchOption of this._build.launch_options ) {
+			let lOs = launchOption.os.split( '_' );
+			if ( lOs.length === 1 ) {
+				lOs.push( '32' );
+			}
+			if ( lOs[0] === this._os ) {
+				if ( lOs[1] === this._arch ) {
+					return launchOption;
+				}
+				result = launchOption;
+			}
+		}
+		return result;
+	}
+
 	private async start()
 	{
+		let launchOption = this.findLaunchOption();
+		if ( !launchOption ) {
+			throw new Error( 'Can\'t find valid launch options for the given os/arch' );
+		}
+
+		var executablePath = launchOption.executable_path.replace( /\//, path.sep );
+		this._file = path.join( this._build.library_dir, 'game', executablePath );
+
 		// If the destination already exists, make sure its valid.
 		if ( !(await fsExists( this._file ) ) ) {
 			throw new Error( 'Can\'t launch because the file doesn\'t exist.' );
@@ -72,9 +105,8 @@ export class LaunchHandle
 			}
 		}
 
-		let launchableFile = path.resolve( process.cwd(), this._file );
-		let child = childProcess.spawn( launchableFile, [], {
-			cwd: path.dirname( launchableFile ),
+		let child = childProcess.spawn( this._file, [], {
+			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
 

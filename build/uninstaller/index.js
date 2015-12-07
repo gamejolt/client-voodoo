@@ -48,8 +48,8 @@ var Uninstaller = (function () {
 
     (0, _createClass3.default)(Uninstaller, null, [{
         key: "uninstall",
-        value: function uninstall(dir) {
-            return new UninstallHandle(dir);
+        value: function uninstall(build) {
+            return new UninstallHandle(build);
         }
     }]);
     return Uninstaller;
@@ -58,12 +58,12 @@ var Uninstaller = (function () {
 exports.Uninstaller = Uninstaller;
 
 var UninstallHandle = (function () {
-    function UninstallHandle(_dir) {
+    function UninstallHandle(_build) {
         (0, _classCallCheck3.default)(this, UninstallHandle);
 
-        this._dir = _dir;
-        this._promise = del(_dir, {
-            cwd: _dir,
+        this._build = _build;
+        this._promise = del(this._build.library_dir, {
+            cwd: this._build.library_dir,
             force: true
         });
     }
@@ -71,7 +71,7 @@ var UninstallHandle = (function () {
     (0, _createClass3.default)(UninstallHandle, [{
         key: "dir",
         get: function get() {
-            return this._dir;
+            return this._build.library_dir;
         }
     }, {
         key: "promise",

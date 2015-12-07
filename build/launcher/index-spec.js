@@ -91,6 +91,11 @@ describe('Launcher', function () {
                                     filesize: 1,
                                     archive_type: 'brotli'
                                 },
+                                launch_options: [{
+                                    id: 1,
+                                    os: 'linux',
+                                    executable_path: 'Bug_Bash.exe'
+                                }],
                                 os_windows: false,
                                 os_windows_64: false,
                                 os_mac: false,
@@ -117,7 +122,7 @@ describe('Launcher', function () {
                             return patchHandle.promise;
 
                         case 5:
-                            launchHandle = index_1.Launcher.launch(executableFile);
+                            launchHandle = index_1.Launcher.launch(build, 'linux', '32');
                             _context.next = 8;
                             return launchHandle.promise;
 
