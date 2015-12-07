@@ -99,7 +99,7 @@ var ExtractHandle = (function () {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this = this;
 
-                var destExists, destStat, filesInDest, files, result, unlinked;
+                var destStat, filesInDest, files, result, unlinked;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -108,64 +108,62 @@ var ExtractHandle = (function () {
                                 return fsExists(this._to);
 
                             case 2:
-                                destExists = _context.sent;
-
-                                if (!destExists) {
-                                    _context.next = 17;
+                                if (!_context.sent) {
+                                    _context.next = 16;
                                     break;
                                 }
 
-                                _context.next = 6;
+                                _context.next = 5;
                                 return fsStat(this._to);
 
-                            case 6:
+                            case 5:
                                 destStat = _context.sent;
 
                                 if (destStat.isDirectory()) {
-                                    _context.next = 9;
+                                    _context.next = 8;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because its not a valid directory');
 
-                            case 9:
-                                _context.next = 11;
+                            case 8:
+                                _context.next = 10;
                                 return fsReadDir(this._to);
 
-                            case 11:
+                            case 10:
                                 filesInDest = _context.sent;
 
                                 if (!(filesInDest && filesInDest.length > 0)) {
-                                    _context.next = 15;
+                                    _context.next = 14;
                                     break;
                                 }
 
                                 if (this._options.overwrite) {
-                                    _context.next = 15;
+                                    _context.next = 14;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because it isnt empty');
 
-                            case 15:
-                                _context.next = 21;
+                            case 14:
+                                _context.next = 20;
                                 break;
 
-                            case 17:
-                                _context.next = 19;
+                            case 16:
+                                _context.next = 18;
                                 return mkdirp(this._to);
 
-                            case 19:
+                            case 18:
                                 if (_context.sent) {
-                                    _context.next = 21;
+                                    _context.next = 20;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create destination folder path');
 
-                            case 21:
+                            case 20:
                                 files = [];
-                                _context.next = 24;
+                                _context.next = 23;
                                 return new _promise2.default(function (resolve, reject) {
                                     var stream = fs.createReadStream(_this._from);
                                     var optionsMap = _this._options.map;
@@ -197,47 +195,47 @@ var ExtractHandle = (function () {
                                     }
                                 });
 
-                            case 24:
+                            case 23:
                                 result = _context.sent;
 
                                 if (!(result && this._options.deleteSource)) {
-                                    _context.next = 36;
+                                    _context.next = 35;
                                     break;
                                 }
 
-                                _context.next = 28;
+                                _context.next = 27;
                                 return fsUnlink(this._from);
 
-                            case 28:
+                            case 27:
                                 unlinked = _context.sent;
                                 _context.t0 = unlinked;
 
                                 if (!_context.t0) {
-                                    _context.next = 34;
+                                    _context.next = 33;
                                     break;
                                 }
 
-                                _context.next = 33;
+                                _context.next = 32;
                                 return fsExists(this._from);
 
-                            case 33:
+                            case 32:
                                 _context.t0 = _context.sent;
 
-                            case 34:
+                            case 33:
                                 if (!_context.t0) {
-                                    _context.next = 36;
+                                    _context.next = 35;
                                     break;
                                 }
 
                                 throw unlinked;
 
-                            case 36:
+                            case 35:
                                 return _context.abrupt("return", {
                                     success: result,
                                     files: files
                                 });
 
-                            case 37:
+                            case 36:
                             case "end":
                                 return _context.stop();
                         }

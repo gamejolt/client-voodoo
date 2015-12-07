@@ -8,3 +8,6 @@
 /// <reference path="./../typings/chai/chai.d.ts" />
 /// <reference path="./../typings/lodash/lodash.d.ts" />
 /// <reference path="./../typings/tar-fs/tar-fs.d.ts" />
+/// <reference path="./../typings/del/del.d.ts" />
+/// <reference path="./../typings/glob/glob.d.ts" />
+/// <reference path="./../typings/minimatch/minimatch.d.ts" />

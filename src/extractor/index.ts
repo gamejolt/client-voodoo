@@ -73,8 +73,7 @@ export class ExtractHandle
 	private async start(): Promise<IExtractResult>
 	{
 		// If the destination already exists, make sure its valid.
-		let destExists = await fsExists( this._to );
-		if ( destExists ) {
+		if ( await fsExists( this._to ) ) {
 			let destStat = await fsStat( this._to );
 			if ( !destStat.isDirectory() ) {
 				throw new Error( 'Can\'t extract to destination because its not a valid directory' );

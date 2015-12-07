@@ -306,6 +306,7 @@ var DownloadHandle = (function () {
                 _this._streamSpeed.onSample(function (sample) {
                     return _this.emitProgress({
                         progress: _this._totalDownloaded / _this._totalSize,
+                        timeLeft: Math.round((_this._totalSize - _this._totalDownloaded) / sample.currentAverage),
                         sample: sample
                     });
                 });

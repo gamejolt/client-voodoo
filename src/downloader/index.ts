@@ -48,6 +48,7 @@ export enum DownloadHandleState
 export interface IDownloadProgress
 {
 	progress: number;
+	timeLeft: number;
 	sample: StreamSpeed.ISampleData;
 }
 
@@ -220,6 +221,7 @@ export class DownloadHandle
 			this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
 			this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
 				progress: this._totalDownloaded / this._totalSize,
+				timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
 				sample: sample,
 			} ) );
 			this._state = DownloadHandleState.STARTED;

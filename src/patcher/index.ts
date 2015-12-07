@@ -100,7 +100,6 @@ export class PatchHandle
 		}
 
 		// If the destination already exists, make sure its valid.
-		let exists = await fsExists( this._options.archiveListFile );
 		if ( await fsExists( this._options.archiveListFile ) ) {
 
 			// Make sure the destination is a file.

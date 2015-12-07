@@ -117,7 +117,7 @@ var PatchHandle = (function () {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this2 = this;
 
-                var currentFiles, exists, stat, archiveListFileDir, dirStat, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
+                var currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -168,114 +168,109 @@ var PatchHandle = (function () {
                                 return fsExists(this._options.archiveListFile);
 
                             case 19:
-                                exists = _context.sent;
-                                _context.next = 22;
-                                return fsExists(this._options.archiveListFile);
-
-                            case 22:
                                 if (!_context.sent) {
-                                    _context.next = 30;
+                                    _context.next = 27;
                                     break;
                                 }
 
-                                _context.next = 25;
+                                _context.next = 22;
                                 return fsStat(this._options.archiveListFile);
 
-                            case 25:
+                            case 22:
                                 stat = _context.sent;
 
                                 if (stat.isFile()) {
-                                    _context.next = 28;
+                                    _context.next = 25;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the archive file list isn\'t a file.');
 
-                            case 28:
-                                _context.next = 45;
+                            case 25:
+                                _context.next = 42;
                                 break;
 
-                            case 30:
+                            case 27:
                                 archiveListFileDir = path.dirname(this._options.archiveListFile);
-                                _context.next = 33;
+                                _context.next = 30;
                                 return fsExists(archiveListFileDir);
 
-                            case 33:
+                            case 30:
                                 if (!_context.sent) {
-                                    _context.next = 41;
+                                    _context.next = 38;
                                     break;
                                 }
 
-                                _context.next = 36;
+                                _context.next = 33;
                                 return fsStat(archiveListFileDir);
 
-                            case 36:
+                            case 33:
                                 dirStat = _context.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 39;
+                                    _context.next = 36;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the path to the archive file list is invalid.');
 
-                            case 39:
-                                _context.next = 45;
+                            case 36:
+                                _context.next = 42;
                                 break;
 
-                            case 41:
-                                _context.next = 43;
+                            case 38:
+                                _context.next = 40;
                                 return mkdirp(archiveListFileDir);
 
-                            case 43:
+                            case 40:
                                 if (_context.sent) {
-                                    _context.next = 45;
+                                    _context.next = 42;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the patch archive file list folder path');
 
-                            case 45:
+                            case 42:
                                 oldBuildFiles = undefined;
-                                _context.next = 48;
+                                _context.next = 45;
                                 return fsExists(this._options.archiveListFile);
 
-                            case 48:
+                            case 45:
                                 if (_context.sent) {
-                                    _context.next = 52;
+                                    _context.next = 49;
                                     break;
                                 }
 
                                 oldBuildFiles = currentFiles;
-                                _context.next = 55;
+                                _context.next = 52;
                                 break;
+
+                            case 49:
+                                _context.next = 51;
+                                return fsReadFile(this._options.archiveListFile, 'utf8');
+
+                            case 51:
+                                oldBuildFiles = _context.sent.split("\n");
 
                             case 52:
                                 _context.next = 54;
-                                return fsReadFile(this._options.archiveListFile, 'utf8');
-
-                            case 54:
-                                oldBuildFiles = _context.sent.split("\n");
-
-                            case 55:
-                                _context.next = 57;
                                 return extractor_1.Extractor.extract(this._from, this._to, {
                                     brotli: this._options.brotli,
                                     overwrite: true,
                                     deleteSource: true
                                 }).promise;
 
-                            case 57:
+                            case 54:
                                 extractResult = _context.sent;
 
                                 if (extractResult.success) {
-                                    _context.next = 60;
+                                    _context.next = 57;
                                     break;
                                 }
 
                                 throw new Error('Failed to extract patch file');
 
-                            case 60:
+                            case 57:
                                 newBuildFiles = extractResult.files;
                                 // Files that the old build created are files in the file system that are not listed in the old build files
 
@@ -285,7 +280,7 @@ var PatchHandle = (function () {
                                 filesToRemove = _.difference(currentFiles, newBuildFiles, createdByOldBuild);
                                 // TODO: use del lib
 
-                                _context.next = 65;
+                                _context.next = 62;
                                 return _promise2.default.all(filesToRemove.map(function (file) {
                                     return fsUnlink(path.resolve(_this2._to, file)).then(function (err) {
                                         if (err) {
@@ -295,15 +290,15 @@ var PatchHandle = (function () {
                                     });
                                 }));
 
-                            case 65:
+                            case 62:
                                 unlinks = _context.sent;
-                                _context.next = 68;
+                                _context.next = 65;
                                 return fsWriteFile(this._options.archiveListFile, newBuildFiles.join("\n"));
 
-                            case 68:
+                            case 65:
                                 return _context.abrupt("return", true);
 
-                            case 69:
+                            case 66:
                             case "end":
                                 return _context.stop();
                         }
