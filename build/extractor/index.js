@@ -50,7 +50,6 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 var fs = require('fs');
 var _ = require('lodash');
 var tarFS = require('tar-fs');
-var decompressStream = require('iltorb').decompressStream;
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
@@ -87,7 +86,6 @@ var ExtractHandle = (function () {
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
             deleteSource: false,
-            brotli: true,
             overwrite: false
         });
         this._promise = this.start();
@@ -188,8 +186,8 @@ var ExtractHandle = (function () {
                                     stream.on('error', function (err) {
                                         return reject(err);
                                     });
-                                    if (_this._options.brotli) {
-                                        stream.pipe(decompressStream()).pipe(extractStream);
+                                    if (_this._options.decompressStream) {
+                                        stream.pipe(_this._options.decompressStream).pipe(extractStream);
                                     } else {
                                         stream.pipe(extractStream);
                                     }

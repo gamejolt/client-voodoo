@@ -39,4 +39,5 @@ __export(require('./downloader/stream-speed'));
 __export(require('./extractor'));
 __export(require('./launcher'));
 __export(require('./patcher'));
+__export(require('./uninstaller'));
 //# sourceMappingURL=index.js.map

@@ -12,6 +12,7 @@ let fsExists = function( path: string ): Promise<boolean>
 	} );
 }
 let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
+let fsChmod:( path: string, mode: string | number ) => Promise<void> = Bluebird.promisify( fs.chmod );
 
 export abstract class Launcher
 {
@@ -65,12 +66,15 @@ export class LaunchHandle
 			if ( !( mode & parseInt( '0001', 8 ) ) &&
 					!( mode & parseInt( '0010', 8 ) ) && process.getgid && gid === process.getgid() &&
 					!( mode & parseInt( '0100', 8 ) ) && process.getuid && uid === process.getuid() ) {
-				throw new Error( 'File isn\'t executable' );
+
+				// Ensure that the main launcher file is executable.
+				await fsChmod( this._file, '0777' );
 			}
 		}
 
-		let child = childProcess.spawn( this._file, [], {
-			cwd: path.dirname( this._file ),
+		let launchableFile = path.resolve( process.cwd(), this._file );
+		let child = childProcess.spawn( launchableFile, [], {
+			cwd: path.dirname( launchableFile ),
 			detached: true,
 		} );
 

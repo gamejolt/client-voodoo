@@ -5,11 +5,13 @@ import { Extractor } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
 import path = require( 'path' );
 
+let decompressStream = require( 'iltorb' ).decompressStream;
+
 describe( 'Extractor', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	let downloadDir = path.join( 'test-files', 'downloaded' );
+	let downloadFile = path.join( 'test-files', 'downloaded', 'Bug_Bash.zip.tar' );
 
 	before( function( done )
 	{
@@ -34,9 +36,9 @@ describe( 'Extractor', function()
 
 	it( 'Should work', async () =>
 	{
-		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadDir, {
-			brotli: true,
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
 			overwrite: true,
+			decompressStream: decompressStream(),
 		} );
 
 		handle.onProgress( SampleUnit.KBps, function( data )
@@ -47,8 +49,7 @@ describe( 'Extractor', function()
 
 		await handle.promise;
 
-		return Extractor.extract( handle.toFullpath, path.join( 'test-files', 'extracted', handle.toFilename ), {
-			brotli: false,
+		return Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
 			deleteSource: true,
 			overwrite: true,
 		} ).promise;

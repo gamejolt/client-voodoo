@@ -63,7 +63,8 @@ var UninstallHandle = (function () {
 
         this._dir = _dir;
         this._promise = del(_dir, {
-            cwd: _dir
+            cwd: _dir,
+            force: true
         });
     }
 

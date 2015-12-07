@@ -15,6 +15,7 @@ export class UninstallHandle
 	{
 		this._promise = del( _dir, {
 			cwd: _dir,
+			force: true, // TODO: make sure this doesnt allow following symlinks.
 		} );
 	}
 

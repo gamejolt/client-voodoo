@@ -2,9 +2,7 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as tar from 'tar-stream';
 import * as tarFS from 'tar-fs';
-import { Readable } from 'stream';
-
-let decompressStream = require( 'iltorb' ).decompressStream;
+import { Readable, Transform } from 'stream';
 
 let Bluebird = require( 'bluebird' );
 let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
@@ -22,8 +20,8 @@ let fsReadDir: ( path: string ) => Promise<string[]> = Bluebird.promisify( fs.re
 export interface IExtractOptions extends tarFS.IExtractOptions
 {
 	deleteSource?: boolean;
-	brotli?: boolean;
 	overwrite?: boolean;
+	decompressStream?: Transform;
 }
 
 export interface IExtractResult
@@ -48,7 +46,6 @@ export class ExtractHandle
 	{
 		this._options = _.defaults( this._options || {}, {
 			deleteSource: false,
-			brotli: true,
 			overwrite: false,
 		} );
 
@@ -118,9 +115,9 @@ export class ExtractHandle
 			extractStream.on( 'error', ( err ) => reject( err ) );
 			stream.on( 'error', ( err ) => reject( err ) );
 
-			if ( this._options.brotli ) {
+			if ( this._options.decompressStream ) {
 				stream
-					.pipe( decompressStream() )
+					.pipe( this._options.decompressStream )
 					.pipe( extractStream );
 			}
 			else {

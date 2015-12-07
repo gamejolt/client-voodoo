@@ -4,11 +4,13 @@ import { Downloader } from './index';
 import path = require( 'path' );
 import { SampleUnit } from './stream-speed';
 
+let decompressStream = require( 'iltorb' ).decompressStream;
+
 describe( 'Downloader', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	let downloadDir = path.join( 'test-files', 'downloaded' );
+	let downloadFile = path.join( 'test-files', 'downloaded', 'Bug_Bash.zip' );
 
 	before( function( done )
 	{
@@ -33,8 +35,7 @@ describe( 'Downloader', function()
 
 	it( 'Should download a resumable non-brotli file', async () =>
 	{
-		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadDir, {
-			brotli: false,
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadFile, {
 			overwrite: true,
 		} );
 
@@ -61,9 +62,9 @@ describe( 'Downloader', function()
 
 	it( 'Should download a non-resumable brotli file', async () =>
 	{
-		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadDir, {
-			brotli: true,
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
 			overwrite: true,
+			decompressStream: decompressStream(),
 		} );
 
 		handle.onProgress( SampleUnit.KBps, function( data )

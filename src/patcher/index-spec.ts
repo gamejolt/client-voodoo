@@ -38,9 +38,7 @@ describe( 'Patcher', function()
 	it( 'Should work', async () =>
 	{
 		let downloadHandle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
-			brotli: false,
 			overwrite: true,
-			destIsFolder: false,
 		} );
 
 		downloadHandle.onProgress( SampleUnit.KBps, function( data )

@@ -54,7 +54,6 @@ var path = require('path');
 var events_1 = require('events');
 var _ = require('lodash');
 var StreamSpeed = require('./stream-speed');
-var decompressStream = require('iltorb').decompressStream;
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
@@ -90,16 +89,14 @@ exports.Downloader = Downloader;
 var DownloadHandleState = exports.DownloadHandleState;
 
 var DownloadHandle = (function () {
-    function DownloadHandle(_from, _to, _options) {
+    function DownloadHandle(_url, _to, _options) {
         (0, _classCallCheck3.default)(this, DownloadHandle);
 
-        this._from = _from;
+        this._url = _url;
         this._to = _to;
         this._options = _options;
-        this._options = _.defaults(_options || {}, {
-            brotli: true,
-            overwrite: false,
-            destIsFolder: true
+        this._options = _.defaults(this._options || {}, {
+            overwrite: false
         });
         this._state = DownloadHandleState.STOPPED;
         this._emitter = new events_1.EventEmitter();
@@ -110,7 +107,7 @@ var DownloadHandle = (function () {
         key: "start",
         value: function start() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var parsedDownloadUrl, stat, unlinked, dirStat;
+                var stat, unlinked, toDir, dirStat;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -128,115 +125,106 @@ var DownloadHandle = (function () {
                                 this._totalSize = 0;
                                 this._totalDownloaded = 0;
                                 _context.prev = 6;
+                                _context.next = 9;
+                                return fsExists(this._to);
 
-                                if (this._options.destIsFolder) {
-                                    parsedDownloadUrl = url.parse(this._from, true);
-
-                                    this._toFilename = path.basename(parsedDownloadUrl.pathname);
-                                } else {
-                                    this._toFilename = path.basename(this._to);
-                                    this._to = path.dirname(this._to);
-                                }
-                                this._toFile = path.join(this._to, this._toFilename);
-                                // If the actual file already exists, we resume download.
-                                _context.next = 11;
-                                return fsExists(this._toFile);
-
-                            case 11:
+                            case 9:
                                 if (!_context.sent) {
-                                    _context.next = 30;
+                                    _context.next = 27;
                                     break;
                                 }
 
-                                _context.next = 14;
-                                return fsStat(this._toFile);
+                                _context.next = 12;
+                                return fsStat(this._to);
 
-                            case 14:
+                            case 12:
                                 stat = _context.sent;
 
                                 if (stat.isFile()) {
-                                    _context.next = 19;
+                                    _context.next = 17;
                                     break;
                                 }
 
                                 throw new Error('Can\'t resume downloading because the destination isn\'t a file.');
 
-                            case 19:
+                            case 17:
                                 if (!this._options.overwrite) {
-                                    _context.next = 27;
+                                    _context.next = 24;
                                     break;
                                 }
 
-                                _context.next = 22;
-                                return fsUnlink(this._toFile);
+                                _context.next = 20;
+                                return fsUnlink(this._to);
 
-                            case 22:
+                            case 20:
                                 unlinked = _context.sent;
 
                                 if (!unlinked) {
-                                    _context.next = 25;
+                                    _context.next = 23;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download because destination cannot be overwritten.');
 
-                            case 25:
-                                this._options.overwrite = false;
+                            case 23:
                                 stat.size = 0;
 
-                            case 27:
+                            case 24:
                                 this._totalDownloaded = stat.size;
-                                _context.next = 44;
+                                _context.next = 42;
                                 break;
 
-                            case 30:
-                                _context.next = 32;
-                                return fsExists(this._to);
+                            case 27:
+                                toDir = path.dirname(this._to);
+                                _context.next = 30;
+                                return fsExists(toDir);
 
-                            case 32:
+                            case 30:
                                 if (!_context.sent) {
-                                    _context.next = 40;
+                                    _context.next = 38;
                                     break;
                                 }
 
-                                _context.next = 35;
-                                return fsStat(this._to);
+                                _context.next = 33;
+                                return fsStat(toDir);
 
-                            case 35:
+                            case 33:
                                 dirStat = _context.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 38;
+                                    _context.next = 36;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download to destination because the path is invalid.');
 
-                            case 38:
-                                _context.next = 44;
+                            case 36:
+                                _context.next = 42;
                                 break;
 
-                            case 40:
-                                _context.next = 42;
-                                return mkdirp(this._to);
+                            case 38:
+                                _context.next = 40;
+                                return mkdirp(toDir);
 
-                            case 42:
+                            case 40:
                                 if (_context.sent) {
-                                    _context.next = 44;
+                                    _context.next = 42;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the destination folder path');
 
-                            case 44:
+                            case 42:
+                                this._options.overwrite = false;
                                 _context.next = 49;
                                 break;
 
-                            case 46:
-                                _context.prev = 46;
+                            case 45:
+                                _context.prev = 45;
                                 _context.t0 = _context["catch"](6);
 
                                 this.onError(_context.t0);
+                                return _context.abrupt("return", false);
 
                             case 49:
                                 this.download();
@@ -247,7 +235,7 @@ var DownloadHandle = (function () {
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[6, 46]]);
+                }, _callee, this, [[6, 45]]);
             }));
         }
     }, {
@@ -289,7 +277,7 @@ var DownloadHandle = (function () {
         value: function download() {
             var _this = this;
 
-            var hostUrl = url.parse(this._from);
+            var hostUrl = url.parse(this._url);
             var httpOptions = {
                 host: hostUrl.host,
                 path: hostUrl.path,
@@ -297,7 +285,7 @@ var DownloadHandle = (function () {
                     'Range': 'bytes=' + this._totalDownloaded.toString() + '-'
                 }
             };
-            this._destStream = fs.createWriteStream(this._toFile, {
+            this._destStream = fs.createWriteStream(this._to, {
                 flags: 'a'
             });
             this._request = http.request(httpOptions, function (response) {
@@ -328,8 +316,8 @@ var DownloadHandle = (function () {
                 } catch (err) {
                     return _this.onError(new Error('Invalid content-range header: ' + _this._response.headers['content-range']));
                 }
-                if (_this._options.brotli) {
-                    _this._response.pipe(_this._streamSpeed).pipe(decompressStream()).pipe(_this._destStream);
+                if (_this._options.decompressStream) {
+                    _this._response.pipe(_this._streamSpeed).pipe(_this._options.decompressStream).pipe(_this._destStream);
                 } else {
                     _this._response.pipe(_this._streamSpeed).pipe(_this._destStream);
                 }
@@ -380,9 +368,9 @@ var DownloadHandle = (function () {
             this._resolver();
         }
     }, {
-        key: "from",
+        key: "url",
         get: function get() {
-            return this._from;
+            return this._url;
         }
     }, {
         key: "to",
@@ -390,14 +378,19 @@ var DownloadHandle = (function () {
             return this._to;
         }
     }, {
-        key: "toFilename",
+        key: "state",
         get: function get() {
-            return this._toFilename;
+            return this._state;
         }
     }, {
-        key: "toFullpath",
+        key: "totalSize",
         get: function get() {
-            return this._toFile;
+            return this._totalSize;
+        }
+    }, {
+        key: "totalDownloaded",
+        get: function get() {
+            return this._totalDownloaded;
         }
     }, {
         key: "promise",

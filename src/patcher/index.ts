@@ -132,9 +132,9 @@ export class PatchHandle
 		}
 
 		let extractResult = await Extractor.extract( this._from, this._to, {
-			brotli: this._options.brotli,
 			overwrite: true,
-			deleteSource: true,
+			deleteSource: false,
+			decompressStream: this._options.brotli ? decompressStream() : null,
 		} ).promise;
 
 		if ( !extractResult.success ) {

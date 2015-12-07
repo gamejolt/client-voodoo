@@ -77,9 +77,7 @@ describe('Launcher', function () {
                     switch (_context.prev = _context.next) {
                         case 0:
                             downloadHandle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5664c7568fb3d/UpSolom_Core-Linux.zip.tar.bro', downloadFile, {
-                                brotli: false,
-                                overwrite: false,
-                                destIsFolder: false
+                                overwrite: false
                             });
 
                             downloadHandle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {

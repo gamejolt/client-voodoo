@@ -5,9 +5,8 @@ import * as util from 'util';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
+import { Transform } from 'stream';
 import * as StreamSpeed from './stream-speed';
-
-let decompressStream = require( 'iltorb' ).decompressStream;
 
 let Bluebird = require( 'bluebird' );
 let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
@@ -23,9 +22,8 @@ let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat )
 
 export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
 {
-	brotli?: boolean;
 	overwrite?: boolean;
-	destIsFolder?: boolean
+	decompressStream?: Transform;
 }
 
 export abstract class Downloader
@@ -56,9 +54,6 @@ export class DownloadHandle
 {
 	private _state: DownloadHandleState;
 
-	private _toFile: string;
-	private _toFilename: string;
-
 	private _promise: Promise<void>;
 	private _resolver: () => void;
 	private _rejector: ( err: NodeJS.ErrnoException ) => void;
@@ -72,12 +67,10 @@ export class DownloadHandle
 	private _request: http.ClientRequest;
 	private _response: http.IncomingMessage;
 
-	constructor( private _from: string, private _to: string, private _options: IDownloadOptions )
+	constructor( private _url: string, private _to: string, private _options: IDownloadOptions )
 	{
-		this._options = _.defaults( _options || {}, {
-			brotli: true,
+		this._options = _.defaults( this._options || {}, {
 			overwrite: false,
-			destIsFolder: true,
 		} );
 
 		this._state = DownloadHandleState.STOPPED;
@@ -85,27 +78,32 @@ export class DownloadHandle
 		this.start();
 	}
 
-	get from(): string
+	get url()
 	{
-		return this._from;
+		return this._url;
 	}
 
-	get to(): string
+	get to()
 	{
 		return this._to;
 	}
 
-	get toFilename(): string
+	get state()
 	{
-		return this._toFilename;
+		return this._state;
 	}
 
-	get toFullpath(): string
+	get totalSize()
 	{
-		return this._toFile;
+		return this._totalSize;
 	}
 
-	get promise(): Promise<void>
+	get totalDownloaded()
+	{
+		return this._totalDownloaded;
+	}
+
+	get promise()
 	{
 		if ( !this._promise ) {
 			this._promise = new Promise<void>( ( resolve, reject ) =>
@@ -130,50 +128,43 @@ export class DownloadHandle
 		this._totalDownloaded = 0;
 
 		try {
-			if ( this._options.destIsFolder ) {
-				let parsedDownloadUrl = url.parse( this._from, true );
-				this._toFilename = path.basename( parsedDownloadUrl.pathname );
-			}
-			else {
-				this._toFilename = path.basename( this._to );
-				this._to = path.dirname( this._to );
-			}
-			this._toFile = path.join( this._to, this._toFilename );
 
 			// If the actual file already exists, we resume download.
-			if ( await fsExists( this._toFile ) ) {
+			if ( await fsExists( this._to ) ) {
 
 				// Make sure the destination is a file.
-				let stat = await fsStat( this._toFile );
+				let stat = await fsStat( this._to );
 				if ( !stat.isFile() ) {
 					throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
 				}
 				else if ( this._options.overwrite ) {
-					let unlinked = await fsUnlink( this._toFile );
+					let unlinked = await fsUnlink( this._to );
 					if ( unlinked ) {
 						throw new Error( 'Can\'t download because destination cannot be overwritten.' );
 					}
-					this._options.overwrite = false;
 					stat.size = 0;
 				}
 				this._totalDownloaded = stat.size;
 			}
 			// Otherwise, we validate the folder path.
 			else {
-				if ( await fsExists( this._to ) ) {
-					let dirStat = await fsStat( this._to );
+				let toDir = path.dirname( this._to );
+				if ( await fsExists( toDir ) ) {
+					let dirStat = await fsStat( toDir );
 					if ( !dirStat.isDirectory() ) {
 						throw new Error( 'Can\'t download to destination because the path is invalid.' );
 					}
 				}
 				// Create the folder path.
-				else if ( !( await mkdirp( this._to ) ) ) {
+				else if ( !( await mkdirp( toDir ) ) ) {
 					throw new Error( 'Couldn\'t create the destination folder path' );
 				}
 			}
+			this._options.overwrite = false;
 		}
 		catch ( err ) {
 			this.onError( err );
+			return false;
 		}
 
 		this.download();
@@ -202,7 +193,7 @@ export class DownloadHandle
 
 	private download()
 	{
-		let hostUrl = url.parse( this._from );
+		let hostUrl = url.parse( this._url );
 		let httpOptions = {
 			host: hostUrl.host,
 			path: hostUrl.path,
@@ -211,7 +202,7 @@ export class DownloadHandle
 			}
 		};
 
-		this._destStream = fs.createWriteStream( this._toFile, {
+		this._destStream = fs.createWriteStream( this._to, {
 			flags: 'a',
 		} );
 
@@ -248,10 +239,10 @@ export class DownloadHandle
 				return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
 			}
 
-			if ( this._options.brotli ) {
+			if ( this._options.decompressStream ) {
 				this._response
 					.pipe( this._streamSpeed )
-					.pipe( decompressStream() )
+					.pipe( this._options.decompressStream )
 					.pipe( this._destStream );
 			}
 			else {

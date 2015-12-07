@@ -44,12 +44,13 @@ var downloader_1 = require('../downloader');
 var index_1 = require('./index');
 var stream_speed_1 = require('../downloader/stream-speed');
 var path = require('path');
+var decompressStream = require('iltorb').decompressStream;
 describe('Extractor', function () {
     var _this = this;
 
     var app = undefined;
     var server = undefined;
-    var downloadDir = path.join('test-files', 'downloaded');
+    var downloadFile = path.join('test-files', 'downloaded', 'Bug_Bash.zip.tar');
     before(function (done) {
         app = express();
         app.use(express.static('../../test-files'));
@@ -71,9 +72,9 @@ describe('Extractor', function () {
                 while (1) {
                     switch (_context.prev = _context.next) {
                         case 0:
-                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadDir, {
-                                brotli: true,
-                                overwrite: true
+                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
+                                overwrite: true,
+                                decompressStream: decompressStream()
                             });
 
                             handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
@@ -84,8 +85,7 @@ describe('Extractor', function () {
                             return handle.promise;
 
                         case 4:
-                            return _context.abrupt("return", index_1.Extractor.extract(handle.toFullpath, path.join('test-files', 'extracted', handle.toFilename), {
-                                brotli: false,
+                            return _context.abrupt("return", index_1.Extractor.extract(handle.to, path.join('test-files', 'extracted', path.basename(handle.to)), {
                                 deleteSource: true,
                                 overwrite: true
                             }).promise);

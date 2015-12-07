@@ -255,9 +255,9 @@ var PatchHandle = (function () {
                             case 52:
                                 _context.next = 54;
                                 return extractor_1.Extractor.extract(this._from, this._to, {
-                                    brotli: this._options.brotli,
                                     overwrite: true,
-                                    deleteSource: true
+                                    deleteSource: false,
+                                    decompressStream: this._options.brotli ? decompressStream() : null
                                 }).promise;
 
                             case 54:

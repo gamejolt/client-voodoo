@@ -11,3 +11,4 @@
 /// <reference path="./../typings/del/del.d.ts" />
 /// <reference path="./../typings/glob/glob.d.ts" />
 /// <reference path="./../typings/minimatch/minimatch.d.ts" />
+/// <reference path="./../typings/gamejolt/gamejolt.d.ts" />

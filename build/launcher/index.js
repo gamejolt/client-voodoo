@@ -57,6 +57,7 @@ var fsExists = function fsExists(path) {
     });
 };
 var fsStat = Bluebird.promisify(fs.stat);
+var fsChmod = Bluebird.promisify(fs.chmod);
 
 var Launcher = (function () {
     function Launcher() {
@@ -86,7 +87,7 @@ var LaunchHandle = (function () {
         key: "start",
         value: function start() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var stat, mode, uid, gid, child, pid;
+                var stat, mode, uid, gid, launchableFile, child, pid;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -118,7 +119,7 @@ var LaunchHandle = (function () {
 
                             case 9:
                                 if (!(process.platform !== 'win32')) {
-                                    _context.next = 17;
+                                    _context.next = 18;
                                     break;
                                 }
 
@@ -136,15 +137,17 @@ var LaunchHandle = (function () {
                                 gid = stat.gid;
 
                                 if (!(!(mode & parseInt('0001', 8)) && !(mode & parseInt('0010', 8)) && process.getgid && gid === process.getgid() && !(mode & parseInt('0100', 8)) && process.getuid && uid === process.getuid())) {
-                                    _context.next = 17;
+                                    _context.next = 18;
                                     break;
                                 }
 
-                                throw new Error('File isn\'t executable');
+                                _context.next = 18;
+                                return fsChmod(this._file, '0777');
 
-                            case 17:
-                                child = childProcess.spawn(this._file, [], {
-                                    cwd: path.dirname(this._file),
+                            case 18:
+                                launchableFile = path.resolve(process.cwd(), this._file);
+                                child = childProcess.spawn(launchableFile, [], {
+                                    cwd: path.dirname(launchableFile),
                                     detached: true
                                 });
                                 pid = child.pid;
@@ -152,7 +155,7 @@ var LaunchHandle = (function () {
                                 child.unref();
                                 return _context.abrupt("return", pid);
 
-                            case 21:
+                            case 23:
                             case "end":
                                 return _context.stop();
                         }
