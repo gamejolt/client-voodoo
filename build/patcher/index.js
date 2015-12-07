@@ -51,8 +51,10 @@ var fs = require('fs');
 var _ = require('lodash');
 var path = require('path');
 var events_1 = require('events');
+var StreamSpeed = require('../downloader/stream-speed');
+var downloader_1 = require('../downloader');
 var extractor_1 = require('../extractor');
-var decompressStream = require('iltorb').decompressStream;
+var brotliDecompress = require('iltorb').decompressStream;
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
@@ -68,8 +70,10 @@ var fsReadDir = Bluebird.promisify(fs.readdir);
 var fsReadDirRecursively = Bluebird.promisify(require('recursive-readdir'));
 (function (PatchHandleState) {
     PatchHandleState[PatchHandleState["STOPPED"] = 0] = "STOPPED";
-    PatchHandleState[PatchHandleState["PATCHING"] = 1] = "PATCHING";
-    PatchHandleState[PatchHandleState["FINISHED"] = 2] = "FINISHED";
+    PatchHandleState[PatchHandleState["STOPPING"] = 1] = "STOPPING";
+    PatchHandleState[PatchHandleState["DOWNLOADING"] = 2] = "DOWNLOADING";
+    PatchHandleState[PatchHandleState["PATCHING"] = 3] = "PATCHING";
+    PatchHandleState[PatchHandleState["FINISHED"] = 4] = "FINISHED";
 })(exports.PatchHandleState || (exports.PatchHandleState = {}));
 var PatchHandleState = exports.PatchHandleState;
 
@@ -80,8 +84,8 @@ var Patcher = (function () {
 
     (0, _createClass3.default)(Patcher, null, [{
         key: "patch",
-        value: function patch(from, to, options) {
-            return new PatchHandle(from, to, options);
+        value: function patch(url, build, options) {
+            return new PatchHandle(url, build, options);
         }
     }]);
     return Patcher;
@@ -90,187 +94,266 @@ var Patcher = (function () {
 exports.Patcher = Patcher;
 
 var PatchHandle = (function () {
-    function PatchHandle(_from, _to, _options) {
-        var _this = this;
-
+    function PatchHandle(_url, _build, _options) {
         (0, _classCallCheck3.default)(this, PatchHandle);
 
-        this._from = _from;
-        this._to = _to;
+        this._url = _url;
+        this._build = _build;
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
-            brotli: true
+            decompmressInDownload: true
         });
         this._state = PatchHandleState.STOPPED;
+        this._downloadHandle = null;
         this._emitter = new events_1.EventEmitter();
-        this._promise = this.promise;
-        this.patch().then(function () {
-            return _this.onFinished();
-        }).catch(function (err) {
-            return _this.onError(err);
-        });
+        this.start();
+        // this.patch()
+        // 	.then( () => this.onFinished() )
+        // 	.catch( ( err ) => this.onError( err ) );
     }
 
     (0, _createClass3.default)(PatchHandle, [{
-        key: "patch",
-        value: function patch() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var _this2 = this;
+        key: "_getDecompressStream",
+        value: function _getDecompressStream() {
+            if (!this._build.file.archive_type) {
+                return null;
+            }
+            switch (this._build.file.archive_type) {
+                case 'brotli':
+                    return brotliDecompress();
+                default:
+                    return null;
+            }
+        }
+    }, {
+        key: "start",
+        value: function start() {
+            var _this = this;
 
-                var currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
+            if (this._state !== PatchHandleState.STOPPED) {
+                return false;
+            }
+            this._promise = this.promise;
+            this._state = PatchHandleState.DOWNLOADING;
+            this._tempFile = path.join(this._build.library_dir, 'tempDownload');
+            this._archiveListFile = path.join(this._build.library_dir, 'archive-file-list');
+            this._to = path.join(this._build.library_dir, 'game');
+            this._downloadHandle = this._downloadHandle || downloader_1.Downloader.download(this._url, this._tempFile, {
+                decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null
+            });
+            this._downloadHandle.onProgress(StreamSpeed.SampleUnit.Bps, function (progress) {
+                return _this.emitProgress(progress);
+            }).promise.then(function () {
+                return _this.patch();
+            }).then(function () {
+                return _this.onFinished();
+            }).catch(function (err) {
+                return _this.onError(err);
+            });
+            return true;
+        }
+    }, {
+        key: "stop",
+        value: function stop() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                // TODO: restrict operations to the given directories.
-                                this._state = PatchHandleState.PATCHING;
-                                currentFiles = undefined;
-                                _context.next = 4;
-                                return fsExists(this._to);
-
-                            case 4:
-                                _context.t0 = !_context.sent;
-
-                                if (_context.t0) {
-                                    _context.next = 9;
+                                if (!(this._state !== PatchHandleState.DOWNLOADING)) {
+                                    _context.next = 2;
                                     break;
                                 }
 
-                                _context.next = 8;
-                                return fsStat(this._to);
+                                return _context.abrupt("return", false);
+
+                            case 2:
+                                this._state = PatchHandleState.STOPPING;
+                                _context.next = 5;
+                                return this._downloadHandle.stop();
+
+                            case 5:
+                                if (_context.sent) {
+                                    _context.next = 8;
+                                    break;
+                                }
+
+                                this._state = PatchHandleState.DOWNLOADING;
+                                return _context.abrupt("return", false);
 
                             case 8:
-                                _context.t0 = !_context.sent.isDirectory();
+                                this._state = PatchHandleState.STOPPED;
+                                return _context.abrupt("return", true);
+
+                            case 10:
+                            case "end":
+                                return _context.stop();
+                        }
+                    }
+                }, _callee, this);
+            }));
+        }
+    }, {
+        key: "patch",
+        value: function patch() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+                var _this2 = this;
+
+                var currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
+                return _regenerator2.default.wrap(function _callee2$(_context2) {
+                    while (1) {
+                        switch (_context2.prev = _context2.next) {
+                            case 0:
+                                // TODO: restrict operations to the given directories.
+                                this._state = PatchHandleState.PATCHING;
+                                this.emitProgress(null);
+                                currentFiles = undefined;
+                                _context2.next = 5;
+                                return fsExists(this._to);
+
+                            case 5:
+                                _context2.t0 = !_context2.sent;
+
+                                if (_context2.t0) {
+                                    _context2.next = 10;
+                                    break;
+                                }
+
+                                _context2.next = 9;
+                                return fsStat(this._to);
 
                             case 9:
-                                if (!_context.t0) {
-                                    _context.next = 13;
+                                _context2.t0 = !_context2.sent.isDirectory();
+
+                            case 10:
+                                if (!_context2.t0) {
+                                    _context2.next = 14;
                                     break;
                                 }
 
                                 currentFiles = [];
-                                _context.next = 17;
+                                _context2.next = 18;
                                 break;
 
-                            case 13:
-                                _context.next = 15;
+                            case 14:
+                                _context2.next = 16;
                                 return fsReadDirRecursively(this._to);
 
-                            case 15:
-                                _context.t1 = function (file) {
+                            case 16:
+                                _context2.t1 = function (file) {
                                     return './' + path.relative(_this2._to, file);
                                 };
 
-                                currentFiles = _context.sent.map(_context.t1);
+                                currentFiles = _context2.sent.map(_context2.t1);
 
-                            case 17:
-                                _context.next = 19;
-                                return fsExists(this._options.archiveListFile);
+                            case 18:
+                                _context2.next = 20;
+                                return fsExists(this._archiveListFile);
 
-                            case 19:
-                                if (!_context.sent) {
-                                    _context.next = 27;
+                            case 20:
+                                if (!_context2.sent) {
+                                    _context2.next = 28;
                                     break;
                                 }
 
-                                _context.next = 22;
-                                return fsStat(this._options.archiveListFile);
+                                _context2.next = 23;
+                                return fsStat(this._archiveListFile);
 
-                            case 22:
-                                stat = _context.sent;
+                            case 23:
+                                stat = _context2.sent;
 
                                 if (stat.isFile()) {
-                                    _context.next = 25;
+                                    _context2.next = 26;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the archive file list isn\'t a file.');
 
-                            case 25:
-                                _context.next = 42;
+                            case 26:
+                                _context2.next = 43;
                                 break;
 
-                            case 27:
-                                archiveListFileDir = path.dirname(this._options.archiveListFile);
-                                _context.next = 30;
+                            case 28:
+                                archiveListFileDir = path.dirname(this._archiveListFile);
+                                _context2.next = 31;
                                 return fsExists(archiveListFileDir);
 
-                            case 30:
-                                if (!_context.sent) {
-                                    _context.next = 38;
+                            case 31:
+                                if (!_context2.sent) {
+                                    _context2.next = 39;
                                     break;
                                 }
 
-                                _context.next = 33;
+                                _context2.next = 34;
                                 return fsStat(archiveListFileDir);
 
-                            case 33:
-                                dirStat = _context.sent;
+                            case 34:
+                                dirStat = _context2.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 36;
+                                    _context2.next = 37;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the path to the archive file list is invalid.');
 
-                            case 36:
-                                _context.next = 42;
+                            case 37:
+                                _context2.next = 43;
                                 break;
 
-                            case 38:
-                                _context.next = 40;
+                            case 39:
+                                _context2.next = 41;
                                 return mkdirp(archiveListFileDir);
 
-                            case 40:
-                                if (_context.sent) {
-                                    _context.next = 42;
+                            case 41:
+                                if (_context2.sent) {
+                                    _context2.next = 43;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the patch archive file list folder path');
 
-                            case 42:
+                            case 43:
                                 oldBuildFiles = undefined;
-                                _context.next = 45;
-                                return fsExists(this._options.archiveListFile);
+                                _context2.next = 46;
+                                return fsExists(this._archiveListFile);
 
-                            case 45:
-                                if (_context.sent) {
-                                    _context.next = 49;
+                            case 46:
+                                if (_context2.sent) {
+                                    _context2.next = 50;
                                     break;
                                 }
 
                                 oldBuildFiles = currentFiles;
-                                _context.next = 52;
+                                _context2.next = 53;
                                 break;
 
-                            case 49:
-                                _context.next = 51;
-                                return fsReadFile(this._options.archiveListFile, 'utf8');
-
-                            case 51:
-                                oldBuildFiles = _context.sent.split("\n");
+                            case 50:
+                                _context2.next = 52;
+                                return fsReadFile(this._archiveListFile, 'utf8');
 
                             case 52:
-                                _context.next = 54;
-                                return extractor_1.Extractor.extract(this._from, this._to, {
+                                oldBuildFiles = _context2.sent.split("\n");
+
+                            case 53:
+                                _context2.next = 55;
+                                return extractor_1.Extractor.extract(this._tempFile, this._to, {
                                     overwrite: true,
                                     deleteSource: false,
-                                    decompressStream: this._options.brotli ? decompressStream() : null
+                                    decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream()
                                 }).promise;
 
-                            case 54:
-                                extractResult = _context.sent;
+                            case 55:
+                                extractResult = _context2.sent;
 
                                 if (extractResult.success) {
-                                    _context.next = 57;
+                                    _context2.next = 58;
                                     break;
                                 }
 
                                 throw new Error('Failed to extract patch file');
 
-                            case 57:
+                            case 58:
                                 newBuildFiles = extractResult.files;
                                 // Files that the old build created are files in the file system that are not listed in the old build files
 
@@ -280,7 +363,7 @@ var PatchHandle = (function () {
                                 filesToRemove = _.difference(currentFiles, newBuildFiles, createdByOldBuild);
                                 // TODO: use del lib
 
-                                _context.next = 62;
+                                _context2.next = 63;
                                 return _promise2.default.all(filesToRemove.map(function (file) {
                                     return fsUnlink(path.resolve(_this2._to, file)).then(function (err) {
                                         if (err) {
@@ -290,21 +373,37 @@ var PatchHandle = (function () {
                                     });
                                 }));
 
-                            case 62:
-                                unlinks = _context.sent;
-                                _context.next = 65;
-                                return fsWriteFile(this._options.archiveListFile, newBuildFiles.join("\n"));
-
-                            case 65:
-                                return _context.abrupt("return", true);
+                            case 63:
+                                unlinks = _context2.sent;
+                                _context2.next = 66;
+                                return fsWriteFile(this._archiveListFile, newBuildFiles.join("\n"));
 
                             case 66:
+                                return _context2.abrupt("return", true);
+
+                            case 67:
                             case "end":
-                                return _context.stop();
+                                return _context2.stop();
                         }
                     }
-                }, _callee, this);
+                }, _callee2, this);
             }));
+        }
+    }, {
+        key: "onProgress",
+        value: function onProgress(unit, fn) {
+            this._emitter.addListener('progress', function (state, progress) {
+                if (progress) {
+                    progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
+                }
+                fn(state, progress);
+            });
+            return this;
+        }
+    }, {
+        key: "emitProgress",
+        value: function emitProgress(progress) {
+            this._emitter.emit('progress', this._state, progress);
         }
     }, {
         key: "onError",

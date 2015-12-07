@@ -10,11 +10,7 @@ describe( 'Launcher', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	let downloadFile = path.join( 'test-files', 'downloaded', 'UpSolom_Core.zip' );
-	let patchDir = path.join( 'test-files', 'patched' );
-	let tempDir = path.join( 'test-files', 'temp' );
-	let archiveListFile = path.join( tempDir, 'archive-file-list' );
-	let executableFile = path.join( 'test-files', 'patched', 'UpSolom_Core-Linux', 'UpSolom-Core.x86' );
+	let executableFile = path.join( 'test-files', 'games', 'game-test-1', 'build-1', 'game', 'Bug_Bash.exe' );
 
 	before( function( done )
 	{
@@ -39,22 +35,48 @@ describe( 'Launcher', function()
 
 	it( 'Should work', async () =>
 	{
-		let downloadHandle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5664c7568fb3d/UpSolom_Core-Linux.zip.tar.bro', downloadFile, {
-			overwrite: false,
+		let build: GameJolt.IGameBuild = {
+			id: 1,
+			game_id: 1,
+			folder: 'test',
+			type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+			package: {
+				id: 1,
+				title: 'test',
+				description: 'test',
+			},
+			release: {
+				id: 1,
+				version_number: '1.0.0',
+			},
+			file: {
+				id: 1,
+				filename: 'Bug_Bash.zip',
+				filesize: 1,
+				archive_type: 'brotli',
+			},
+			os_windows: false,
+			os_windows_64: false,
+			os_mac: false,
+			os_mac_64: false,
+			os_linux: true,
+			os_linux_64: false,
+			os_other: false,
+			modified_on: 1,
+			library_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
+		}
+
+		let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', build, {
+			decompressInDownload: false,
 		} );
 
-		downloadHandle.onProgress( SampleUnit.KBps, function( data )
+		patchHandle.onProgress( SampleUnit.KBps, function( state, data )
 		{
-			console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-		} );
-
-		await downloadHandle.promise
-
-		let patchHandle = Patcher.patch( downloadFile, patchDir, {
-			brotli: true,
-			tempDir: tempDir,
-			archiveListFile: archiveListFile,
+			console.log( 'State: ' + state );
+			if ( data ) {
+				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			}
 		} );
 
 		await patchHandle.promise;
