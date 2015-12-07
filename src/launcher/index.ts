@@ -73,7 +73,7 @@ export class LaunchHandle
 		}
 
 		var executablePath = launchOption.executable_path.replace( /\//, path.sep );
-		this._file = path.join( this._build.library_dir, 'game', executablePath );
+		this._file = path.join( this._build.install_dir, 'game', executablePath );
 
 		// If the destination already exists, make sure its valid.
 		if ( !(await fsExists( this._file ) ) ) {

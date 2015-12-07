@@ -127,14 +127,14 @@ var PatchHandle = (function () {
             var _this = this;
 
             if (this._state !== PatchHandleState.STOPPED) {
-                return false;
+                return this;
             }
             this._promise = this.promise;
             this._state = PatchHandleState.DOWNLOADING;
             this._emitter.emit('downloading');
-            this._tempFile = path.join(this._build.library_dir, 'tempDownload');
-            this._archiveListFile = path.join(this._build.library_dir, 'archive-file-list');
-            this._to = path.join(this._build.library_dir, 'game');
+            this._tempFile = path.join(this._build.install_dir, 'tempDownload');
+            this._archiveListFile = path.join(this._build.install_dir, 'archive-file-list');
+            this._to = path.join(this._build.install_dir, 'game');
             this._downloadHandle = this._downloadHandle || downloader_1.Downloader.download(this._url, this._tempFile, {
                 decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null
             });
@@ -147,7 +147,7 @@ var PatchHandle = (function () {
             }).catch(function (err) {
                 return _this.onError(err);
             });
-            return true;
+            return this;
         }
     }, {
         key: "stop",

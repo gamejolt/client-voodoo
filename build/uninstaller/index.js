@@ -62,8 +62,8 @@ var UninstallHandle = (function () {
         (0, _classCallCheck3.default)(this, UninstallHandle);
 
         this._build = _build;
-        this._promise = del(this._build.library_dir, {
-            cwd: this._build.library_dir,
+        this._promise = del(this._build.install_dir, {
+            cwd: this._build.install_dir,
             force: true
         });
     }
@@ -71,7 +71,7 @@ var UninstallHandle = (function () {
     (0, _createClass3.default)(UninstallHandle, [{
         key: "dir",
         get: function get() {
-            return this._build.library_dir;
+            return this._build.install_dir;
         }
     }, {
         key: "promise",

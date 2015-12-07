@@ -103,7 +103,7 @@ export class PatchHandle
 	start()
 	{
 		if ( this._state !== PatchHandleState.STOPPED ) {
-			return false;
+			return this;
 		}
 
 		this._promise = this.promise;
@@ -111,9 +111,9 @@ export class PatchHandle
 		this._state = PatchHandleState.DOWNLOADING;
 		this._emitter.emit( 'downloading' );
 
-		this._tempFile = path.join( this._build.library_dir, 'tempDownload' );
-		this._archiveListFile = path.join( this._build.library_dir, 'archive-file-list' );
-		this._to = path.join( this._build.library_dir, 'game' );
+		this._tempFile = path.join( this._build.install_dir, 'tempDownload' );
+		this._archiveListFile = path.join( this._build.install_dir, 'archive-file-list' );
+		this._to = path.join( this._build.install_dir, 'game' );
 
 		this._downloadHandle = this._downloadHandle || Downloader.download( this._url, this._tempFile, {
 			decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
@@ -125,7 +125,7 @@ export class PatchHandle
 				.then( () => this.onFinished() )
 				.catch( ( err ) => this.onError( err ) );
 
-		return true;
+		return this;
 	}
 
 	async stop()

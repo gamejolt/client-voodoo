@@ -102,7 +102,7 @@ describe('Patcher', function () {
                                 os_linux_64: false,
                                 os_other: false,
                                 modified_on: 1,
-                                library_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1'))
+                                install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1'))
                             };
                             patchHandle = index_1.Patcher.patch('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', build, {
                                 decompressInDownload: false

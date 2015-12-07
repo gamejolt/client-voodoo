@@ -18,7 +18,7 @@ declare namespace GameJolt
 		os_linux_64: boolean;
 		os_other: boolean;
 		modified_on: number;
-		library_dir: string;
+		install_dir: string;
 	}
 
 	export interface IGameBuildFile
