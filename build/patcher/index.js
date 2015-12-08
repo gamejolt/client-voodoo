@@ -100,7 +100,7 @@ var PatchHandle = (function () {
         this._build = _build;
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
-            decompressInDownload: true
+            decompressInDownload: false
         });
         this._state = PatchHandleState.STOPPED;
         this._downloadHandle = null;

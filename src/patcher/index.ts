@@ -63,7 +63,7 @@ export class PatchHandle
 	constructor( private _url: string, private _build: GameJolt.IGameBuild, private _options?: IPatcherOptions )
 	{
 		this._options = _.defaults<IPatcherOptions>( this._options || {}, {
-			decompressInDownload: true,
+			decompressInDownload: false,
 		} );
 
 		this._state = PatchHandleState.STOPPED;
