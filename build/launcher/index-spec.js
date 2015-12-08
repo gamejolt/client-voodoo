@@ -66,7 +66,7 @@ describe('Launcher', function () {
     });
     it('Should work', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-            var build, patchHandle, launchHandle, pid;
+            var build, patchHandle, launchHandle, launchInstance;
             return _regenerator2.default.wrap(function _callee$(_context) {
                 while (1) {
                     switch (_context.prev = _context.next) {
@@ -127,9 +127,13 @@ describe('Launcher', function () {
                             return launchHandle.promise;
 
                         case 8:
-                            pid = _context.sent;
+                            launchInstance = _context.sent;
+                            _context.next = 11;
+                            return new _promise2.default(function (resolve) {
+                                return launchInstance.on('end', resolve);
+                            });
 
-                        case 9:
+                        case 11:
                         case "end":
                             return _context.stop();
                     }

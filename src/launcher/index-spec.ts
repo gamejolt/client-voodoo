@@ -94,6 +94,7 @@ describe( 'Launcher', function()
 		await patchHandle.promise;
 
 		let launchHandle = Launcher.launch( build, 'linux', '32' );
-		let pid = await launchHandle.promise;
+		let launchInstance = await launchHandle.promise;
+		await new Promise( ( resolve ) => launchInstance.on( 'end', resolve ) );
 	} );
 } );

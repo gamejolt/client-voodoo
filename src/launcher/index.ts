@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { EventEmitter } from 'events';
 import * as childProcess from 'child_process';
+import * as os from 'os';
 import * as _ from 'lodash';
+
+import { PidFinder } from './pid-finder';
 
 let Bluebird = require( 'bluebird' );
 let fsExists = function( path: string ): Promise<boolean>
@@ -14,22 +18,36 @@ let fsExists = function( path: string ): Promise<boolean>
 let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
 let fsChmod:( path: string, mode: string | number ) => Promise<void> = Bluebird.promisify( fs.chmod );
 
+export interface ILaunchOptions
+{
+	pollInterval: number;
+}
+
 export abstract class Launcher
 {
-	static launch( build: GameJolt.IGameBuild, os: string, arch: string ): LaunchHandle
+	static launch( build: GameJolt.IGameBuild, os: string, arch: string, options?: ILaunchOptions ): LaunchHandle
 	{
-		return new LaunchHandle( build, os, arch );
+		return new LaunchHandle( build, os, arch, options );
+	}
+
+	static async attach( pid: number, pollInterval?: number )
+	{
+		return new LaunchInstanceHandle( pid, pollInterval );
 	}
 }
 
 export class LaunchHandle
 {
-	private _promise: Promise<number>;
+	private _promise: Promise<LaunchInstanceHandle>;
 	private _file: string;
 
-	constructor( private _build: GameJolt.IGameBuild, private _os: string, private _arch: string )
+	constructor( private _build: GameJolt.IGameBuild, private _os: string, private _arch: string, options?: ILaunchOptions )
 	{
-		this._promise = this.start();
+		options = options || {
+			pollInterval: 1000,
+		};
+
+		this._promise = this.start( options.pollInterval );
 	}
 
 	get build()
@@ -65,7 +83,7 @@ export class LaunchHandle
 		return result;
 	}
 
-	private async start()
+	private async start( pollInterval: number )
 	{
 		let launchOption = this.findLaunchOption();
 		if ( !launchOption ) {
@@ -113,6 +131,33 @@ export class LaunchHandle
 		let pid = child.pid;
 		child.unref();
 
-		return pid;
+		return new LaunchInstanceHandle( pid, pollInterval );
+	}
+}
+
+export class LaunchInstanceHandle extends EventEmitter
+{
+	private _interval: NodeJS.Timer;
+
+	constructor( private _pid: number, pollInterval?: number )
+	{
+		super();
+		this._interval = setInterval( () => this.tick(), pollInterval || 1000 );
+	}
+
+	tick()
+	{
+		PidFinder.find( this._pid )
+			.then( ( result ) =>
+			{
+				if ( !result ) {
+					throw new Error( 'Process doesn\'t exist anymore' );
+				}
+			} )
+			.catch( ( err ) =>
+			{
+				clearInterval( this._interval );
+				this.emit( 'end', err );
+			} );
 	}
 }
