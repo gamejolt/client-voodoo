@@ -4,7 +4,7 @@ import { Downloader } from './index';
 import path = require( 'path' );
 import { SampleUnit } from './stream-speed';
 
-let decompressStream = require( 'iltorb' ).decompressStream;
+let decompressStream = require( 'gunzip-maybe' );
 
 describe( 'Downloader', function()
 {
@@ -35,7 +35,7 @@ describe( 'Downloader', function()
 
 	it( 'Should download a resumable non-brotli file', async () =>
 	{
-		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadFile, {
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
 			overwrite: true,
 		} );
 
@@ -62,7 +62,7 @@ describe( 'Downloader', function()
 
 	it( 'Should download a non-resumable brotli file', async () =>
 	{
-		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
 			overwrite: true,
 			decompressStream: decompressStream(),
 		} );

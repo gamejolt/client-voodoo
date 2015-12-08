@@ -55,6 +55,7 @@ var StreamSpeed = require('../downloader/stream-speed');
 var downloader_1 = require('../downloader');
 var extractor_1 = require('../extractor');
 var brotliDecompress = require('iltorb').decompressStream;
+var gzipDecompress = require('gunzip-maybe');
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
@@ -101,7 +102,7 @@ var PatchHandle = (function () {
         this._build = _build;
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
-            decompmressInDownload: true
+            decompressInDownload: true
         });
         this._state = PatchHandleState.STOPPED;
         this._downloadHandle = null;
@@ -111,10 +112,12 @@ var PatchHandle = (function () {
     (0, _createClass3.default)(PatchHandle, [{
         key: "_getDecompressStream",
         value: function _getDecompressStream() {
-            if (!this._build.file.archive_type) {
+            if (!this._build.archive_type) {
                 return null;
             }
-            switch (this._build.file.archive_type) {
+            switch (this._build.archive_type) {
+                case 'tar.gz':
+                    return gzipDecompress();
                 case 'brotli':
                     return brotliDecompress();
                 default:
@@ -338,7 +341,7 @@ var PatchHandle = (function () {
                                 _context2.next = 55;
                                 return extractor_1.Extractor.extract(this._tempFile, this._to, {
                                     overwrite: true,
-                                    deleteSource: false,
+                                    deleteSource: true,
                                     decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream()
                                 }).promise;
 

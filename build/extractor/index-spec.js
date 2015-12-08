@@ -44,7 +44,7 @@ var downloader_1 = require('../downloader');
 var index_1 = require('./index');
 var stream_speed_1 = require('../downloader/stream-speed');
 var path = require('path');
-var decompressStream = require('iltorb').decompressStream;
+var decompressStream = require('gunzip-maybe');
 describe('Extractor', function () {
     var _this = this;
 
@@ -72,7 +72,7 @@ describe('Extractor', function () {
                 while (1) {
                     switch (_context.prev = _context.next) {
                         case 0:
-                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
+                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
                                 overwrite: true,
                                 decompressStream: decompressStream()
                             });

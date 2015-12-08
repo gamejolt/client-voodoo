@@ -87,10 +87,10 @@ describe('Launcher', function () {
                                 },
                                 file: {
                                     id: 1,
-                                    filename: 'Bug_Bash.zip',
-                                    filesize: 1,
-                                    archive_type: 'brotli'
+                                    filename: 'Bug_Bash.tar.gz',
+                                    filesize: 1
                                 },
+                                archive_type: 'tar.gz',
                                 launch_options: [{
                                     id: 1,
                                     os: 'linux',
@@ -106,7 +106,7 @@ describe('Launcher', function () {
                                 modified_on: 1,
                                 install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1'))
                             };
-                            patchHandle = patcher_1.Patcher.patch('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', build, {
+                            patchHandle = patcher_1.Patcher.patch('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', build, {
                                 decompressInDownload: false
                             });
 

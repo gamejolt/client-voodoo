@@ -10,6 +10,7 @@ import { Downloader, DownloadHandle, IDownloadProgress } from '../downloader';
 import { Extractor } from '../extractor';
 
 let brotliDecompress = require( 'iltorb' ).decompressStream;
+let gzipDecompress = require( 'gunzip-maybe' );
 
 let Bluebird = require( 'bluebird' );
 let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
@@ -65,7 +66,7 @@ export class PatchHandle
 	constructor( private _url: string, private _build: GameJolt.IGameBuild, private _options?: IPatcherOptions )
 	{
 		this._options = _.defaults<IPatcherOptions>( this._options || {}, {
-			decompmressInDownload: true,
+			decompressInDownload: true,
 		} );
 
 		this._state = PatchHandleState.STOPPED;
@@ -87,11 +88,14 @@ export class PatchHandle
 
 	private _getDecompressStream()
 	{
-		if ( !this._build.file.archive_type ) {
+		if ( !this._build.archive_type ) {
 			return null;
 		}
 
-		switch ( this._build.file.archive_type ) {
+		switch ( this._build.archive_type ) {
+			case 'tar.gz':
+				return gzipDecompress();
+
 			case 'brotli':
 				return brotliDecompress();
 
@@ -197,7 +201,7 @@ export class PatchHandle
 
 		let extractResult = await Extractor.extract( this._tempFile, this._to, {
 			overwrite: true,
-			deleteSource: false,
+			deleteSource: true,
 			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
 		} ).promise;
 

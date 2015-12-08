@@ -9,6 +9,7 @@ declare namespace GameJolt
 		package: IGamePackage;
 		release: IGameRelease;
 		file: IGameBuildFile;
+		archive_type: string;
 		launch_options: IGameBuildLaunchOptions[];
 		os_windows: boolean;
 		os_windows_64: boolean;
@@ -26,7 +27,6 @@ declare namespace GameJolt
 		id: number;
 		filename: string;
 		filesize: number;
-		archive_type: string;
 	}
 
 	export interface IGamePackage

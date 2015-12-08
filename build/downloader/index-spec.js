@@ -43,7 +43,7 @@ var express = require('express');
 var index_1 = require('./index');
 var path = require('path');
 var stream_speed_1 = require('./stream-speed');
-var decompressStream = require('iltorb').decompressStream;
+var decompressStream = require('gunzip-maybe');
 describe('Downloader', function () {
     var _this = this;
 
@@ -73,7 +73,7 @@ describe('Downloader', function () {
                 while (1) {
                     switch (_context2.prev = _context2.next) {
                         case 0:
-                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip', downloadFile, {
+                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
                                 overwrite: true
                             });
                             waited = false;
@@ -137,7 +137,7 @@ describe('Downloader', function () {
                 while (1) {
                     switch (_context3.prev = _context3.next) {
                         case 0:
-                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/565c737f389aa/Bug_Bash.zip.tar.bro', downloadFile, {
+                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
                                 overwrite: true,
                                 decompressStream: decompressStream()
                             });
