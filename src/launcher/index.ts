@@ -145,6 +145,11 @@ export class LaunchInstanceHandle extends EventEmitter
 		this._interval = setInterval( () => this.tick(), pollInterval || 1000 );
 	}
 
+	get pid()
+	{
+		return this._pid;
+	}
+
 	tick()
 	{
 		PidFinder.find( this._pid )

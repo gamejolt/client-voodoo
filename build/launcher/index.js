@@ -307,6 +307,11 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
                 _this2.emit('end', err);
             });
         }
+    }, {
+        key: "pid",
+        get: function get() {
+            return this._pid;
+        }
     }]);
     return LaunchInstanceHandle;
 })(events_1.EventEmitter);

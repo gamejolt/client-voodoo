@@ -113,8 +113,6 @@ var PatchHandle = (function () {
             if (!this._build.archive_type) {
                 return null;
             }
-            var brotliDecompress = require('iltorb').decompressStream;
-            var gzipDecompress = require('gunzip-maybe');
             switch (this._build.archive_type) {
                 case 'tar.gz':
                     return require('gunzip-maybe')();
