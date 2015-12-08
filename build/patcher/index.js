@@ -54,8 +54,6 @@ var events_1 = require('events');
 var StreamSpeed = require('../downloader/stream-speed');
 var downloader_1 = require('../downloader');
 var extractor_1 = require('../extractor');
-var brotliDecompress = require('iltorb').decompressStream;
-var gzipDecompress = require('gunzip-maybe');
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
 var fsUnlink = Bluebird.promisify(fs.unlink);
@@ -115,11 +113,13 @@ var PatchHandle = (function () {
             if (!this._build.archive_type) {
                 return null;
             }
+            var brotliDecompress = require('iltorb').decompressStream;
+            var gzipDecompress = require('gunzip-maybe');
             switch (this._build.archive_type) {
                 case 'tar.gz':
-                    return gzipDecompress();
+                    return require('gunzip-maybe')();
                 case 'brotli':
-                    return brotliDecompress();
+                    return require('iltorb').decompressStream();
                 default:
                     return null;
             }

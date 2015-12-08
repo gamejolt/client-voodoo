@@ -9,9 +9,6 @@ import * as StreamSpeed from '../downloader/stream-speed';
 import { Downloader, DownloadHandle, IDownloadProgress } from '../downloader';
 import { Extractor } from '../extractor';
 
-let brotliDecompress = require( 'iltorb' ).decompressStream;
-let gzipDecompress = require( 'gunzip-maybe' );
-
 let Bluebird = require( 'bluebird' );
 let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
 let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
@@ -94,10 +91,10 @@ export class PatchHandle
 
 		switch ( this._build.archive_type ) {
 			case 'tar.gz':
-				return gzipDecompress();
+				return require( 'gunzip-maybe' )();
 
 			case 'brotli':
-				return brotliDecompress();
+				return require( 'iltorb' ).decompressStream();
 
 			default:
 				return null;
