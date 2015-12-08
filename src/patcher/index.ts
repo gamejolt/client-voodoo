@@ -115,9 +115,11 @@ export class PatchHandle
 		this._archiveListFile = path.join( this._build.install_dir, 'archive-file-list' );
 		this._to = path.join( this._build.install_dir, 'game' );
 
-		this._downloadHandle = this._downloadHandle || Downloader.download( this._url, this._tempFile, {
-			decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
-		} );
+		if ( !this._downloadHandle ) {
+			this._downloadHandle = Downloader.download( this._url, this._tempFile, {
+				decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
+			} );
+		}
 
 		this._downloadHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
 			.promise
@@ -245,7 +247,7 @@ export class PatchHandle
 
 	onPatching( fn: Function ): PatchHandle
 	{
-		this._emitter.addListener( 'downloading', fn );
+		this._emitter.addListener( 'patching', fn );
 		return this;
 	}
 
