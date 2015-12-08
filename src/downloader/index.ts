@@ -6,6 +6,7 @@ import * as path from 'path';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 import { Transform } from 'stream';
+import * as request from 'request';
 import * as StreamSpeed from './stream-speed';
 
 let Bluebird = require( 'bluebird' );
@@ -64,7 +65,7 @@ export class DownloadHandle
 
 	private _streamSpeed: StreamSpeed.StreamSpeed;
 	private _destStream: fs.WriteStream;
-	private _request: http.ClientRequest;
+	private _request: request.Request;
 	private _response: http.IncomingMessage;
 
 	constructor( private _url: string, private _to: string, private _options: IDownloadOptions )
@@ -194,75 +195,88 @@ export class DownloadHandle
 	private download()
 	{
 		let hostUrl = url.parse( this._url );
-		let httpOptions = {
-			host: hostUrl.host,
-			path: hostUrl.path,
+		let httpOptions: request.CoreOptions = {
 			headers: {
 				'Range': 'bytes=' + this._totalDownloaded.toString() + '-',
-			}
+			},
 		};
 
 		this._destStream = fs.createWriteStream( this._to, {
 			flags: 'a',
 		} );
 
-		this._request = http.request( httpOptions, ( response ) =>
-		{
-			this._response = response;
-			this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
-			this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
-				progress: this._totalDownloaded / this._totalSize,
-				timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
-				sample: sample,
-			} ) );
-			this._state = DownloadHandleState.STARTED;
+		this._request = request.get( this._url, httpOptions )
+			.on( 'response', ( response: http.IncomingMessage ) =>
+			{
+				if ( response.statusCode === 301 ) {
+					return;
+				}
 
-			// Unsatisfiable request - most likely we've downloaded the whole thing already.
-			// TODO - send HEAD request to get content-length and compare.
-			if ( this._response.statusCode == 416 ) {
-				return this.onFinished();
-			}
+				this._response = response;
 
-			// Expecting the partial response status code
-			if ( this._response.statusCode != 206 ) {
-				return this.onError( new Error( 'Bad status code ' + this._response.statusCode ) );
-			}
+				this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
+				this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
+					progress: this._totalDownloaded / this._totalSize,
+					timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
+					sample: sample,
+				} ) );
+				this._state = DownloadHandleState.STARTED;
 
-			if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
-				return this.onError( new Error( 'Missing or invalid content-range response header' ) );
-			}
+				// Unsatisfiable request - most likely we've downloaded the whole thing already.
+				// TODO - send HEAD request to get content-length and compare.
+				if ( this._response.statusCode === 416 ) {
+					return this.onFinished();
+				}
 
-			try {
-				this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
-			}
-			catch ( err ) {
-				return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
-			}
+				// Expecting the partial response status code
+				if ( this._response.statusCode !== 206 ) {
+					return this.onError( new Error( 'Bad status code ' + this._response.statusCode ) );
+				}
 
-			if ( this._options.decompressStream ) {
-				this._response
-					.pipe( this._streamSpeed )
-					.pipe( this._options.decompressStream )
-					.pipe( this._destStream );
-			}
-			else {
-				this._response
-					.pipe( this._streamSpeed )
-					.pipe( this._destStream );
-			}
+				if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
+					return this.onError( new Error( 'Missing or invalid content-range response header' ) );
+				}
 
-			this._response.on( 'data', ( data ) =>
+				try {
+					this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
+				}
+				catch ( err ) {
+					return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
+				}
+
+				if ( this._options.decompressStream ) {
+					this._request
+						.pipe( this._streamSpeed )
+						.pipe( this._options.decompressStream )
+						.pipe( this._destStream );
+				}
+				else {
+					this._request
+						.pipe( this._streamSpeed )
+						.pipe( this._destStream );
+				}
+
+				this._destStream.on( 'finish', () => this.onFinished() );
+				this._destStream.on( 'error', ( err ) => this.onError( err ) );
+			} )
+			.on( 'data', ( data ) =>
 			{
 				this._totalDownloaded += data.length;
-			} );
+		 	} )
+			.on( 'error', ( err ) => this.onError( err ) );
 
-			this._destStream.on( 'finish', () => this.onFinished() );
+		// 	this._response.on( 'data', ( data ) =>
+		// 	{
+		// 		this._totalDownloaded += data.length;
+		// 	} );
 
-			this._response.on( 'error', ( err ) => this.onError( err ) );
-			this._destStream.on( 'error', ( err ) => this.onError( err ) );
-		} );
-		this._request.on( 'error', ( err ) => this.onError( err ) );
-		this._request.end();
+		// 	this._destStream.on( 'finish', () => this.onFinished() );
+
+		// 	this._response.on( 'error', ( err ) => this.onError( err ) );
+		// 	this._destStream.on( 'error', ( err ) => this.onError( err ) );
+		// } );
+		// this._request.on( 'error', ( err ) => this.onError( err ) );
+		// this._request.end();
 	}
 
 	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => void ): DownloadHandle

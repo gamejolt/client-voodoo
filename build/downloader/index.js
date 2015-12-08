@@ -48,11 +48,11 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
     });
 };
 var fs = require('fs');
-var http = require('http');
 var url = require('url');
 var path = require('path');
 var events_1 = require('events');
 var _ = require('lodash');
+var request = require('request');
 var StreamSpeed = require('./stream-speed');
 var Bluebird = require('bluebird');
 var mkdirp = Bluebird.promisify(require('mkdirp'));
@@ -279,8 +279,6 @@ var DownloadHandle = (function () {
 
             var hostUrl = url.parse(this._url);
             var httpOptions = {
-                host: hostUrl.host,
-                path: hostUrl.path,
                 headers: {
                     'Range': 'bytes=' + this._totalDownloaded.toString() + '-'
                 }
@@ -288,7 +286,10 @@ var DownloadHandle = (function () {
             this._destStream = fs.createWriteStream(this._to, {
                 flags: 'a'
             });
-            this._request = http.request(httpOptions, function (response) {
+            this._request = request.get(this._url, httpOptions).on('response', function (response) {
+                if (response.statusCode === 301) {
+                    return;
+                }
                 _this._response = response;
                 _this._streamSpeed = new StreamSpeed.StreamSpeed(_this._options);
                 _this._streamSpeed.onSample(function (sample) {
@@ -301,11 +302,11 @@ var DownloadHandle = (function () {
                 _this._state = DownloadHandleState.STARTED;
                 // Unsatisfiable request - most likely we've downloaded the whole thing already.
                 // TODO - send HEAD request to get content-length and compare.
-                if (_this._response.statusCode == 416) {
+                if (_this._response.statusCode === 416) {
                     return _this.onFinished();
                 }
                 // Expecting the partial response status code
-                if (_this._response.statusCode != 206) {
+                if (_this._response.statusCode !== 206) {
                     return _this.onError(new Error('Bad status code ' + _this._response.statusCode));
                 }
                 if (!_this._response.headers || !_this._response.headers['content-range']) {
@@ -317,27 +318,31 @@ var DownloadHandle = (function () {
                     return _this.onError(new Error('Invalid content-range header: ' + _this._response.headers['content-range']));
                 }
                 if (_this._options.decompressStream) {
-                    _this._response.pipe(_this._streamSpeed).pipe(_this._options.decompressStream).pipe(_this._destStream);
+                    _this._request.pipe(_this._streamSpeed).pipe(_this._options.decompressStream).pipe(_this._destStream);
                 } else {
-                    _this._response.pipe(_this._streamSpeed).pipe(_this._destStream);
+                    _this._request.pipe(_this._streamSpeed).pipe(_this._destStream);
                 }
-                _this._response.on('data', function (data) {
-                    _this._totalDownloaded += data.length;
-                });
                 _this._destStream.on('finish', function () {
                     return _this.onFinished();
-                });
-                _this._response.on('error', function (err) {
-                    return _this.onError(err);
                 });
                 _this._destStream.on('error', function (err) {
                     return _this.onError(err);
                 });
-            });
-            this._request.on('error', function (err) {
+            }).on('data', function (data) {
+                _this._totalDownloaded += data.length;
+            }).on('error', function (err) {
                 return _this.onError(err);
             });
-            this._request.end();
+            // 	this._response.on( 'data', ( data ) =>
+            // 	{
+            // 		this._totalDownloaded += data.length;
+            // 	} );
+            // 	this._destStream.on( 'finish', () => this.onFinished() );
+            // 	this._response.on( 'error', ( err ) => this.onError( err ) );
+            // 	this._destStream.on( 'error', ( err ) => this.onError( err ) );
+            // } );
+            // this._request.on( 'error', ( err ) => this.onError( err ) );
+            // this._request.end();
         }
     }, {
         key: "onProgress",
