@@ -78,7 +78,7 @@ var PidFinder = (function () {
                     var data = out.split('\r\n');
                     resolve(data.length >= 2 && data[0].startsWith("Image Name"));
                 });
-                cmd.stdin.write('tasklist /FI;"PID eq ' + pid.toString() + '" /FO:CSV\n');
+                cmd.stdin.write('tasklist /FI:"PID eq ' + pid.toString() + '" /FO:CSV\n');
                 cmd.stdin.end();
             });
         }
