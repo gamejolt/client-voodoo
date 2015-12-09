@@ -94,7 +94,7 @@ export class PatchHandle
 				return require( 'gunzip-maybe' )();
 
 			case 'brotli':
-				return require( 'iltorb' ).decompressStream();
+				throw new Error( 'Not supporting brotli anymore.' );
 
 			default:
 				return null;
