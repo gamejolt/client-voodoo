@@ -51,14 +51,14 @@ describe( 'Launcher', function()
 			},
 			file: {
 				id: 1,
-				filename: 'Bug_Bash.tar.gz',
+				filename: 'GJGas.exe.tar.xz',
 				filesize: 1,
 			},
-			archive_type: 'tar.gz',
+			archive_type: 'tar.xz',
 			launch_options: [ {
 				id: 1,
 				os: 'linux',
-				executable_path: 'Bug_Bash.exe',
+				executable_path: 'GJGas.exe',
 			} ],
 			os_windows: false,
 			os_windows_64: false,
@@ -71,7 +71,8 @@ describe( 'Launcher', function()
 			install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 		}
 
-		let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', build, {
+		let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+			overwrite: true,
 			decompressInDownload: false,
 		} );
 

@@ -43,7 +43,8 @@ var express = require('express');
 var index_1 = require('./index');
 var path = require('path');
 var stream_speed_1 = require('./stream-speed');
-var decompressStream = require('gunzip-maybe');
+var gzip = require('gunzip-maybe');
+var xz = require('lzma-native').createDecompressor;
 describe('Downloader', function () {
     var _this = this;
 
@@ -64,7 +65,7 @@ describe('Downloader', function () {
         app = null;
         server = null;
     });
-    it('Should download a resumable non-brotli file', function () {
+    it('Should download a resumable file', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
             var _this2 = this;
 
@@ -73,7 +74,7 @@ describe('Downloader', function () {
                 while (1) {
                     switch (_context2.prev = _context2.next) {
                         case 0:
-                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
+                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
                                 overwrite: true
                             });
                             waited = false;
@@ -130,7 +131,7 @@ describe('Downloader', function () {
             }, _callee2, this);
         }));
     });
-    it('Should download a non-resumable brotli file', function () {
+    it('Should download a gzip file', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
             var handle;
             return _regenerator2.default.wrap(function _callee3$(_context3) {
@@ -139,7 +140,7 @@ describe('Downloader', function () {
                         case 0:
                             handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
                                 overwrite: true,
-                                decompressStream: decompressStream()
+                                decompressStream: gzip()
                             });
 
                             handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
@@ -154,6 +155,32 @@ describe('Downloader', function () {
                     }
                 }
             }, _callee3, this);
+        }));
+    });
+    it('Should download a xz file', function () {
+        return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+            var handle;
+            return _regenerator2.default.wrap(function _callee4$(_context4) {
+                while (1) {
+                    switch (_context4.prev = _context4.next) {
+                        case 0:
+                            handle = index_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
+                                overwrite: true,
+                                decompressStream: xz()
+                            });
+
+                            handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
+                                console.log('Download progress: ' + Math.floor(data.progress * 100) + '%');
+                                console.log('Current speed: ' + Math.floor(data.sample.current) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor(data.sample.peak) + ' kbps, low: ' + Math.floor(data.sample.low) + ', average: ' + Math.floor(data.sample.average) + ' kbps');
+                            });
+                            return _context4.abrupt("return", handle.promise);
+
+                        case 3:
+                        case "end":
+                            return _context4.stop();
+                    }
+                }
+            }, _callee4, this);
         }));
     });
 });

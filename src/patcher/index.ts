@@ -27,6 +27,7 @@ let fsReadDirRecursively: ( path: string ) => Promise<string[]> = Bluebird.promi
 
 export interface IPatcherOptions
 {
+	overwrite?: boolean;
 	decompressInDownload?: boolean;
 }
 
@@ -63,6 +64,7 @@ export class PatchHandle
 	constructor( private _url: string, private _build: GameJolt.IGameBuild, private _options?: IPatcherOptions )
 	{
 		this._options = _.defaults<IPatcherOptions>( this._options || {}, {
+			overwrite: false,
 			decompressInDownload: false,
 		} );
 
@@ -90,6 +92,9 @@ export class PatchHandle
 		}
 
 		switch ( this._build.archive_type ) {
+			case 'tar.xz':
+				return require( 'lzma-native' ).createDecompressor();
+
 			case 'tar.gz':
 				return require( 'gunzip-maybe' )();
 
@@ -97,7 +102,7 @@ export class PatchHandle
 				throw new Error( 'Not supporting brotli anymore.' );
 
 			default:
-				return null;
+				throw new Error( 'No decompression given' );
 		}
 	}
 
@@ -118,6 +123,7 @@ export class PatchHandle
 
 		if ( !this._downloadHandle ) {
 			this._downloadHandle = Downloader.download( this._url, this._tempFile, {
+				overwrite: this._options.overwrite,
 				decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
 			} );
 		}

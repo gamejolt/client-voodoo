@@ -100,6 +100,7 @@ var PatchHandle = (function () {
         this._build = _build;
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
+            overwrite: false,
             decompressInDownload: false
         });
         this._state = PatchHandleState.STOPPED;
@@ -114,12 +115,14 @@ var PatchHandle = (function () {
                 return null;
             }
             switch (this._build.archive_type) {
+                case 'tar.xz':
+                    return require('lzma-native').createDecompressor();
                 case 'tar.gz':
                     return require('gunzip-maybe')();
                 case 'brotli':
                     throw new Error('Not supporting brotli anymore.');
                 default:
-                    return null;
+                    throw new Error('No decompression given');
             }
         }
     }, {
@@ -138,6 +141,7 @@ var PatchHandle = (function () {
             this._to = path.join(this._build.install_dir, 'game');
             if (!this._downloadHandle) {
                 this._downloadHandle = downloader_1.Downloader.download(this._url, this._tempFile, {
+                    overwrite: this._options.overwrite,
                     decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null
                 });
             }
