@@ -185,7 +185,7 @@ var LaunchHandle = (function () {
                             case 3:
                                 executablePath = launchOption.executable_path.replace(/\//, path.sep);
 
-                                this._file = path.join(this._build.install_dir, 'game', executablePath);
+                                this._file = path.join(this._build.install_dir, executablePath);
                                 // If the destination already exists, make sure its valid.
                                 _context2.next = 7;
                                 return fsExists(this._file);

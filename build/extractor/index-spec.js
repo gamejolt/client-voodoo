@@ -66,50 +66,16 @@ describe('Extractor', function () {
         app = null;
         server = null;
     });
-    // it( 'Should work with tar.gz files', async () =>
-    // {
-    // 	let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
-    // 		overwrite: true,
-    // 		decompressStream: gzip(),
-    // 	} );
-    // 	handle.onProgress( SampleUnit.KBps, function( data )
-    // 	{
-    // 		console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-    // 		console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-    // 	} );
-    // 	await handle.promise;
-    // 	return Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
-    // 		deleteSource: true,
-    // 		overwrite: true,
-    // 	} ).promise;
-    // } );
-    // it( 'Should work with tar.xz files', async () =>
-    // {
-    // 	let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
-    // 		overwrite: true,
-    // 		decompressStream: xz(),
-    // 	} );
-    // 	handle.onProgress( SampleUnit.KBps, function( data )
-    // 	{
-    // 		console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-    // 		console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-    // 	} );
-    // 	await handle.promise;
-    // 	return Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
-    // 		deleteSource: true,
-    // 		overwrite: true,
-    // 	} ).promise;
-    // } );
-    it('Should allow resumable extraction', function (done) {
+    it('Should work with tar.gz files', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-            var handle, extractionHandle, waited;
+            var handle;
             return _regenerator2.default.wrap(function _callee$(_context) {
                 while (1) {
                     switch (_context.prev = _context.next) {
                         case 0:
-                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
+                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5666cfe4c69d9/Bug_Bash.exe.tar.gz', downloadFile, {
                                 overwrite: true,
-                                decompressStream: xz()
+                                decompressStream: gzip()
                             });
 
                             handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
@@ -120,6 +86,69 @@ describe('Extractor', function () {
                             return handle.promise;
 
                         case 4:
+                            return _context.abrupt("return", index_1.Extractor.extract(handle.to, path.join('test-files', 'extracted', path.basename(handle.to)), {
+                                deleteSource: true,
+                                overwrite: true
+                            }).promise);
+
+                        case 5:
+                        case "end":
+                            return _context.stop();
+                    }
+                }
+            }, _callee, this);
+        }));
+    });
+    it('Should work with tar.xz files', function () {
+        return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            var handle;
+            return _regenerator2.default.wrap(function _callee2$(_context2) {
+                while (1) {
+                    switch (_context2.prev = _context2.next) {
+                        case 0:
+                            handle = downloader_1.Downloader.download('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
+                                overwrite: true,
+                                decompressStream: xz()
+                            });
+
+                            handle.onProgress(stream_speed_1.SampleUnit.KBps, function (data) {
+                                console.log('Download progress: ' + Math.floor(data.progress * 100) + '%');
+                                console.log('Current speed: ' + Math.floor(data.sample.current) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor(data.sample.peak) + ' kbps, low: ' + Math.floor(data.sample.low) + ', average: ' + Math.floor(data.sample.average) + ' kbps');
+                            });
+                            _context2.next = 4;
+                            return handle.promise;
+
+                        case 4:
+                            return _context2.abrupt("return", index_1.Extractor.extract(handle.to, path.join('test-files', 'extracted', path.basename(handle.to)), {
+                                deleteSource: true,
+                                overwrite: true
+                            }).promise);
+
+                        case 5:
+                        case "end":
+                            return _context2.stop();
+                    }
+                }
+            }, _callee2, this);
+        }));
+    });
+    it('Should allow resumable extraction', function (done) {
+        return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            var extractionHandle, waited;
+            return _regenerator2.default.wrap(function _callee3$(_context3) {
+                while (1) {
+                    switch (_context3.prev = _context3.next) {
+                        case 0:
+                            // let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
+                            // 	overwrite: true,
+                            // 	decompressStream: xz(),
+                            // } );
+                            // handle.onProgress( SampleUnit.KBps, function( data )
+                            // {
+                            // 	console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+                            // 	console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+                            // } );
+                            // await handle.promise;
                             extractionHandle = index_1.Extractor.extract('test-files/Downloads.tar', path.join('test-files', 'extracted', path.basename('test')), {
                                 deleteSource: false,
                                 overwrite: true
@@ -136,38 +165,38 @@ describe('Extractor', function () {
                             // What a hacky way to catch the extraction in the middle. Don't judge me.
                             // If resumes too fast it means the file is fully extracted or is fully contained in the readable stream's internal buffer.
                             // Use a bigger file!
-                            _context.next = 9;
+                            _context3.next = 5;
                             return new _promise2.default(function (resolve) {
                                 return setTimeout(resolve, 100);
                             });
 
-                        case 9:
-                            _context.next = 11;
+                        case 5:
+                            _context3.next = 7;
                             return extractionHandle.stop();
 
-                        case 11:
+                        case 7:
                             console.log('Stopping to smell the bees.');
-                            _context.next = 14;
+                            _context3.next = 10;
                             return new _promise2.default(function (resolve) {
                                 return setTimeout(resolve, 3000);
                             });
 
-                        case 14:
+                        case 10:
                             waited = true;
                             console.log('I meant flowers.');
-                            _context.next = 18;
+                            _context3.next = 14;
                             return extractionHandle.start();
 
-                        case 18:
-                            _context.next = 20;
+                        case 14:
+                            _context3.next = 16;
                             return extractionHandle.promise;
 
-                        case 20:
+                        case 16:
                         case "end":
-                            return _context.stop();
+                            return _context3.stop();
                     }
                 }
-            }, _callee, this);
+            }, _callee3, this);
         }));
     });
 });

@@ -110,7 +110,7 @@ var ExtractHandle = (function () {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                if (!this._running) {
+                                if (!(this._running || this._readStream)) {
                                     _context.next = 3;
                                     break;
                                 }

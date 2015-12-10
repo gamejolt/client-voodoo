@@ -82,7 +82,7 @@ export class ExtractHandle
 
 	async start(): Promise<IExtractResult>
 	{
-		if ( this._running ) {
+		if ( this._running || this._readStream ) {
 			if ( this._readStream ) {
 				this._readStream.resume();
 			}
