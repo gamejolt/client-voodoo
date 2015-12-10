@@ -88,84 +88,120 @@ var ExtractHandle = (function () {
             deleteSource: false,
             overwrite: false
         });
-        this._promise = this.start();
+        // Avoid fat arrow here because it causes an implicit return and will resolve the promise.
+        var _this = this;
+        this._promise = new _promise2.default(function (resolve, reject) {
+            _this.start().then(function (result) {
+                if (!_this._terminated) {
+                    resolve(result);
+                }
+            });
+        });
     }
 
     (0, _createClass3.default)(ExtractHandle, [{
         key: "start",
         value: function start() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var _this = this;
+                var _this2 = this;
 
                 var destStat, filesInDest, files, result, unlinked;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                _context.next = 2;
-                                return fsExists(this._to);
-
-                            case 2:
-                                if (!_context.sent) {
-                                    _context.next = 16;
+                                if (!this._running) {
+                                    _context.next = 3;
                                     break;
                                 }
 
-                                _context.next = 5;
+                                if (this._readStream) {
+                                    this._readStream.resume();
+                                }
+                                return _context.abrupt("return", this._promise);
+
+                            case 3:
+                                this._running = true;
+                                // If the destination already exists, make sure its valid.
+                                _context.next = 6;
+                                return fsExists(this._to);
+
+                            case 6:
+                                if (!_context.sent) {
+                                    _context.next = 20;
+                                    break;
+                                }
+
+                                _context.next = 9;
                                 return fsStat(this._to);
 
-                            case 5:
+                            case 9:
                                 destStat = _context.sent;
 
                                 if (destStat.isDirectory()) {
-                                    _context.next = 8;
+                                    _context.next = 12;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because its not a valid directory');
 
-                            case 8:
-                                _context.next = 10;
+                            case 12:
+                                _context.next = 14;
                                 return fsReadDir(this._to);
 
-                            case 10:
+                            case 14:
                                 filesInDest = _context.sent;
 
                                 if (!(filesInDest && filesInDest.length > 0)) {
-                                    _context.next = 14;
+                                    _context.next = 18;
                                     break;
                                 }
 
                                 if (this._options.overwrite) {
-                                    _context.next = 14;
+                                    _context.next = 18;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because it isnt empty');
 
-                            case 14:
-                                _context.next = 20;
+                            case 18:
+                                _context.next = 24;
                                 break;
 
-                            case 16:
-                                _context.next = 18;
+                            case 20:
+                                _context.next = 22;
                                 return mkdirp(this._to);
 
-                            case 18:
+                            case 22:
                                 if (_context.sent) {
-                                    _context.next = 20;
+                                    _context.next = 24;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create destination folder path');
 
-                            case 20:
+                            case 24:
+                                if (!this._terminated) {
+                                    _context.next = 26;
+                                    break;
+                                }
+
+                                return _context.abrupt("return", {
+                                    success: false,
+                                    files: []
+                                });
+
+                            case 26:
                                 files = [];
-                                _context.next = 23;
+                                _context.next = 29;
                                 return new _promise2.default(function (resolve, reject) {
-                                    var stream = fs.createReadStream(_this._from);
-                                    var optionsMap = _this._options.map;
-                                    var extractStream = tarFS.extract(_this._to, _.assign(_this._options, {
+                                    _this2._readStream = fs.createReadStream(_this2._from);
+                                    // If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
+                                    if (!_this2._running) {
+                                        _this2.stop(false);
+                                    }
+                                    var optionsMap = _this2._options.map;
+                                    var extractStream = tarFS.extract(_this2._to, _.assign(_this2._options, {
                                         map: function map(header) {
                                             // TODO: fuggin symlinks and the likes.
                                             if (header.type === 'file') {
@@ -183,62 +219,90 @@ var ExtractHandle = (function () {
                                     extractStream.on('error', function (err) {
                                         return reject(err);
                                     });
-                                    stream.on('error', function (err) {
+                                    _this2._readStream.on('error', function (err) {
                                         return reject(err);
                                     });
-                                    if (_this._options.decompressStream) {
-                                        stream.pipe(_this._options.decompressStream).pipe(extractStream);
+                                    if (_this2._options.decompressStream) {
+                                        _this2._readStream.pipe(_this2._options.decompressStream).pipe(extractStream);
                                     } else {
-                                        stream.pipe(extractStream);
+                                        _this2._readStream.pipe(extractStream);
                                     }
                                 });
 
-                            case 23:
+                            case 29:
                                 result = _context.sent;
 
                                 if (!(result && this._options.deleteSource)) {
-                                    _context.next = 35;
+                                    _context.next = 41;
                                     break;
                                 }
 
-                                _context.next = 27;
+                                _context.next = 33;
                                 return fsUnlink(this._from);
 
-                            case 27:
+                            case 33:
                                 unlinked = _context.sent;
                                 _context.t0 = unlinked;
 
                                 if (!_context.t0) {
-                                    _context.next = 33;
+                                    _context.next = 39;
                                     break;
                                 }
 
-                                _context.next = 32;
+                                _context.next = 38;
                                 return fsExists(this._from);
 
-                            case 32:
+                            case 38:
                                 _context.t0 = _context.sent;
 
-                            case 33:
+                            case 39:
                                 if (!_context.t0) {
-                                    _context.next = 35;
+                                    _context.next = 41;
                                     break;
                                 }
 
                                 throw unlinked;
 
-                            case 35:
+                            case 41:
                                 return _context.abrupt("return", {
                                     success: result,
                                     files: files
                                 });
 
-                            case 36:
+                            case 42:
                             case "end":
                                 return _context.stop();
                         }
                     }
                 }, _callee, this);
+            }));
+        }
+    }, {
+        key: "stop",
+        value: function stop(terminate) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+                var readStreamHack;
+                return _regenerator2.default.wrap(function _callee2$(_context2) {
+                    while (1) {
+                        switch (_context2.prev = _context2.next) {
+                            case 0:
+                                this._running = false;
+                                if (terminate) {
+                                    this._terminated = true;
+                                    readStreamHack = this._readStream;
+
+                                    readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
+                                } else {
+                                        this._readStream.pause();
+                                    }
+                                return _context2.abrupt("return", true);
+
+                            case 3:
+                            case "end":
+                                return _context2.stop();
+                        }
+                    }
+                }, _callee2, this);
             }));
         }
     }, {

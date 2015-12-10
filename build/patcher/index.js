@@ -68,11 +68,14 @@ var fsStat = Bluebird.promisify(fs.stat);
 var fsReadDir = Bluebird.promisify(fs.readdir);
 var fsReadDirRecursively = Bluebird.promisify(require('recursive-readdir'));
 (function (PatchHandleState) {
-    PatchHandleState[PatchHandleState["STOPPED"] = 0] = "STOPPED";
-    PatchHandleState[PatchHandleState["STOPPING"] = 1] = "STOPPING";
+    PatchHandleState[PatchHandleState["STOPPED_DOWNLOAD"] = 0] = "STOPPED_DOWNLOAD";
+    PatchHandleState[PatchHandleState["STOPPING_DOWNLOAD"] = 1] = "STOPPING_DOWNLOAD";
     PatchHandleState[PatchHandleState["DOWNLOADING"] = 2] = "DOWNLOADING";
-    PatchHandleState[PatchHandleState["PATCHING"] = 3] = "PATCHING";
-    PatchHandleState[PatchHandleState["FINISHED"] = 4] = "FINISHED";
+    PatchHandleState[PatchHandleState["STOPPED_PATCH"] = 3] = "STOPPED_PATCH";
+    PatchHandleState[PatchHandleState["STOPPING_PATCH"] = 4] = "STOPPING_PATCH";
+    PatchHandleState[PatchHandleState["PATCHING"] = 5] = "PATCHING";
+    PatchHandleState[PatchHandleState["FINISHING"] = 6] = "FINISHING";
+    PatchHandleState[PatchHandleState["FINISHED"] = 7] = "FINISHED";
 })(exports.PatchHandleState || (exports.PatchHandleState = {}));
 var PatchHandleState = exports.PatchHandleState;
 
@@ -103,8 +106,9 @@ var PatchHandle = (function () {
             overwrite: false,
             decompressInDownload: false
         });
-        this._state = PatchHandleState.STOPPED;
+        this._state = PatchHandleState.STOPPED_DOWNLOAD;
         this._downloadHandle = null;
+        this._extractHandle = null;
         this._emitter = new events_1.EventEmitter();
     }
 
@@ -126,70 +130,32 @@ var PatchHandle = (function () {
             }
         }
     }, {
-        key: "start",
-        value: function start() {
-            var _this = this;
-
-            if (this._state !== PatchHandleState.STOPPED) {
-                return this;
-            }
-            this._promise = this.promise;
-            this._state = PatchHandleState.DOWNLOADING;
-            this._emitter.emit('downloading');
-            this._tempFile = path.join(this._build.install_dir, 'tempDownload');
-            this._archiveListFile = path.join(this._build.install_dir, 'archive-file-list');
-            this._to = path.join(this._build.install_dir, 'game');
-            if (!this._downloadHandle) {
-                this._downloadHandle = downloader_1.Downloader.download(this._url, this._tempFile, {
-                    overwrite: this._options.overwrite,
-                    decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null
-                });
-            }
-            this._downloadHandle.onProgress(StreamSpeed.SampleUnit.Bps, function (progress) {
-                return _this.emitProgress(progress);
-            }).promise.then(function () {
-                return _this.patch();
-            }).then(function () {
-                return _this.onFinished();
-            }).catch(function (err) {
-                return _this.onError(err);
-            });
-            return this;
-        }
-    }, {
-        key: "stop",
-        value: function stop() {
+        key: "waitForStart",
+        value: function waitForStart() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+                var _this = this;
+
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                if (!(this._state !== PatchHandleState.DOWNLOADING)) {
+                                if (!(this._state !== PatchHandleState.STOPPED_DOWNLOAD && this._state !== PatchHandleState.STOPPED_PATCH)) {
                                     _context.next = 2;
                                     break;
                                 }
 
-                                return _context.abrupt("return", false);
+                                return _context.abrupt("return");
 
                             case 2:
-                                this._state = PatchHandleState.STOPPING;
-                                _context.next = 5;
-                                return this._downloadHandle.stop();
-
-                            case 5:
-                                if (_context.sent) {
-                                    _context.next = 8;
-                                    break;
+                                if (!this._waitForStartPromise) {
+                                    this._waitForStartPromise = new _promise2.default(function (resolve, reject) {
+                                        _this._waitForStartResolver = resolve;
+                                        _this._waitForStartRejector = reject;
+                                    });
                                 }
+                                return _context.abrupt("return", this._waitForStartPromise);
 
-                                this._state = PatchHandleState.DOWNLOADING;
-                                return _context.abrupt("return", false);
-
-                            case 8:
-                                this._state = PatchHandleState.STOPPED;
-                                return _context.abrupt("return", true);
-
-                            case 10:
+                            case 4:
                             case "end":
                                 return _context.stop();
                         }
@@ -198,178 +164,387 @@ var PatchHandle = (function () {
             }));
         }
     }, {
-        key: "patch",
-        value: function patch() {
+        key: "start",
+        value: function start(url) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
                 var _this2 = this;
 
-                var currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles, extractResult, newBuildFiles, createdByOldBuild, filesToRemove, unlinks;
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
-                                // TODO: restrict operations to the given directories.
+                                this._url = url || this._url;
+                                this._promise = this.promise;
+
+                                if (!(this._state === PatchHandleState.STOPPED_DOWNLOAD)) {
+                                    _context2.next = 15;
+                                    break;
+                                }
+
+                                if (this._waitForStartPromise) {
+                                    this._waitForStartResolver();
+                                    this._waitForStartPromise = null;
+                                }
+                                this._state = PatchHandleState.DOWNLOADING;
+                                if (!this._emittedDownloading) {
+                                    this._emitter.emit('downloading');
+                                    this._emittedDownloading = true;
+                                }
+                                this._tempFile = path.join(this._build.install_dir, '.gj-tempDownload');
+                                this._archiveListFile = path.join(this._build.install_dir, '.gj-archive-file-list');
+                                this._patchListFile = path.join(this._build.install_dir, '.gj-patch-file');
+                                this._to = this._build.install_dir;
+                                if (!this._downloadHandle) {
+                                    this._downloadHandle = downloader_1.Downloader.download(this._url, this._tempFile, {
+                                        overwrite: this._options.overwrite,
+                                        decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null
+                                    });
+                                    // Make sure to not remove the temp download file if we're resuming.
+                                    this._options.overwrite = false;
+                                }
+                                this._downloadHandle.onProgress(StreamSpeed.SampleUnit.Bps, function (progress) {
+                                    return _this2.emitProgress(progress);
+                                }).promise.then(function () {
+                                    return _this2.patch();
+                                }).then(function () {
+                                    return _this2.onFinished();
+                                }).catch(function (err) {
+                                    return _this2.onError(err);
+                                });
+                                return _context2.abrupt("return", true);
+
+                            case 15:
+                                if (!(this._state === PatchHandleState.STOPPED_PATCH)) {
+                                    _context2.next = 20;
+                                    break;
+                                }
+
+                                if (this._waitForStartPromise) {
+                                    this._waitForStartResolver();
+                                    this._waitForStartPromise = null;
+                                }
                                 this._state = PatchHandleState.PATCHING;
-                                this._emitter.emit('patching');
-                                currentFiles = undefined;
-                                _context2.next = 5;
-                                return fsExists(this._to);
-
-                            case 5:
-                                _context2.t0 = !_context2.sent;
-
-                                if (_context2.t0) {
-                                    _context2.next = 10;
-                                    break;
-                                }
-
-                                _context2.next = 9;
-                                return fsStat(this._to);
-
-                            case 9:
-                                _context2.t0 = !_context2.sent.isDirectory();
-
-                            case 10:
-                                if (!_context2.t0) {
-                                    _context2.next = 14;
-                                    break;
-                                }
-
-                                currentFiles = [];
-                                _context2.next = 18;
-                                break;
-
-                            case 14:
-                                _context2.next = 16;
-                                return fsReadDirRecursively(this._to);
-
-                            case 16:
-                                _context2.t1 = function (file) {
-                                    return './' + path.relative(_this2._to, file);
-                                };
-
-                                currentFiles = _context2.sent.map(_context2.t1);
-
-                            case 18:
-                                _context2.next = 20;
-                                return fsExists(this._archiveListFile);
+                                this._extractHandle.start();
+                                return _context2.abrupt("return", true);
 
                             case 20:
-                                if (!_context2.sent) {
-                                    _context2.next = 28;
+                                return _context2.abrupt("return", false);
+
+                            case 21:
+                            case "end":
+                                return _context2.stop();
+                        }
+                    }
+                }, _callee2, this);
+            }));
+        }
+    }, {
+        key: "_stop",
+        value: function _stop(terminate) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+                return _regenerator2.default.wrap(function _callee3$(_context3) {
+                    while (1) {
+                        switch (_context3.prev = _context3.next) {
+                            case 0:
+                                if (!(this._state === PatchHandleState.DOWNLOADING)) {
+                                    _context3.next = 10;
                                     break;
                                 }
 
-                                _context2.next = 23;
-                                return fsStat(this._archiveListFile);
+                                this._state = PatchHandleState.STOPPING_DOWNLOAD;
+                                _context3.next = 4;
+                                return this._downloadHandle.stop();
 
-                            case 23:
-                                stat = _context2.sent;
+                            case 4:
+                                if (_context3.sent) {
+                                    _context3.next = 7;
+                                    break;
+                                }
+
+                                this._state = PatchHandleState.DOWNLOADING;
+                                return _context3.abrupt("return", false);
+
+                            case 7:
+                                this._state = PatchHandleState.STOPPED_DOWNLOAD;
+                                _context3.next = 21;
+                                break;
+
+                            case 10:
+                                if (!(this._state === PatchHandleState.PATCHING)) {
+                                    _context3.next = 20;
+                                    break;
+                                }
+
+                                this._state = PatchHandleState.STOPPING_PATCH;
+                                _context3.next = 14;
+                                return this._extractHandle.stop(terminate);
+
+                            case 14:
+                                if (_context3.sent) {
+                                    _context3.next = 17;
+                                    break;
+                                }
+
+                                this._state = PatchHandleState.PATCHING;
+                                return _context3.abrupt("return", false);
+
+                            case 17:
+                                this._state = PatchHandleState.STOPPED_PATCH;
+                                _context3.next = 21;
+                                break;
+
+                            case 20:
+                                return _context3.abrupt("return", false);
+
+                            case 21:
+                                if (terminate) {
+                                    this._emitter.emit('canceled');
+                                } else {
+                                    this._emitter.emit('stopped');
+                                }
+                                this.waitForStart();
+                                return _context3.abrupt("return", true);
+
+                            case 24:
+                            case "end":
+                                return _context3.stop();
+                        }
+                    }
+                }, _callee3, this);
+            }));
+        }
+    }, {
+        key: "stop",
+        value: function stop() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+                return _regenerator2.default.wrap(function _callee4$(_context4) {
+                    while (1) {
+                        switch (_context4.prev = _context4.next) {
+                            case 0:
+                                return _context4.abrupt("return", this._stop(false));
+
+                            case 1:
+                            case "end":
+                                return _context4.stop();
+                        }
+                    }
+                }, _callee4, this);
+            }));
+        }
+    }, {
+        key: "cancel",
+        value: function cancel() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+                return _regenerator2.default.wrap(function _callee5$(_context5) {
+                    while (1) {
+                        switch (_context5.prev = _context5.next) {
+                            case 0:
+                                return _context5.abrupt("return", this._stop(true));
+
+                            case 1:
+                            case "end":
+                                return _context5.stop();
+                        }
+                    }
+                }, _callee5, this);
+            }));
+        }
+    }, {
+        key: "patch",
+        value: function patch() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+                var _this3 = this;
+
+                var createdByOldBuild, currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles, _createdByOldBuild, extractResult, newBuildFiles, filesToRemove, unlinks;
+
+                return _regenerator2.default.wrap(function _callee6$(_context6) {
+                    while (1) {
+                        switch (_context6.prev = _context6.next) {
+                            case 0:
+                                // TODO: restrict operations to the given directories.
+                                this._state = PatchHandleState.PATCHING;
+                                if (!this._emittedPatching) {
+                                    this._emitter.emit('patching');
+                                    this._emittedPatching = true;
+                                }
+                                createdByOldBuild = undefined;
+                                // TODO: check if ./ is valid on windows platforms as well.
+
+                                _context6.next = 5;
+                                return fsReadDirRecursively(this._to);
+
+                            case 5:
+                                _context6.t0 = function (file) {
+                                    return !path.basename(file).startsWith('.gj-');
+                                };
+
+                                _context6.t1 = function (file) {
+                                    return './' + path.relative(_this3._to, file);
+                                };
+
+                                currentFiles = _context6.sent.filter(_context6.t0).map(_context6.t1);
+                                _context6.next = 10;
+                                return fsExists(this._patchListFile);
+
+                            case 10:
+                                if (!_context6.sent) {
+                                    _context6.next = 21;
+                                    break;
+                                }
+
+                                _context6.next = 13;
+                                return fsStat(this._patchListFile);
+
+                            case 13:
+                                stat = _context6.sent;
 
                                 if (stat.isFile()) {
-                                    _context2.next = 26;
+                                    _context6.next = 16;
+                                    break;
+                                }
+
+                                throw new Error('Can\'t patch because the patch file isn\'t a file.');
+
+                            case 16:
+                                _context6.next = 18;
+                                return fsReadFile(this._patchListFile, 'utf8');
+
+                            case 18:
+                                createdByOldBuild = _context6.sent.split("\n");
+                                _context6.next = 59;
+                                break;
+
+                            case 21:
+                                _context6.next = 23;
+                                return fsExists(this._archiveListFile);
+
+                            case 23:
+                                if (!_context6.sent) {
+                                    _context6.next = 31;
+                                    break;
+                                }
+
+                                _context6.next = 26;
+                                return fsStat(this._archiveListFile);
+
+                            case 26:
+                                stat = _context6.sent;
+
+                                if (stat.isFile()) {
+                                    _context6.next = 29;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the archive file list isn\'t a file.');
 
-                            case 26:
-                                _context2.next = 43;
+                            case 29:
+                                _context6.next = 46;
                                 break;
 
-                            case 28:
+                            case 31:
                                 archiveListFileDir = path.dirname(this._archiveListFile);
-                                _context2.next = 31;
+                                _context6.next = 34;
                                 return fsExists(archiveListFileDir);
 
-                            case 31:
-                                if (!_context2.sent) {
-                                    _context2.next = 39;
+                            case 34:
+                                if (!_context6.sent) {
+                                    _context6.next = 42;
                                     break;
                                 }
 
-                                _context2.next = 34;
+                                _context6.next = 37;
                                 return fsStat(archiveListFileDir);
 
-                            case 34:
-                                dirStat = _context2.sent;
+                            case 37:
+                                dirStat = _context6.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context2.next = 37;
+                                    _context6.next = 40;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the path to the archive file list is invalid.');
 
-                            case 37:
-                                _context2.next = 43;
+                            case 40:
+                                _context6.next = 46;
                                 break;
 
-                            case 39:
-                                _context2.next = 41;
+                            case 42:
+                                _context6.next = 44;
                                 return mkdirp(archiveListFileDir);
 
-                            case 41:
-                                if (_context2.sent) {
-                                    _context2.next = 43;
+                            case 44:
+                                if (_context6.sent) {
+                                    _context6.next = 46;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the patch archive file list folder path');
 
-                            case 43:
+                            case 46:
                                 oldBuildFiles = undefined;
-                                _context2.next = 46;
+                                _context6.next = 49;
                                 return fsExists(this._archiveListFile);
 
-                            case 46:
-                                if (_context2.sent) {
-                                    _context2.next = 50;
+                            case 49:
+                                if (_context6.sent) {
+                                    _context6.next = 53;
                                     break;
                                 }
 
                                 oldBuildFiles = currentFiles;
-                                _context2.next = 53;
+                                _context6.next = 56;
                                 break;
 
-                            case 50:
-                                _context2.next = 52;
+                            case 53:
+                                _context6.next = 55;
                                 return fsReadFile(this._archiveListFile, 'utf8');
 
-                            case 52:
-                                oldBuildFiles = _context2.sent.split("\n");
-
-                            case 53:
-                                _context2.next = 55;
-                                return extractor_1.Extractor.extract(this._tempFile, this._to, {
-                                    overwrite: true,
-                                    deleteSource: true,
-                                    decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream()
-                                }).promise;
-
                             case 55:
-                                extractResult = _context2.sent;
+                                oldBuildFiles = _context6.sent.split("\n");
+
+                            case 56:
+                                // Files that the old build created are files in the file system that are not listed in the old build files
+                                _createdByOldBuild = _.difference(currentFiles, oldBuildFiles);
+                                _context6.next = 59;
+                                return fsWriteFile(this._patchListFile, _createdByOldBuild.join("\n"));
+
+                            case 59:
+                                _context6.next = 61;
+                                return this.waitForStart().then(function () {
+                                    return extractor_1.Extractor.extract(_this3._tempFile, _this3._to, {
+                                        overwrite: true,
+                                        deleteSource: true,
+                                        decompressStream: _this3._options.decompressInDownload ? null : _this3._getDecompressStream()
+                                    });
+                                });
+
+                            case 61:
+                                this._extractHandle = _context6.sent;
+                                _context6.next = 64;
+                                return this._extractHandle.promise;
+
+                            case 64:
+                                extractResult = _context6.sent;
 
                                 if (extractResult.success) {
-                                    _context2.next = 58;
+                                    _context6.next = 67;
                                     break;
                                 }
 
                                 throw new Error('Failed to extract patch file');
 
-                            case 58:
+                            case 67:
+                                this._state = PatchHandleState.FINISHING;
                                 newBuildFiles = extractResult.files;
-                                // Files that the old build created are files in the file system that are not listed in the old build files
-
-                                createdByOldBuild = _.difference(currentFiles, oldBuildFiles);
                                 // Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
 
                                 filesToRemove = _.difference(currentFiles, newBuildFiles, createdByOldBuild);
                                 // TODO: use del lib
 
-                                _context2.next = 63;
+                                _context6.next = 72;
                                 return _promise2.default.all(filesToRemove.map(function (file) {
-                                    return fsUnlink(path.resolve(_this2._to, file)).then(function (err) {
+                                    return fsUnlink(path.resolve(_this3._to, file)).then(function (err) {
                                         if (err) {
                                             throw err;
                                         }
@@ -377,20 +552,20 @@ var PatchHandle = (function () {
                                     });
                                 }));
 
-                            case 63:
-                                unlinks = _context2.sent;
-                                _context2.next = 66;
+                            case 72:
+                                unlinks = _context6.sent;
+                                _context6.next = 75;
                                 return fsWriteFile(this._archiveListFile, newBuildFiles.join("\n"));
 
-                            case 66:
-                                return _context2.abrupt("return", true);
+                            case 75:
+                                return _context6.abrupt("return", true);
 
-                            case 67:
+                            case 76:
                             case "end":
-                                return _context2.stop();
+                                return _context6.stop();
                         }
                     }
-                }, _callee2, this);
+                }, _callee6, this);
             }));
         }
     }, {
@@ -422,7 +597,7 @@ var PatchHandle = (function () {
     }, {
         key: "onError",
         value: function onError(err) {
-            this._state = PatchHandleState.STOPPED;
+            this._state = PatchHandleState.STOPPED_DOWNLOAD;
             this._rejector(err);
             this._promise = null;
         }
@@ -435,12 +610,12 @@ var PatchHandle = (function () {
     }, {
         key: "promise",
         get: function get() {
-            var _this3 = this;
+            var _this4 = this;
 
             if (!this._promise) {
                 this._promise = new _promise2.default(function (resolve, reject) {
-                    _this3._resolver = resolve;
-                    _this3._rejector = reject;
+                    _this4._resolver = resolve;
+                    _this4._rejector = reject;
                 });
             }
             return this._promise;

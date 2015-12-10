@@ -88,7 +88,7 @@ describe( 'Patcher', function()
 			{
 				console.log( 'Patching...' );
 			} )
-			.start();
+			.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
 
 		return patchHandle.promise;
 	} );

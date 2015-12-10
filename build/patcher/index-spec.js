@@ -116,7 +116,7 @@ describe('Patcher', function () {
                                 console.log('Current speed: ' + Math.floor(data.sample.current) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor(data.sample.peak) + ' kbps, low: ' + Math.floor(data.sample.low) + ', average: ' + Math.floor(data.sample.average) + 'kbps');
                             }).onPatching(function () {
                                 console.log('Patching...');
-                            }).start();
+                            }).start('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz');
                             return _context.abrupt("return", patchHandle.promise);
 
                         case 4:

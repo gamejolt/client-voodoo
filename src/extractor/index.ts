@@ -41,6 +41,9 @@ export abstract class Extractor
 export class ExtractHandle
 {
 	private _promise: Promise<IExtractResult>;
+	private _readStream: Readable;
+	private _running: boolean;
+	private _terminated: boolean;
 
 	constructor( private _from: string, private _to: string, private _options?: IExtractOptions )
 	{
@@ -49,7 +52,17 @@ export class ExtractHandle
 			overwrite: false,
 		} );
 
-		this._promise = this.start();
+		// Avoid fat arrow here because it causes an implicit return and will resolve the promise.
+		let _this = this;
+		this._promise = new Promise<IExtractResult>( function( resolve, reject )
+		{
+			_this.start().then( ( result ) =>
+			{
+				if ( !_this._terminated ) {
+					resolve( result );
+				}
+			} );
+		} );
 	}
 
 	get from(): string
@@ -67,8 +80,17 @@ export class ExtractHandle
 		return this._promise;
 	}
 
-	private async start(): Promise<IExtractResult>
+	async start(): Promise<IExtractResult>
 	{
+		if ( this._running ) {
+			if ( this._readStream ) {
+				this._readStream.resume();
+			}
+			return this._promise;
+		}
+
+		this._running = true;
+
 		// If the destination already exists, make sure its valid.
 		if ( await fsExists( this._to ) ) {
 			let destStat = await fsStat( this._to );
@@ -91,10 +113,23 @@ export class ExtractHandle
 			throw new Error( 'Couldn\'t create destination folder path' );
 		}
 
+		if ( this._terminated ) {
+			return {
+				success: false,
+				files: [],
+			};
+		}
+
 		let files: string[] = [];
 		let result = await new Promise<boolean>( ( resolve, reject ) =>
 		{
-			let stream = fs.createReadStream( this._from )
+			this._readStream = fs.createReadStream( this._from );
+
+			// If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
+			if ( !this._running ) {
+				this.stop( false );
+			}
+
 			let optionsMap = this._options.map;
 			let extractStream = tarFS.extract( this._to, _.assign( this._options, {
 				map: ( header: tar.IEntryHeader ) =>
@@ -113,15 +148,15 @@ export class ExtractHandle
 
 			extractStream.on( 'finish', () => resolve( true ) );
 			extractStream.on( 'error', ( err ) => reject( err ) );
-			stream.on( 'error', ( err ) => reject( err ) );
+			this._readStream.on( 'error', ( err ) => reject( err ) );
 
 			if ( this._options.decompressStream ) {
-				stream
+				this._readStream
 					.pipe( this._options.decompressStream )
 					.pipe( extractStream );
 			}
 			else {
-				stream.pipe( extractStream );
+				this._readStream.pipe( extractStream );
 			}
 		} );
 
@@ -138,5 +173,19 @@ export class ExtractHandle
 			success: result,
 			files: files,
 		};
+	}
+
+	async stop( terminate?: boolean )
+	{
+		this._running = false;
+		if ( terminate ) {
+			this._terminated = true;
+			let readStreamHack: any = this._readStream;
+			readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
+		}
+		else {
+			this._readStream.pause();
+		}
+		return true;
 	}
 }

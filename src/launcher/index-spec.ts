@@ -71,12 +71,12 @@ describe( 'Launcher', function()
 				modified_on: 1,
 				install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 			}
-	
+
 			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
 				overwrite: true,
 				decompressInDownload: false,
 			} );
-	
+
 			patchHandle
 				.onDownloading( function()
 				{
@@ -91,10 +91,10 @@ describe( 'Launcher', function()
 				{
 					console.log( 'Patching...' );
 				} )
-				.start();
-	
+				.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
+
 			await patchHandle.promise;
-	
+
 			let launchHandle = Launcher.launch( build, 'linux', '32' );
 			let launchInstance = await launchHandle.promise;
 			await new Promise( ( resolve ) => launchInstance.on( 'end', resolve ) );
