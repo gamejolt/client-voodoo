@@ -168,7 +168,7 @@ var LaunchHandle = (function () {
         key: "start",
         value: function start(pollInterval) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
-                var launchOption, executablePath, stat, mode, uid, gid, child, pid;
+                var launchOption, executablePath, stat, mode, uid, gid, spawnCommand, child, pid;
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
@@ -240,7 +240,8 @@ var LaunchHandle = (function () {
                                 return fsChmod(this._file, '0777');
 
                             case 23:
-                                child = childProcess.spawn(this._file, [], {
+                                spawnCommand = (process.platform === 'darwin' ? 'open ' : '') + this._file;
+                                child = childProcess.spawn(spawnCommand, [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
                                 });
@@ -249,7 +250,7 @@ var LaunchHandle = (function () {
                                 child.unref();
                                 return _context2.abrupt("return", new LaunchInstanceHandle(pid, pollInterval));
 
-                            case 27:
+                            case 28:
                             case "end":
                                 return _context2.stop();
                         }

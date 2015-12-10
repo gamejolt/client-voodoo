@@ -123,7 +123,8 @@ export class LaunchHandle
 			}
 		}
 
-		let child = childProcess.spawn( this._file, [], {
+		let spawnCommand = ( process.platform === 'darwin' ? 'open ' : '' ) + this._file;
+		let child = childProcess.spawn( spawnCommand, [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
