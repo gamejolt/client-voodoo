@@ -63,30 +63,22 @@ var PidFinder = (function () {
     }, {
         key: "findWindows",
         value: function findWindows(pid) {
-            return new _promise2.default(function (resolve) {
-                // Need spawn because for some odd reason sometimes you cant use tasklist directly..
-                var cmd = childProcess.spawn('cmd');
-                var out = '';
-                cmd.stdout.on('data', function (data) {
-                    out += data.toString();
+            return new _promise2.default(function (resolve, reject) {
+                var cmd = childProcess.exec('tasklist.exe /FI:"PID eq ' + pid.toString() + '" /FO:CSV', function (err, stdout, stderr) {
+                    if (err) {
+                        return reject(err);
+                    }
+                    var data = stdout.toString().split('\n').filter(function (value) {
+                        return !!value;
+                    });
+                    resolve(data.length >= 2);
                 });
-                var err = '';
-                cmd.stderr.on('data', function (data) {
-                    err += data.toString();
-                });
-                cmd.on('exit', function () {
-                    var data = out.split('\r\n');
-                    resolve(data.length >= 2 && data[0].startsWith("Image Name"));
-                });
-                cmd.stdin.write('tasklist /FI:"PID eq ' + pid.toString() + '" /FO:CSV\n');
-                cmd.stdin.end();
             });
         }
     }, {
         key: "findNonWindows",
         value: function findNonWindows(pid) {
             return new _promise2.default(function (resolve, reject) {
-                // Need spawn because for some odd reason sometimes you cant use tasklist directly..
                 var cmd = childProcess.exec('ps -p ' + pid.toString(), function (err, stdout, stderr) {
                     if (err) {
                         return reject(err);
