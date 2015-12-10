@@ -14,31 +14,17 @@ export abstract class PidFinder
 
 	static findWindows( pid: number )
 	{
-		return new Promise<boolean>( ( resolve ) =>
+		return new Promise<boolean>( ( resolve, reject ) =>
 		{
-			// Need spawn because for some odd reason sometimes you cant use tasklist directly..
-			let cmd = childProcess.spawn( 'cmd' );
-
-			let out = '';
-			cmd.stdout.on( 'data', ( data: Buffer ) =>
+			let cmd = childProcess.exec( 'tasklist.exe /FI:"PID eq ' + pid.toString() + '" /FO:CSV', ( err, stdout, stderr ) =>
 			{
-				out += data.toString();
-			} );
+				if ( err ) {
+					return reject( err );
+				}
 
-			let err = '';
-			cmd.stderr.on( 'data', ( data: Buffer ) =>
-			{
-				err += data.toString();
+				let data = stdout.toString().split( '\n' ).filter( ( value ) => { return !!value } );
+				resolve( data.length >= 2 );
 			} );
-
-			cmd.on( 'exit', () =>
-			{
-				let data = out.split( '\r\n' );
-				resolve( data.length >= 2 && data[0].startsWith( "Image Name" ) );
-			} );
-
-			cmd.stdin.write( 'tasklist /FI:"PID eq ' + pid.toString() + '" /FO:CSV\n' );
-			cmd.stdin.end();
 		} );
 	}
 
@@ -46,7 +32,6 @@ export abstract class PidFinder
 	{
 		return new Promise<boolean>( ( resolve, reject ) =>
 		{
-			// Need spawn because for some odd reason sometimes you cant use tasklist directly..
 			let cmd = childProcess.exec( 'ps -p ' + pid.toString(), ( err, stdout, stderr ) =>
 			{
 				if ( err ) {
