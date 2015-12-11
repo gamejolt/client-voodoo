@@ -41,7 +41,10 @@ export abstract class Extractor
 export class ExtractHandle
 {
 	private _promise: Promise<IExtractResult>;
+	private _resolver: Function;
+	private _rejector: Function;
 	private _readStream: Readable;
+	private _extractStream: tar.Extract;
 	private _running: boolean;
 	private _terminated: boolean;
 
@@ -82,10 +85,14 @@ export class ExtractHandle
 
 	async start(): Promise<IExtractResult>
 	{
-		if ( this._running || this._readStream ) {
-			if ( this._readStream ) {
-				this._readStream.resume();
-			}
+		console.log( 'Starting extraction' );
+		if ( this._running ) {
+			return this._promise;
+		}
+		else if ( this._readStream ) {
+			console.log( 'Resuming extraction' );
+			this._pipe();
+			this._readStream.resume();
 			return this._promise;
 		}
 
@@ -124,6 +131,8 @@ export class ExtractHandle
 		let result = await new Promise<boolean>( ( resolve, reject ) =>
 		{
 			this._readStream = fs.createReadStream( this._from );
+			this._resolver = resolve;
+			this._rejector = reject;
 
 			// If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
 			if ( !this._running ) {
@@ -131,11 +140,12 @@ export class ExtractHandle
 			}
 
 			let optionsMap = this._options.map;
-			let extractStream = tarFS.extract( this._to, _.assign( this._options, {
+			this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
 				map: ( header: tar.IEntryHeader ) =>
 				{
 					// TODO: fuggin symlinks and the likes.
 					if ( header.type === 'file' ) {
+						console.log( 'Extracting ' + header.name );
 						files.push( header.name );
 					}
 
@@ -146,18 +156,13 @@ export class ExtractHandle
 				},
 			} ) );
 
-			extractStream.on( 'finish', () => resolve( true ) );
-			extractStream.on( 'error', ( err ) => reject( err ) );
-			this._readStream.on( 'error', ( err ) => reject( err ) );
-
+			this._extractStream.on( 'finish', () => this._resolver( true ) );
+			this._extractStream.on( 'error', ( err ) => this._rejector( err ) );
 			if ( this._options.decompressStream ) {
-				this._readStream
-					.pipe( this._options.decompressStream )
-					.pipe( extractStream );
+				this._options.decompressStream.pipe( this._extractStream );
 			}
-			else {
-				this._readStream.pipe( extractStream );
-			}
+
+			this._pipe();
 		} );
 
 		if ( result && this._options.deleteSource ) {
@@ -175,8 +180,27 @@ export class ExtractHandle
 		};
 	}
 
+	private _pipe()
+	{
+		this._readStream.on( 'error', ( err ) => this._rejector( err ) );
+
+		if ( this._options.decompressStream ) {
+			this._readStream.pipe( this._options.decompressStream )
+		}
+		else {
+			this._readStream.pipe( this._extractStream );
+		}
+	}
+
+	private _unpipe()
+	{
+		this._readStream.unpipe();
+		this._readStream.removeAllListeners();
+	}
+
 	async stop( terminate?: boolean )
 	{
+		console.log( 'Extractor stopping' );
 		this._running = false;
 		if ( terminate ) {
 			this._terminated = true;
@@ -184,8 +208,11 @@ export class ExtractHandle
 			readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
 		}
 		else {
+			console.log( 'Readable stream paused, should not read more files damnit!' );
 			this._readStream.pause();
+			this._unpipe();
 		}
+		console.log( 'Extractor stopped' );
 		return true;
 	}
 }

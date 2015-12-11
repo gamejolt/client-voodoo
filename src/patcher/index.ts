@@ -121,7 +121,7 @@ export class PatchHandle
 	private async waitForStart()
 	{
 		if ( this._state !== PatchHandleState.STOPPED_DOWNLOAD && this._state !== PatchHandleState.STOPPED_PATCH ) {
-			return;
+			return this._waitForStartPromise;
 		}
 		if ( !this._waitForStartPromise ) {
 			this._waitForStartPromise = new Promise<void>( ( resolve, reject ) =>
@@ -161,19 +161,23 @@ export class PatchHandle
 					decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
 				} );
 
-				// Make sure to not remove the temp download file if we're resuming.
-				this._options.overwrite = false;
-			}
-
-			this._downloadHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
+				this._downloadHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
 				.promise
 					.then( () => this.patch() )
 					.then( () => this.onFinished() )
 					.catch( ( err ) => this.onError( err ) );
 
+				// Make sure to not remove the temp download file if we're resuming.
+				this._options.overwrite = false;
+			}
+
+			// This resumes if it already existed.
+			this._downloadHandle.start();
+
 			return true;
 		}
 		else if ( this._state === PatchHandleState.STOPPED_PATCH ) {
+			console.log( 'Resuming patching' );
 			if ( this._waitForStartPromise ) {
 				this._waitForStartResolver();
 				this._waitForStartPromise = null;
@@ -203,10 +207,13 @@ export class PatchHandle
 		else if ( this._state === PatchHandleState.PATCHING ) {
 			this._state = PatchHandleState.STOPPING_PATCH;
 
-			if ( !( await this._extractHandle.stop( terminate ) ) ) {
+			console.log( 'Stopping extraction' );
+			if ( this._extractHandle && !( await this._extractHandle.stop( terminate ) ) ) {
+				console.log( 'Failed to stop extraction' );
 				this._state = PatchHandleState.PATCHING;
 				return false;
 			}
+			console.log( 'Stopped extraction' );
 
 			this._state = PatchHandleState.STOPPED_PATCH;
 		}
@@ -307,11 +314,13 @@ export class PatchHandle
 			await fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
 		}
 
-		this._extractHandle = await this.waitForStart().then( () => Extractor.extract( this._tempFile, this._to, {
+		console.log( 'Extracting' );
+		await this.waitForStart();
+		this._extractHandle = Extractor.extract( this._tempFile, this._to, {
 			overwrite: true,
 			deleteSource: true,
 			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
-		} ) );
+		} );
 
 		let extractResult = await this._extractHandle.promise;
 		if ( !extractResult.success ) {

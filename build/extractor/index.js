@@ -110,79 +110,89 @@ var ExtractHandle = (function () {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                if (!(this._running || this._readStream)) {
-                                    _context.next = 3;
+                                console.log('Starting extraction');
+
+                                if (!this._running) {
+                                    _context.next = 5;
                                     break;
                                 }
 
-                                if (this._readStream) {
-                                    this._readStream.resume();
-                                }
                                 return _context.abrupt("return", this._promise);
 
-                            case 3:
-                                this._running = true;
-                                // If the destination already exists, make sure its valid.
-                                _context.next = 6;
-                                return fsExists(this._to);
-
-                            case 6:
-                                if (!_context.sent) {
-                                    _context.next = 20;
+                            case 5:
+                                if (!this._readStream) {
+                                    _context.next = 10;
                                     break;
                                 }
 
-                                _context.next = 9;
+                                console.log('Resuming extraction');
+                                this._pipe();
+                                this._readStream.resume();
+                                return _context.abrupt("return", this._promise);
+
+                            case 10:
+                                this._running = true;
+                                // If the destination already exists, make sure its valid.
+                                _context.next = 13;
+                                return fsExists(this._to);
+
+                            case 13:
+                                if (!_context.sent) {
+                                    _context.next = 27;
+                                    break;
+                                }
+
+                                _context.next = 16;
                                 return fsStat(this._to);
 
-                            case 9:
+                            case 16:
                                 destStat = _context.sent;
 
                                 if (destStat.isDirectory()) {
-                                    _context.next = 12;
+                                    _context.next = 19;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because its not a valid directory');
 
-                            case 12:
-                                _context.next = 14;
+                            case 19:
+                                _context.next = 21;
                                 return fsReadDir(this._to);
 
-                            case 14:
+                            case 21:
                                 filesInDest = _context.sent;
 
                                 if (!(filesInDest && filesInDest.length > 0)) {
-                                    _context.next = 18;
+                                    _context.next = 25;
                                     break;
                                 }
 
                                 if (this._options.overwrite) {
-                                    _context.next = 18;
+                                    _context.next = 25;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because it isnt empty');
 
-                            case 18:
-                                _context.next = 24;
+                            case 25:
+                                _context.next = 31;
                                 break;
 
-                            case 20:
-                                _context.next = 22;
+                            case 27:
+                                _context.next = 29;
                                 return mkdirp(this._to);
 
-                            case 22:
+                            case 29:
                                 if (_context.sent) {
-                                    _context.next = 24;
+                                    _context.next = 31;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create destination folder path');
 
-                            case 24:
+                            case 31:
                                 if (!this._terminated) {
-                                    _context.next = 26;
+                                    _context.next = 33;
                                     break;
                                 }
 
@@ -191,20 +201,23 @@ var ExtractHandle = (function () {
                                     files: []
                                 });
 
-                            case 26:
+                            case 33:
                                 files = [];
-                                _context.next = 29;
+                                _context.next = 36;
                                 return new _promise2.default(function (resolve, reject) {
                                     _this2._readStream = fs.createReadStream(_this2._from);
+                                    _this2._resolver = resolve;
+                                    _this2._rejector = reject;
                                     // If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
                                     if (!_this2._running) {
                                         _this2.stop(false);
                                     }
                                     var optionsMap = _this2._options.map;
-                                    var extractStream = tarFS.extract(_this2._to, _.assign(_this2._options, {
+                                    _this2._extractStream = tarFS.extract(_this2._to, _.assign(_this2._options, {
                                         map: function map(header) {
                                             // TODO: fuggin symlinks and the likes.
                                             if (header.type === 'file') {
+                                                console.log('Extracting ' + header.name);
                                                 files.push(header.name);
                                             }
                                             if (optionsMap) {
@@ -213,69 +226,85 @@ var ExtractHandle = (function () {
                                             return header;
                                         }
                                     }));
-                                    extractStream.on('finish', function () {
-                                        return resolve(true);
+                                    _this2._extractStream.on('finish', function () {
+                                        return _this2._resolver(true);
                                     });
-                                    extractStream.on('error', function (err) {
-                                        return reject(err);
-                                    });
-                                    _this2._readStream.on('error', function (err) {
-                                        return reject(err);
+                                    _this2._extractStream.on('error', function (err) {
+                                        return _this2._rejector(err);
                                     });
                                     if (_this2._options.decompressStream) {
-                                        _this2._readStream.pipe(_this2._options.decompressStream).pipe(extractStream);
-                                    } else {
-                                        _this2._readStream.pipe(extractStream);
+                                        _this2._options.decompressStream.pipe(_this2._extractStream);
                                     }
+                                    _this2._pipe();
                                 });
 
-                            case 29:
+                            case 36:
                                 result = _context.sent;
 
                                 if (!(result && this._options.deleteSource)) {
-                                    _context.next = 41;
+                                    _context.next = 48;
                                     break;
                                 }
 
-                                _context.next = 33;
+                                _context.next = 40;
                                 return fsUnlink(this._from);
 
-                            case 33:
+                            case 40:
                                 unlinked = _context.sent;
                                 _context.t0 = unlinked;
 
                                 if (!_context.t0) {
-                                    _context.next = 39;
+                                    _context.next = 46;
                                     break;
                                 }
 
-                                _context.next = 38;
+                                _context.next = 45;
                                 return fsExists(this._from);
 
-                            case 38:
+                            case 45:
                                 _context.t0 = _context.sent;
 
-                            case 39:
+                            case 46:
                                 if (!_context.t0) {
-                                    _context.next = 41;
+                                    _context.next = 48;
                                     break;
                                 }
 
                                 throw unlinked;
 
-                            case 41:
+                            case 48:
                                 return _context.abrupt("return", {
                                     success: result,
                                     files: files
                                 });
 
-                            case 42:
+                            case 49:
                             case "end":
                                 return _context.stop();
                         }
                     }
                 }, _callee, this);
             }));
+        }
+    }, {
+        key: "_pipe",
+        value: function _pipe() {
+            var _this3 = this;
+
+            this._readStream.on('error', function (err) {
+                return _this3._rejector(err);
+            });
+            if (this._options.decompressStream) {
+                this._readStream.pipe(this._options.decompressStream);
+            } else {
+                this._readStream.pipe(this._extractStream);
+            }
+        }
+    }, {
+        key: "_unpipe",
+        value: function _unpipe() {
+            this._readStream.unpipe();
+            this._readStream.removeAllListeners();
         }
     }, {
         key: "stop",
@@ -286,6 +315,7 @@ var ExtractHandle = (function () {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
+                                console.log('Extractor stopping');
                                 this._running = false;
                                 if (terminate) {
                                     this._terminated = true;
@@ -293,11 +323,14 @@ var ExtractHandle = (function () {
 
                                     readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
                                 } else {
+                                        console.log('Readable stream paused, should not read more files damnit!');
                                         this._readStream.pause();
+                                        this._unpipe();
                                     }
+                                console.log('Extractor stopped');
                                 return _context2.abrupt("return", true);
 
-                            case 3:
+                            case 5:
                             case "end":
                                 return _context2.stop();
                         }
