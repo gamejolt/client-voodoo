@@ -4,6 +4,10 @@ var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
+var _promise = require("babel-runtime/core-js/promise");
+
+var _promise2 = _interopRequireDefault(_promise);
+
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
@@ -11,10 +15,6 @@ var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 var _createClass2 = require("babel-runtime/helpers/createClass");
 
 var _createClass3 = _interopRequireDefault(_createClass2);
-
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -54,15 +54,7 @@ var events_1 = require('events');
 var _ = require('lodash');
 var request = require('request');
 var StreamSpeed = require('./stream-speed');
-var Bluebird = require('bluebird');
-var mkdirp = Bluebird.promisify(require('mkdirp'));
-var fsUnlink = Bluebird.promisify(fs.unlink);
-var fsExists = function fsExists(path) {
-    return new _promise2.default(function (resolve) {
-        fs.exists(path, resolve);
-    });
-};
-var fsStat = Bluebird.promisify(fs.stat);
+var common_1 = require('../common');
 
 var Downloader = (function () {
     function Downloader() {
@@ -126,7 +118,7 @@ var DownloadHandle = (function () {
                                 this._totalDownloaded = 0;
                                 _context.prev = 6;
                                 _context.next = 9;
-                                return fsExists(this._to);
+                                return common_1.default.fsExists(this._to);
 
                             case 9:
                                 if (!_context.sent) {
@@ -135,7 +127,7 @@ var DownloadHandle = (function () {
                                 }
 
                                 _context.next = 12;
-                                return fsStat(this._to);
+                                return common_1.default.fsStat(this._to);
 
                             case 12:
                                 stat = _context.sent;
@@ -154,7 +146,7 @@ var DownloadHandle = (function () {
                                 }
 
                                 _context.next = 20;
-                                return fsUnlink(this._to);
+                                return common_1.default.fsUnlink(this._to);
 
                             case 20:
                                 unlinked = _context.sent;
@@ -177,7 +169,7 @@ var DownloadHandle = (function () {
                             case 27:
                                 toDir = path.dirname(this._to);
                                 _context.next = 30;
-                                return fsExists(toDir);
+                                return common_1.default.fsExists(toDir);
 
                             case 30:
                                 if (!_context.sent) {
@@ -186,7 +178,7 @@ var DownloadHandle = (function () {
                                 }
 
                                 _context.next = 33;
-                                return fsStat(toDir);
+                                return common_1.default.fsStat(toDir);
 
                             case 33:
                                 dirStat = _context.sent;
@@ -204,7 +196,7 @@ var DownloadHandle = (function () {
 
                             case 38:
                                 _context.next = 40;
-                                return mkdirp(toDir);
+                                return common_1.default.mkdirp(toDir);
 
                             case 40:
                                 if (_context.sent) {

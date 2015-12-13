@@ -4,6 +4,10 @@ var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
+var _promise = require("babel-runtime/core-js/promise");
+
+var _promise2 = _interopRequireDefault(_promise);
+
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
@@ -11,10 +15,6 @@ var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 var _createClass2 = require("babel-runtime/helpers/createClass");
 
 var _createClass3 = _interopRequireDefault(_createClass2);
-
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -50,16 +50,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 var fs = require('fs');
 var _ = require('lodash');
 var tarFS = require('tar-fs');
-var Bluebird = require('bluebird');
-var mkdirp = Bluebird.promisify(require('mkdirp'));
-var fsUnlink = Bluebird.promisify(fs.unlink);
-var fsExists = function fsExists(path) {
-    return new _promise2.default(function (resolve) {
-        fs.exists(path, resolve);
-    });
-};
-var fsStat = Bluebird.promisify(fs.stat);
-var fsReadDir = Bluebird.promisify(fs.readdir);
+var common_1 = require('../common');
 
 var Extractor = (function () {
     function Extractor() {
@@ -110,89 +101,86 @@ var ExtractHandle = (function () {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                console.log('Starting extraction');
-
                                 if (!this._running) {
-                                    _context.next = 5;
+                                    _context.next = 4;
                                     break;
                                 }
 
                                 return _context.abrupt("return", this._promise);
 
-                            case 5:
+                            case 4:
                                 if (!this._readStream) {
-                                    _context.next = 10;
+                                    _context.next = 8;
                                     break;
                                 }
 
-                                console.log('Resuming extraction');
                                 this._pipe();
                                 this._readStream.resume();
                                 return _context.abrupt("return", this._promise);
 
-                            case 10:
+                            case 8:
                                 this._running = true;
                                 // If the destination already exists, make sure its valid.
-                                _context.next = 13;
-                                return fsExists(this._to);
+                                _context.next = 11;
+                                return common_1.default.fsExists(this._to);
 
-                            case 13:
+                            case 11:
                                 if (!_context.sent) {
-                                    _context.next = 27;
+                                    _context.next = 25;
                                     break;
                                 }
 
-                                _context.next = 16;
-                                return fsStat(this._to);
+                                _context.next = 14;
+                                return common_1.default.fsStat(this._to);
 
-                            case 16:
+                            case 14:
                                 destStat = _context.sent;
 
                                 if (destStat.isDirectory()) {
-                                    _context.next = 19;
+                                    _context.next = 17;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because its not a valid directory');
 
-                            case 19:
-                                _context.next = 21;
-                                return fsReadDir(this._to);
+                            case 17:
+                                _context.next = 19;
+                                return common_1.default.fsReadDir(this._to);
 
-                            case 21:
+                            case 19:
                                 filesInDest = _context.sent;
 
                                 if (!(filesInDest && filesInDest.length > 0)) {
-                                    _context.next = 25;
+                                    _context.next = 23;
                                     break;
                                 }
 
                                 if (this._options.overwrite) {
-                                    _context.next = 25;
+                                    _context.next = 23;
                                     break;
                                 }
 
                                 throw new Error('Can\'t extract to destination because it isnt empty');
 
-                            case 25:
-                                _context.next = 31;
+                            case 23:
+                                _context.next = 29;
                                 break;
 
-                            case 27:
-                                _context.next = 29;
-                                return mkdirp(this._to);
+                            case 25:
+                                _context.next = 27;
+                                return common_1.default.mkdirp(this._to);
 
-                            case 29:
+                            case 27:
                                 if (_context.sent) {
-                                    _context.next = 31;
+                                    _context.next = 29;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create destination folder path');
 
-                            case 31:
+                            case 29:
                                 if (!this._terminated) {
-                                    _context.next = 33;
+                                    _context.next = 31;
                                     break;
                                 }
 
@@ -201,9 +189,9 @@ var ExtractHandle = (function () {
                                     files: []
                                 });
 
-                            case 33:
+                            case 31:
                                 files = [];
-                                _context.next = 36;
+                                _context.next = 34;
                                 return new _promise2.default(function (resolve, reject) {
                                     _this2._readStream = fs.createReadStream(_this2._from);
                                     _this2._resolver = resolve;
@@ -217,7 +205,6 @@ var ExtractHandle = (function () {
                                         map: function map(header) {
                                             // TODO: fuggin symlinks and the likes.
                                             if (header.type === 'file') {
-                                                console.log('Extracting ' + header.name);
                                                 files.push(header.name);
                                             }
                                             if (optionsMap) {
@@ -238,47 +225,47 @@ var ExtractHandle = (function () {
                                     _this2._pipe();
                                 });
 
-                            case 36:
+                            case 34:
                                 result = _context.sent;
 
                                 if (!(result && this._options.deleteSource)) {
-                                    _context.next = 48;
+                                    _context.next = 46;
                                     break;
                                 }
 
-                                _context.next = 40;
-                                return fsUnlink(this._from);
+                                _context.next = 38;
+                                return common_1.default.fsUnlink(this._from);
 
-                            case 40:
+                            case 38:
                                 unlinked = _context.sent;
                                 _context.t0 = unlinked;
 
+                                if (!_context.t0) {
+                                    _context.next = 44;
+                                    break;
+                                }
+
+                                _context.next = 43;
+                                return common_1.default.fsExists(this._from);
+
+                            case 43:
+                                _context.t0 = _context.sent;
+
+                            case 44:
                                 if (!_context.t0) {
                                     _context.next = 46;
                                     break;
                                 }
 
-                                _context.next = 45;
-                                return fsExists(this._from);
-
-                            case 45:
-                                _context.t0 = _context.sent;
-
-                            case 46:
-                                if (!_context.t0) {
-                                    _context.next = 48;
-                                    break;
-                                }
-
                                 throw unlinked;
 
-                            case 48:
+                            case 46:
                                 return _context.abrupt("return", {
                                     success: result,
                                     files: files
                                 });
 
-                            case 49:
+                            case 47:
                             case "end":
                                 return _context.stop();
                         }
@@ -315,7 +302,6 @@ var ExtractHandle = (function () {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
-                                console.log('Extractor stopping');
                                 this._running = false;
                                 if (terminate) {
                                     this._terminated = true;
@@ -323,14 +309,12 @@ var ExtractHandle = (function () {
 
                                     readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
                                 } else {
-                                        console.log('Readable stream paused, should not read more files damnit!');
                                         this._readStream.pause();
                                         this._unpipe();
                                     }
-                                console.log('Extractor stopped');
                                 return _context2.abrupt("return", true);
 
-                            case 5:
+                            case 3:
                             case "end":
                                 return _context2.stop();
                         }

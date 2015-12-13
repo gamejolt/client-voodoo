@@ -4,19 +4,9 @@ import { EventEmitter } from 'events';
 import * as childProcess from 'child_process';
 import * as os from 'os';
 import * as _ from 'lodash';
-
+import Common from '../common';
 import { PidFinder } from './pid-finder';
-
-let Bluebird = require( 'bluebird' );
-let fsExists = function( path: string ): Promise<boolean>
-{
-	return new Promise<boolean>( function( resolve )
-	{
-		fs.exists( path, resolve );
-	} );
-}
-let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
-let fsChmod:( path: string, mode: string | number ) => Promise<void> = Bluebird.promisify( fs.chmod );
+let plist = require( 'plist' );
 
 export interface ILaunchOptions
 {
@@ -83,6 +73,29 @@ export class LaunchHandle
 		return result;
 	}
 
+	private async ensureExecutable( file: string, stat?: fs.Stats )
+	{
+		if ( !stat ) {
+			stat = await Common.fsStat( file );
+		}
+		// Make sure the file is executable
+		let mode = stat.mode;
+		if ( !mode ) {
+			throw new Error( 'Can\'t determine if the file is executable by the current user.' );
+		}
+
+		let uid = stat.uid;
+		let gid = stat.gid;
+
+		if ( !( mode & parseInt( '0001', 8 ) ) &&
+				!( mode & parseInt( '0010', 8 ) ) && process.getgid && gid === process.getgid() &&
+				!( mode & parseInt( '0100', 8 ) ) && process.getuid && uid === process.getuid() ) {
+
+			// Ensure that the main launcher file is executable.
+			await Common.chmod( file, '0777' );
+		}
+	}
+
 	private async start( pollInterval: number )
 	{
 		let launchOption = this.findLaunchOption();
@@ -94,43 +107,123 @@ export class LaunchHandle
 		this._file = path.join( this._build.install_dir, executablePath );
 
 		// If the destination already exists, make sure its valid.
-		if ( !(await fsExists( this._file ) ) ) {
+		if ( !(await Common.fsExists( this._file ) ) ) {
 			throw new Error( 'Can\'t launch because the file doesn\'t exist.' );
 		}
 
-		// Make sure the destination is a file.
-		let stat = await fsStat( this._file );
+		// Make sure the destination is a file
+		// On mac it can be a folder as long as its a bundle..
+		let stat = await Common.fsStat( this._file );
+
+		switch ( process.platform ) {
+			case 'win32':
+				return this.startWindows( stat, pollInterval );
+
+			case 'linux':
+				return this.startLinux( stat, pollInterval );
+
+			case 'darwin':
+				return this.startMac( stat, pollInterval );
+
+			default:
+				throw new Error( 'What potato are you running on? Detected platform: ' + process.platform );
+		}
+	}
+
+	private async startWindows( stat: fs.Stats, pollInterval: number )
+	{
 		if ( !stat.isFile() ) {
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		// Make sure the file is executable
-		if ( process.platform !== 'win32' ) { // We dont care about windows. Everything's executable. Have a good day virus makers.
-			let mode = stat.mode;
-			if ( !mode ) {
-				throw new Error( 'Can\'t determine if the file is executable by the current user.' );
-			}
-
-			let uid = stat.uid;
-			let gid = stat.gid;
-
-			if ( !( mode & parseInt( '0001', 8 ) ) &&
-					!( mode & parseInt( '0010', 8 ) ) && process.getgid && gid === process.getgid() &&
-					!( mode & parseInt( '0100', 8 ) ) && process.getuid && uid === process.getuid() ) {
-
-				// Ensure that the main launcher file is executable.
-				await fsChmod( this._file, '0777' );
-			}
-		}
-
-		let spawnCommand = ( process.platform === 'darwin' ? 'open ' : '' ) + this._file;
-		let child = childProcess.spawn( spawnCommand, [], {
+		let child = childProcess.spawn( this._file, [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
 
 		let pid = child.pid;
 		child.unref();
+
+		return new LaunchInstanceHandle( pid, pollInterval );
+	}
+
+	private async startLinux( stat: fs.Stats, pollInterval: number )
+	{
+		if ( !stat.isFile() ) {
+			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
+		}
+
+		await this.ensureExecutable( this._file, stat );
+
+		let child = childProcess.spawn( this._file, [], {
+			cwd: path.dirname( this._file ),
+			detached: true,
+		} );
+
+		let pid = child.pid;
+		child.unref();
+
+		return new LaunchInstanceHandle( pid, pollInterval );
+	}
+
+	private async startMac( stat: fs.Stats, pollInterval: number )
+	{
+		let pid;
+		if ( stat.isFile() ) {
+
+			await this.ensureExecutable( this._file, stat );
+
+			let child = childProcess.spawn( this._file, [], {
+				cwd: path.dirname( this._file ),
+				detached: true,
+			} );
+
+			pid = child.pid;
+			child.unref();
+		}
+		else {
+			if ( !this._file.toLowerCase().endsWith( '.app' ) ) {
+				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Expecting .app folder' );
+			}
+
+			let plistPath = path.join( this._file, 'Contents', 'Info.plist' );
+			if ( !( await Common.fsExists( plistPath ) ) ) {
+				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.' );
+			}
+
+			let plistStat = await Common.fsStat( plistPath );
+			if ( !plistStat.isFile() ) {
+				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.' );
+			}
+
+			let parsedPlist = plist( await Common.fsReadFile( plistPath, 'utf8' ) );
+			if ( !parsedPlist ) {
+				throw new Error( 'That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.' );
+			}
+
+			let macosPath = path.join( this._file, 'Contents', 'MacOS' );
+			if ( !( await Common.fsExists( macosPath ) ) ) {
+				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.' );
+			}
+
+			let macosStat = await Common.fsStat( macosPath );
+			if ( !macosStat.isDirectory() ) {
+				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. MacOS isn\'t a valid directory.' );
+			}
+
+			let baseName = path.basename( this._file );
+			let executableName = parsedPlist.CFBundleExecutable || baseName.substr( 0, baseName.length - '.app'.length );
+
+			await this.ensureExecutable( path.join( macosPath, executableName ) );
+
+			let child = childProcess.spawn( 'open ' + this._file, [], {
+				cwd: path.dirname( this._file ),
+				detached: true,
+			} );
+
+			pid = child.pid;
+			child.unref();
+		}
 
 		return new LaunchInstanceHandle( pid, pollInterval );
 	}

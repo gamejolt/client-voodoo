@@ -343,16 +343,15 @@ describe('Patcher', function () {
                                                                         return patchHandle.stop();
 
                                                                     case 4:
-                                                                        console.log('Paused');
-                                                                        _context8.next = 7;
+                                                                        _context8.next = 6;
                                                                         return wait(5000);
 
-                                                                    case 7:
+                                                                    case 6:
                                                                         console.log('Resuming...');
-                                                                        _context8.next = 10;
+                                                                        _context8.next = 9;
                                                                         return patchHandle.start();
 
-                                                                    case 10:
+                                                                    case 9:
                                                                     case "end":
                                                                         return _context8.stop();
                                                                 }
@@ -434,15 +433,14 @@ describe('Patcher', function () {
                                                                         return patchHandle.stop();
 
                                                                     case 6:
-                                                                        console.log('Paused');
-                                                                        _context11.next = 9;
+                                                                        _context11.next = 8;
                                                                         return wait(5000);
 
-                                                                    case 9:
+                                                                    case 8:
                                                                         console.log('Resuming...');
                                                                         /* await */patchHandle.start(); // Dont await here before that makes you wait for the whole extraction to finish.
 
-                                                                    case 11:
+                                                                    case 10:
                                                                     case "end":
                                                                         return _context11.stop();
                                                                 }

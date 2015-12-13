@@ -8,22 +8,7 @@ import { EventEmitter } from 'events';
 import * as StreamSpeed from '../downloader/stream-speed';
 import { Downloader, DownloadHandle, IDownloadProgress } from '../downloader';
 import { Extractor, ExtractHandle } from '../extractor';
-
-let Bluebird = require( 'bluebird' );
-let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
-let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
-let fsExists = function( path: string ): Promise<boolean>
-{
-	return new Promise<boolean>( function( resolve )
-	{
-		fs.exists( path, resolve );
-	} );
-}
-let fsReadFile: ( path: string, encoding?: string ) => Promise<string> = Bluebird.promisify( fs.readFile );
-let fsWriteFile: ( path: string, data: string ) => Promise<string> = Bluebird.promisify( fs.writeFile );
-let fsStat: ( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
-let fsReadDir: ( path: string ) => Promise<string[]> = Bluebird.promisify( fs.readdir );
-let fsReadDirRecursively: ( path: string ) => Promise<string[]> = Bluebird.promisify( require( 'recursive-readdir' ) );
+import Common from '../common';
 
 export interface IPatcherOptions
 {
@@ -177,7 +162,6 @@ export class PatchHandle
 			return true;
 		}
 		else if ( this._state === PatchHandleState.STOPPED_PATCH ) {
-			console.log( 'Resuming patching' );
 			if ( this._waitForStartPromise ) {
 				this._waitForStartResolver();
 				this._waitForStartPromise = null;
@@ -207,13 +191,10 @@ export class PatchHandle
 		else if ( this._state === PatchHandleState.PATCHING ) {
 			this._state = PatchHandleState.STOPPING_PATCH;
 
-			console.log( 'Stopping extraction' );
 			if ( this._extractHandle && !( await this._extractHandle.stop( terminate ) ) ) {
-				console.log( 'Failed to stop extraction' );
 				this._state = PatchHandleState.PATCHING;
 				return false;
 			}
-			console.log( 'Stopped extraction' );
 
 			this._state = PatchHandleState.STOPPED_PATCH;
 		}
@@ -253,7 +234,7 @@ export class PatchHandle
 		let createdByOldBuild: string[];
 
 		// TODO: check if ./ is valid on windows platforms as well.
-		let currentFiles = ( await fsReadDirRecursively( this._to ) )
+		let currentFiles = ( await Common.fsReadDirRecursively( this._to ) )
 			.filter( ( file ) =>
 			{
 				return !path.basename( file ).startsWith( '.gj-' );
@@ -264,23 +245,23 @@ export class PatchHandle
 			} );
 
 		// If the patch file already exists, make sure its valid.
-		if ( await fsExists( this._patchListFile ) ) {
+		if ( await Common.fsExists( this._patchListFile ) ) {
 
 			// Make sure the destination is a file.
-			let stat = await fsStat( this._patchListFile );
+			let stat = await Common.fsStat( this._patchListFile );
 			if ( !stat.isFile() ) {
 				throw new Error( 'Can\'t patch because the patch file isn\'t a file.' );
 			}
 
-			createdByOldBuild = ( await fsReadFile( this._patchListFile, 'utf8' ) ).split( "\n" );
+			createdByOldBuild = ( await Common.fsReadFile( this._patchListFile, 'utf8' ) ).split( "\n" );
 		}
 		else {
 
 			// If the destination already exists, make sure its valid.
-			if ( await fsExists( this._archiveListFile ) ) {
+			if ( await Common.fsExists( this._archiveListFile ) ) {
 
 				// Make sure the destination is a file.
-				let stat = await fsStat( this._archiveListFile );
+				let stat = await Common.fsStat( this._archiveListFile );
 				if ( !stat.isFile() ) {
 					throw new Error( 'Can\'t patch because the archive file list isn\'t a file.' );
 				}
@@ -288,33 +269,32 @@ export class PatchHandle
 			// Otherwise, we validate the folder path.
 			else {
 				let archiveListFileDir = path.dirname( this._archiveListFile );
-				if ( await fsExists( archiveListFileDir ) ) {
-					let dirStat = await fsStat( archiveListFileDir );
+				if ( await Common.fsExists( archiveListFileDir ) ) {
+					let dirStat = await Common.fsStat( archiveListFileDir );
 					if ( !dirStat.isDirectory() ) {
 						throw new Error( 'Can\'t patch because the path to the archive file list is invalid.' );
 					}
 				}
 				// Create the folder path.
-				else if ( !( await mkdirp( archiveListFileDir ) ) ) {
+				else if ( !( await Common.mkdirp( archiveListFileDir ) ) ) {
 					throw new Error( 'Couldn\'t create the patch archive file list folder path' );
 				}
 			}
 
 			let oldBuildFiles;
-			if ( !( await fsExists( this._archiveListFile ) ) ) {
+			if ( !( await Common.fsExists( this._archiveListFile ) ) ) {
 				oldBuildFiles = currentFiles;
 			}
 			else {
-				oldBuildFiles = ( await fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
+				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
 			}
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
 			let createdByOldBuild = _.difference( currentFiles, oldBuildFiles );
 
-			await fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
+			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
 		}
 
-		console.log( 'Extracting' );
 		await this.waitForStart();
 		this._extractHandle = Extractor.extract( this._tempFile, this._to, {
 			overwrite: true,
@@ -336,7 +316,7 @@ export class PatchHandle
 		// TODO: use del lib
 		let unlinks = await Promise.all( filesToRemove.map( ( file ) =>
 		{
-			return fsUnlink( path.resolve( this._to, file ) ).then( function( err )
+			return Common.fsUnlink( path.resolve( this._to, file ) ).then( function( err )
 			{
 				if ( err ) {
 					throw err;
@@ -345,7 +325,7 @@ export class PatchHandle
 			} );
 		} ) );
 
-		await fsWriteFile( this._archiveListFile, newBuildFiles.join( "\n" ) );
+		await Common.fsWriteFile( this._archiveListFile, newBuildFiles.join( "\n" ) );
 		return true;
 	}
 

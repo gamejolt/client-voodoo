@@ -8,18 +8,7 @@ import * as _ from 'lodash';
 import { Transform } from 'stream';
 import * as request from 'request';
 import * as StreamSpeed from './stream-speed';
-
-let Bluebird = require( 'bluebird' );
-let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
-let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
-let fsExists = function( path: string ): Promise<boolean>
-{
-	return new Promise<boolean>( function( resolve )
-	{
-		fs.exists( path, resolve );
-	} );
-}
-let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
+import Common from '../common';
 
 export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
 {
@@ -131,15 +120,15 @@ export class DownloadHandle
 		try {
 
 			// If the actual file already exists, we resume download.
-			if ( await fsExists( this._to ) ) {
+			if ( await Common.fsExists( this._to ) ) {
 
 				// Make sure the destination is a file.
-				let stat = await fsStat( this._to );
+				let stat = await Common.fsStat( this._to );
 				if ( !stat.isFile() ) {
 					throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
 				}
 				else if ( this._options.overwrite ) {
-					let unlinked = await fsUnlink( this._to );
+					let unlinked = await Common.fsUnlink( this._to );
 					if ( unlinked ) {
 						throw new Error( 'Can\'t download because destination cannot be overwritten.' );
 					}
@@ -150,14 +139,14 @@ export class DownloadHandle
 			// Otherwise, we validate the folder path.
 			else {
 				let toDir = path.dirname( this._to );
-				if ( await fsExists( toDir ) ) {
-					let dirStat = await fsStat( toDir );
+				if ( await Common.fsExists( toDir ) ) {
+					let dirStat = await Common.fsStat( toDir );
 					if ( !dirStat.isDirectory() ) {
 						throw new Error( 'Can\'t download to destination because the path is invalid.' );
 					}
 				}
 				// Create the folder path.
-				else if ( !( await mkdirp( toDir ) ) ) {
+				else if ( !( await Common.mkdirp( toDir ) ) ) {
 					throw new Error( 'Couldn\'t create the destination folder path' );
 				}
 			}

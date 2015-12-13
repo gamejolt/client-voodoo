@@ -194,7 +194,6 @@ describe( 'Patcher', function()
 					console.log( 'Patching...' );
 					console.log( 'Pausing...' );
 					await patchHandle.stop();
-					console.log( 'Paused' );
 					await wait( 5000 );
 					console.log( 'Resuming...' );
 					await patchHandle.start();
@@ -233,7 +232,6 @@ describe( 'Patcher', function()
 					await wait( 3000 ); // Might fail if the extraction finishes really fast. HMMM.
 					console.log( 'Pausing...' );
 					await patchHandle.stop();
-					console.log( 'Paused' );
 					await wait( 5000 );
 					console.log( 'Resuming...' );
 					/* await */ patchHandle.start(); // Dont await here before that makes you wait for the whole extraction to finish.

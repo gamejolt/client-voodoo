@@ -3,19 +3,7 @@ import * as _ from 'lodash';
 import * as tar from 'tar-stream';
 import * as tarFS from 'tar-fs';
 import { Readable, Transform } from 'stream';
-
-let Bluebird = require( 'bluebird' );
-let mkdirp:( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
-let fsUnlink:( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
-let fsExists = function( path: string ): Promise<boolean>
-{
-	return new Promise<boolean>( function( resolve )
-	{
-		fs.exists( path, resolve );
-	} );
-}
-let fsStat:( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
-let fsReadDir: ( path: string ) => Promise<string[]> = Bluebird.promisify( fs.readdir );
+import Common from '../common';
 
 export interface IExtractOptions extends tarFS.IExtractOptions
 {
@@ -85,12 +73,10 @@ export class ExtractHandle
 
 	async start(): Promise<IExtractResult>
 	{
-		console.log( 'Starting extraction' );
 		if ( this._running ) {
 			return this._promise;
 		}
 		else if ( this._readStream ) {
-			console.log( 'Resuming extraction' );
 			this._pipe();
 			this._readStream.resume();
 			return this._promise;
@@ -99,14 +85,14 @@ export class ExtractHandle
 		this._running = true;
 
 		// If the destination already exists, make sure its valid.
-		if ( await fsExists( this._to ) ) {
-			let destStat = await fsStat( this._to );
+		if ( await Common.fsExists( this._to ) ) {
+			let destStat = await Common.fsStat( this._to );
 			if ( !destStat.isDirectory() ) {
 				throw new Error( 'Can\'t extract to destination because its not a valid directory' );
 			}
 
 			// Don't extract to a non-empty directory.
-			let filesInDest = await fsReadDir( this._to );
+			let filesInDest = await Common.fsReadDir( this._to );
 			if ( filesInDest && filesInDest.length > 0 ) {
 
 				// Allow extracting to a non empty directory only if the overwrite option is set.
@@ -116,7 +102,7 @@ export class ExtractHandle
 			}
 		}
 		// Create the folder path to extract to.
-		else if ( !( await mkdirp( this._to ) ) ) {
+		else if ( !( await Common.mkdirp( this._to ) ) ) {
 			throw new Error( 'Couldn\'t create destination folder path' );
 		}
 
@@ -145,7 +131,6 @@ export class ExtractHandle
 				{
 					// TODO: fuggin symlinks and the likes.
 					if ( header.type === 'file' ) {
-						console.log( 'Extracting ' + header.name );
 						files.push( header.name );
 					}
 
@@ -168,8 +153,8 @@ export class ExtractHandle
 		if ( result && this._options.deleteSource ) {
 
 			// Remove the source file, but throw only if there was an error and the file still exists.
-			let unlinked = await fsUnlink( this._from );
-			if ( unlinked && ( await fsExists( this._from ) ) ) {
+			let unlinked = await Common.fsUnlink( this._from );
+			if ( unlinked && ( await Common.fsExists( this._from ) ) ) {
 				throw unlinked;
 			}
 		}
@@ -200,7 +185,6 @@ export class ExtractHandle
 
 	async stop( terminate?: boolean )
 	{
-		console.log( 'Extractor stopping' );
 		this._running = false;
 		if ( terminate ) {
 			this._terminated = true;
@@ -208,11 +192,9 @@ export class ExtractHandle
 			readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
 		}
 		else {
-			console.log( 'Readable stream paused, should not read more files damnit!' );
 			this._readStream.pause();
 			this._unpipe();
 		}
-		console.log( 'Extractor stopped' );
 		return true;
 	}
 }
