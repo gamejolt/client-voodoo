@@ -5,12 +5,12 @@ import { Patcher } from '../patcher';
 import { Launcher } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
 import path = require( 'path' );
+import * as del from 'del';
 
 describe( 'Launcher', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	let executableFile = path.join( 'test-files', 'games', 'game-test-1', 'build-1', 'game', 'Bug_Bash.exe' );
 
 	before( function( done )
 	{
@@ -31,6 +31,11 @@ describe( 'Launcher', function()
 
 		app = null;
 		server = null;
+	} );
+
+	beforeEach( () =>
+	{
+		return del( 'test-files/!(.gj-*)' );
 	} );
 
 	it( 'Should work', async ( done ) =>

@@ -3,6 +3,7 @@ import http = require( 'http' );
 import { Downloader } from './index';
 import path = require( 'path' );
 import { SampleUnit } from './stream-speed';
+import * as del from 'del';
 
 let gzip = require( 'gunzip-maybe' );
 let xz = require( 'lzma-native' ).createDecompressor;
@@ -32,6 +33,11 @@ describe( 'Downloader', function()
 
 		app = null;
 		server = null;
+	} );
+
+	beforeEach( () =>
+	{
+		return del( 'test-files/!(.gj-*)' );
 	} );
 
 	it( 'Should download a resumable file', async () =>

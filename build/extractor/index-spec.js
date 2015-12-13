@@ -44,8 +44,11 @@ var downloader_1 = require('../downloader');
 var index_1 = require('./index');
 var stream_speed_1 = require('../downloader/stream-speed');
 var path = require('path');
+var del = require('del');
 var gzip = require('gunzip-maybe');
-var xz = require('lzma-native').createDecompressor;
+var xz = require('lzma-native').createDecompressor.bind(undefined, {
+    synchronous: true
+});
 describe('Extractor', function () {
     var _this = this;
 
@@ -65,6 +68,9 @@ describe('Extractor', function () {
         });
         app = null;
         server = null;
+    });
+    beforeEach(function () {
+        return del('test-files/!(.gj-*)');
     });
     it('Should work with tar.gz files', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
@@ -139,17 +145,7 @@ describe('Extractor', function () {
                 while (1) {
                     switch (_context3.prev = _context3.next) {
                         case 0:
-                            // let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
-                            // 	overwrite: true,
-                            // 	decompressStream: xz(),
-                            // } );
-                            // handle.onProgress( SampleUnit.KBps, function( data )
-                            // {
-                            // 	console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-                            // 	console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-                            // } );
-                            // await handle.promise;
-                            extractionHandle = index_1.Extractor.extract('test-files/Downloads.tar', path.join('test-files', 'extracted', path.basename('test')), {
+                            extractionHandle = index_1.Extractor.extract('test-files/.gj-bigTempDownload.tar', path.join('test-files', 'extracted', path.basename('test')), {
                                 deleteSource: false,
                                 overwrite: true
                             });

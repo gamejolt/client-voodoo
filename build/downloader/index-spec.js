@@ -43,6 +43,7 @@ var express = require('express');
 var index_1 = require('./index');
 var path = require('path');
 var stream_speed_1 = require('./stream-speed');
+var del = require('del');
 var gzip = require('gunzip-maybe');
 var xz = require('lzma-native').createDecompressor;
 describe('Downloader', function () {
@@ -64,6 +65,9 @@ describe('Downloader', function () {
         });
         app = null;
         server = null;
+    });
+    beforeEach(function () {
+        return del('test-files/!(.gj-*)');
     });
     it('Should download a resumable file', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {

@@ -43,6 +43,8 @@ var express = require('express');
 var stream_speed_1 = require('../downloader/stream-speed');
 var index_1 = require('./index');
 var path = require('path');
+var common_1 = require('../common');
+var del = require('del');
 describe('Patcher', function () {
     var _this = this;
 
@@ -101,6 +103,9 @@ describe('Patcher', function () {
         });
         app = null;
         server = null;
+    });
+    beforeEach(function () {
+        return del('test-files/!(.gj-*)');
     });
     it('Should work', function () {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
@@ -321,6 +326,15 @@ describe('Patcher', function () {
                                     while (1) {
                                         switch (_context9.prev = _context9.next) {
                                             case 0:
+                                                console.log('Preparing...');
+                                                _context9.next = 3;
+                                                return common_1.default.mkdirp(build.install_dir);
+
+                                            case 3:
+                                                _context9.next = 5;
+                                                return common_1.default.fsCopy(path.join('test-files', '.gj-bigTempDownload.tar.xz'), path.join(build.install_dir, '.gj-tempDownload'));
+
+                                            case 5:
                                                 patchHandle = index_1.Patcher.patch('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
                                                     overwrite: false,
                                                     decompressInDownload: false
@@ -359,13 +373,13 @@ describe('Patcher', function () {
                                                         }, _callee8, this);
                                                     }));
                                                 }).start('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz');
-                                                _context9.next = 4;
+                                                _context9.next = 9;
                                                 return patchHandle.promise;
 
-                                            case 4:
+                                            case 9:
                                                 done();
 
-                                            case 5:
+                                            case 10:
                                             case "end":
                                                 return _context9.stop();
                                         }
@@ -406,6 +420,15 @@ describe('Patcher', function () {
                                     while (1) {
                                         switch (_context12.prev = _context12.next) {
                                             case 0:
+                                                console.log('Preparing...');
+                                                _context12.next = 3;
+                                                return common_1.default.mkdirp(build.install_dir);
+
+                                            case 3:
+                                                _context12.next = 5;
+                                                return common_1.default.fsCopy(path.join('test-files', '.gj-bigTempDownload.tar.xz'), path.join(build.install_dir, '.gj-tempDownload'));
+
+                                            case 5:
                                                 patchHandle = index_1.Patcher.patch('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
                                                     overwrite: false,
                                                     decompressInDownload: false
@@ -424,7 +447,7 @@ describe('Patcher', function () {
                                                                     case 0:
                                                                         console.log('Patching...');
                                                                         _context11.next = 3;
-                                                                        return wait(3000);
+                                                                        return wait(1000);
 
                                                                     case 3:
                                                                         // Might fail if the extraction finishes really fast. HMMM.
@@ -448,13 +471,13 @@ describe('Patcher', function () {
                                                         }, _callee11, this);
                                                     }));
                                                 }).start('https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz');
-                                                _context12.next = 4;
+                                                _context12.next = 9;
                                                 return patchHandle.promise;
 
-                                            case 4:
+                                            case 9:
                                                 done();
 
-                                            case 5:
+                                            case 10:
                                             case "end":
                                                 return _context12.stop();
                                         }

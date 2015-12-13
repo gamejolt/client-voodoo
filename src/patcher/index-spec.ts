@@ -4,6 +4,8 @@ import { Downloader } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
 import { Patcher } from './index';
 import path = require( 'path' );
+import Common from '../common';
+import * as del from 'del';
 
 describe( 'Patcher', function()
 {
@@ -44,6 +46,7 @@ describe( 'Patcher', function()
 		modified_on: 1,
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 	}
+
 	let wait = function( millis: number )
 	{
 		return new Promise<void>( ( resolve ) => setTimeout( resolve, millis ) );
@@ -68,6 +71,11 @@ describe( 'Patcher', function()
 
 		app = null;
 		server = null;
+	} );
+
+	beforeEach( () =>
+	{
+		return del( 'test-files/!(.gj-*)' );
 	} );
 
 	it( 'Should work', async () =>
@@ -174,6 +182,10 @@ describe( 'Patcher', function()
 	it( 'Should be resumable after pausing right after downloading', async ( done ) =>
 	{
 		try {
+			console.log( 'Preparing...' );
+			await Common.mkdirp( build.install_dir );
+			await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build.install_dir, '.gj-tempDownload' ) );
+
 			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
 				overwrite: false, // false because im tricking patcher into thinking it already downloaded a hugeass file.
 				decompressInDownload: false,
@@ -211,6 +223,10 @@ describe( 'Patcher', function()
 	it( 'Should be resumable after pausing in the middle of extracting', async ( done ) =>
 	{
 		try {
+			console.log( 'Preparing...' );
+			await Common.mkdirp( build.install_dir );
+			await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build.install_dir, '.gj-tempDownload' ) );
+
 			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
 				overwrite: false, // false because im tricking patcher into thinking it already downloaded a hugeass file.
 				decompressInDownload: false,
@@ -229,7 +245,7 @@ describe( 'Patcher', function()
 				.onPatching( async function()
 				{
 					console.log( 'Patching...' );
-					await wait( 3000 ); // Might fail if the extraction finishes really fast. HMMM.
+					await wait( 1000 ); // Might fail if the extraction finishes really fast. HMMM.
 					console.log( 'Pausing...' );
 					await patchHandle.stop();
 					await wait( 5000 );

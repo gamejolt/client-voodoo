@@ -44,12 +44,12 @@ var patcher_1 = require('../patcher');
 var index_1 = require('./index');
 var stream_speed_1 = require('../downloader/stream-speed');
 var path = require('path');
+var del = require('del');
 describe('Launcher', function () {
     var _this = this;
 
     var app = undefined;
     var server = undefined;
-    var executableFile = path.join('test-files', 'games', 'game-test-1', 'build-1', 'game', 'Bug_Bash.exe');
     before(function (done) {
         app = express();
         app.use(express.static('../../test-files'));
@@ -63,6 +63,9 @@ describe('Launcher', function () {
         });
         app = null;
         server = null;
+    });
+    beforeEach(function () {
+        return del('test-files/!(.gj-*)');
     });
     it('Should work', function (done) {
         return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {

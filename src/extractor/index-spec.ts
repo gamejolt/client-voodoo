@@ -4,9 +4,12 @@ import { Downloader } from '../downloader';
 import { Extractor } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
 import path = require( 'path' );
+import * as del from 'del';
 
 let gzip = require( 'gunzip-maybe' );
-let xz = require( 'lzma-native' ).createDecompressor;
+let xz:Function = require( 'lzma-native' ).createDecompressor.bind( this, {
+	synchronous:  true,
+} );
 
 describe( 'Extractor', function()
 {
@@ -33,6 +36,11 @@ describe( 'Extractor', function()
 
 		app = null;
 		server = null;
+	} );
+
+	beforeEach( () =>
+	{
+		return del( 'test-files/!(.gj-*)' );
 	} );
 
 	it( 'Should work with tar.gz files', async () =>
@@ -79,20 +87,7 @@ describe( 'Extractor', function()
 
 	it( 'Should allow resumable extraction', async ( done ) =>
 	{
-		// let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
-		// 	overwrite: true,
-		// 	decompressStream: xz(),
-		// } );
-
-		// handle.onProgress( SampleUnit.KBps, function( data )
-		// {
-		// 	console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-		// 	console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-		// } );
-
-		// await handle.promise;
-
-		let extractionHandle = Extractor.extract( 'test-files/Downloads.tar', path.join( 'test-files', 'extracted', path.basename( 'test' ) ), {
+		let extractionHandle = Extractor.extract( 'test-files/.gj-bigTempDownload.tar', path.join( 'test-files', 'extracted', path.basename( 'test' ) ), {
 			deleteSource: false,
 			overwrite: true,
 		} );
