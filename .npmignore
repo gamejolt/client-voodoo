@@ -7,3 +7,4 @@
 /gulpfile.js
 /jsconfig.json
 /tsd.json
+*.js.map
