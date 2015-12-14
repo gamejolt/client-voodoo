@@ -1,6 +1,16 @@
 {
   "name": "client-voodoo",
-  "version": "0.0.0",
+  "description": "This is an almighty package for anything that has to do with managing a library of games through the Game Jolt Client.",
+  "version": "0.0.1",
+  "bugs": {
+    "url": "https://github.com/gamejolt/client-voodoo/issues"
+  },
+  "license": "MIT",
+  "author": "Game Jolt Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gamejolt/client-voodoo.git"
+  },
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter list --colors --slow 400 --timeout 300000 \"./build/**/*-spec.js\""
   },
