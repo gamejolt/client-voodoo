@@ -8,43 +8,55 @@ import { EventEmitter } from 'events';
 import * as StreamSpeed from '../downloader/stream-speed';
 import { Downloader, DownloadHandle, IDownloadProgress } from '../downloader';
 import { Extractor, ExtractHandle } from '../extractor';
+import { VoodooQueue } from '../queue';
 import Common from '../common';
 
 export interface IPatcherOptions
 {
 	overwrite?: boolean;
 	decompressInDownload?: boolean;
+	generateUrl?: Function;
 }
 
 export enum PatchHandleState
 {
 	STOPPED_DOWNLOAD,
 	STOPPING_DOWNLOAD,
+	STARTING_DOWNLOAD,
 	DOWNLOADING,
 	STOPPED_PATCH,
 	STOPPING_PATCH,
+	STARTING_PATCH,
 	PATCHING,
 	FINISHING,
 	FINISHED,
 }
 
+const DOWNLOADING_STATES = [ PatchHandleState.STOPPED_DOWNLOAD, PatchHandleState.STOPPING_DOWNLOAD, PatchHandleState.STARTING_DOWNLOAD, PatchHandleState.DOWNLOADING ];
+const PATCHING_STATES = [ PatchHandleState.STOPPED_PATCH, PatchHandleState.STOPPING_PATCH, PatchHandleState.STARTING_PATCH, PatchHandleState.PATCHING ];
+const FINISHED_STATES = [ PatchHandleState.FINISHING, PatchHandleState.FINISHED ];
+
 export abstract class Patcher
 {
 	static patch( url: string, build: GameJolt.IGameBuild, options?: IPatcherOptions ): PatchHandle
 	{
-		return new PatchHandle( url, build, options );
+		let patchHandle = new PatchHandle( url, build, options );
+		VoodooQueue.enqueue( patchHandle );
+		return patchHandle;
 	}
 }
 
 export class PatchHandle
 {
 	private _state: PatchHandleState;
+	private _wasStopped: boolean;
 	private _to: string;
 	private _tempFile: string;
 	private _archiveListFile: string;
 	private _patchListFile: string;
 	private _downloadHandle: DownloadHandle;
 	private _extractHandle: ExtractHandle;
+	private _onProgressFuncMapping: Map<Function, Function>;
 
 	private _promise: Promise<void>;
 	private _resolver: () => void;
@@ -67,6 +79,7 @@ export class PatchHandle
 		this._state = PatchHandleState.STOPPED_DOWNLOAD;
 		this._downloadHandle = null;
 		this._extractHandle = null;
+		this._onProgressFuncMapping = new Map<Function, Function>();
 		this._emitter = new EventEmitter();
 	}
 
@@ -80,6 +93,26 @@ export class PatchHandle
 			} );
 		}
 		return this._promise;
+	}
+
+	get state()
+	{
+		return this._state;
+	}
+
+	isDownloading()
+	{
+		return DOWNLOADING_STATES.indexOf( this._state ) !== -1;
+	}
+
+	isPatching()
+	{
+		return PATCHING_STATES.indexOf( this._state ) !== -1;
+	}
+
+	isFinished()
+	{
+		return FINISHED_STATES.indexOf( this._state ) !== -1;
 	}
 
 	private _getDecompressStream()
@@ -124,15 +157,10 @@ export class PatchHandle
 		this._promise = this.promise;
 
 		if ( this._state === PatchHandleState.STOPPED_DOWNLOAD ) {
+			this._state = PatchHandleState.STARTING_DOWNLOAD;
 			if ( this._waitForStartPromise ) {
 				this._waitForStartResolver();
 				this._waitForStartPromise = null;
-			}
-
-			this._state = PatchHandleState.DOWNLOADING;
-			if ( !this._emittedDownloading ) {
-				this._emitter.emit( 'downloading' );
-				this._emittedDownloading = true;
 			}
 
 			this._tempFile = path.join( this._build.install_dir, '.gj-tempDownload' );
@@ -157,11 +185,21 @@ export class PatchHandle
 			}
 
 			// This resumes if it already existed.
-			this._downloadHandle.start();
+			await this._downloadHandle.start();
+
+			this._state = PatchHandleState.DOWNLOADING;
+			if ( !this._emittedDownloading ) {
+				this._emitter.emit( 'downloading' );
+				this._emittedDownloading = true;
+			}
+			if ( this._wasStopped ) {
+				this._emitter.emit( 'resumed' );
+			}
 
 			return true;
 		}
 		else if ( this._state === PatchHandleState.STOPPED_PATCH ) {
+			this._state = PatchHandleState.STARTING_PATCH;
 			if ( this._waitForStartPromise ) {
 				this._waitForStartResolver();
 				this._waitForStartPromise = null;
@@ -179,9 +217,11 @@ export class PatchHandle
 	private async _stop( terminate: boolean )
 	{
 		if ( this._state === PatchHandleState.DOWNLOADING ) {
+			console.log( 'Stopping download' );
 			this._state = PatchHandleState.STOPPING_DOWNLOAD;
 
 			if ( !( await this._downloadHandle.stop() ) ) {
+				console.log( 'Failed to stop download' );
 				this._state = PatchHandleState.DOWNLOADING;
 				return false;
 			}
@@ -189,9 +229,11 @@ export class PatchHandle
 			this._state = PatchHandleState.STOPPED_DOWNLOAD;
 		}
 		else if ( this._state === PatchHandleState.PATCHING ) {
+			console.log( 'Stopping patch' );
 			this._state = PatchHandleState.STOPPING_PATCH;
 
 			if ( this._extractHandle && !( await this._extractHandle.stop( terminate ) ) ) {
+				console.log( 'Failed to stop patch' );
 				this._state = PatchHandleState.PATCHING;
 				return false;
 			}
@@ -202,6 +244,8 @@ export class PatchHandle
 			return false;
 		}
 
+		console.log( 'Stopped' );
+		this._wasStopped = true;
 		if ( terminate ) {
 			this._emitter.emit( 'canceled' );
 		}
@@ -229,6 +273,9 @@ export class PatchHandle
 		if ( !this._emittedPatching ) {
 			this._emitter.emit( 'patching' );
 			this._emittedPatching = true;
+		}
+		if ( this._wasStopped ) {
+			this._emitter.emit( 'resumed' );
 		}
 
 		let createdByOldBuild: string[];
@@ -329,25 +376,87 @@ export class PatchHandle
 		return true;
 	}
 
-	onDownloading( fn: Function ): PatchHandle
+	onDownloading( fn: Function )
 	{
 		this._emitter.addListener( 'downloading', fn );
 		return this;
 	}
 
-	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => any ): PatchHandle
+	deregisterOnDownloading( fn: Function )
 	{
-		this._emitter.addListener( 'progress', ( progress: IDownloadProgress ) =>
-		{
-			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
-			fn( progress );
-		} );
+		this._emitter.removeListener( 'downloading', fn );
 		return this;
 	}
 
-	onPatching( fn: Function ): PatchHandle
+	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => any )
+	{
+		let func = function( progress: IDownloadProgress )
+		{
+			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
+			progress.timeLeft
+			fn( progress );
+		};
+
+		this._onProgressFuncMapping.set( fn, func );
+		this._emitter.addListener( 'progress', func );
+		return this;
+	}
+
+	deregisterOnProgress( fn: Function )
+	{
+		let func = this._onProgressFuncMapping.get( fn );
+		if ( func ) {
+			this._emitter.removeListener( 'progress', func );
+			this._onProgressFuncMapping.delete( fn );
+		}
+		return this;
+	}
+
+	onPatching( fn: Function )
 	{
 		this._emitter.addListener( 'patching', fn );
+		return this;
+	}
+
+	deregisterOnPatching( fn: Function )
+	{
+		this._emitter.removeListener( 'patching', fn );
+		return this;
+	}
+
+	onPaused( fn: Function )
+	{
+		this._emitter.addListener( 'stopped', fn );
+		return this;
+	}
+
+	deregisterOnPaused( fn: Function )
+	{
+		this._emitter.removeListener( 'stopped', fn );
+		return this;
+	}
+
+	onResumed( fn: Function )
+	{
+		this._emitter.addListener( 'resumed', fn );
+		return this;
+	}
+
+	deregisterOnResumed( fn: Function )
+	{
+		this._emitter.removeListener( 'resumed', fn );
+		return this;
+	}
+
+	onCanceled( fn: Function )
+	{
+		this._emitter.addListener( 'canceled', fn );
+		return this;
+	}
+
+	deregisterOnCanceled( fn: Function )
+	{
+		this._emitter.removeListener( 'canceled', fn );
 		return this;
 	}
 
