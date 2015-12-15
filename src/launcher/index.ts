@@ -182,7 +182,7 @@ export class LaunchHandle
 			child.unref();
 		}
 		else {
-			if ( !this._file.toLowerCase().endsWith( '.app' ) ) {
+			if ( !this._file.toLowerCase().endsWith( '.app' ) && !this._file.toLowerCase().endsWith( '.app/' ) ) {
 				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Expecting .app folder' );
 			}
 
