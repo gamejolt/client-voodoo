@@ -207,7 +207,7 @@ export class PatchHandle
 			return true;
 		}
 		else if ( this._state === PatchHandleState.STOPPED_PATCH ) {
-			this._state = PatchHandleState.STARTING_PATCH;
+			this._state = PatchHandleState.PATCHING;
 			if ( this._waitForStartPromise ) {
 				this._waitForStartResolver();
 				this._waitForStartPromise = null;
@@ -277,7 +277,7 @@ export class PatchHandle
 	private async patch()
 	{
 		// TODO: restrict operations to the given directories.
-		this._state = PatchHandleState.PATCHING;
+		this._state = PatchHandleState.STARTING_PATCH;
 		console.log( 'Changing state to patching. State is ' + this._state );
 		let createdByOldBuild: string[];
 
@@ -353,8 +353,11 @@ export class PatchHandle
 			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
 		} );
 
+		//  Wait for start before emitting the patching state to be sure everything's initialized properly.
+		await this._extractHandle.start();
+
 		// TODO might need manual extractor start here
-		//this._state = PatchHandleState.PATCHING;
+		this._state = PatchHandleState.PATCHING;
 		if ( !this._emittedPatching ) {
 			console.log( 'State when patching: ' + this._state );
 			this._emitter.emit( 'patching' );

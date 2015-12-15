@@ -29,7 +29,7 @@ export abstract class Extractor
 export class ExtractHandle
 {
 	private _promise: Promise<IExtractResult>;
-	private _resolver: Function;
+	private _resolver: ( result: IExtractResult ) => any;
 	private _rejector: Function;
 	private _readStream: Readable;
 	private _extractStream: tar.Extract;
@@ -41,18 +41,6 @@ export class ExtractHandle
 		this._options = _.defaults( this._options || {}, {
 			deleteSource: false,
 			overwrite: false,
-		} );
-
-		// Avoid fat arrow here because it causes an implicit return and will resolve the promise.
-		let _this = this;
-		this._promise = new Promise<IExtractResult>( function( resolve, reject )
-		{
-			_this.start().then( ( result ) =>
-			{
-				if ( !_this._terminated ) {
-					resolve( result );
-				}
-			} );
 		} );
 	}
 
@@ -66,23 +54,36 @@ export class ExtractHandle
 		return this._to;
 	}
 
-	get promise(): Promise<IExtractResult>
+	get promise()
 	{
+		if ( !this._promise ) {
+			this._promise = new Promise<IExtractResult>( ( resolve, reject ) =>
+			{
+				this._resolver = function( result: IExtractResult )
+				{
+					if ( !this._terminated ) {
+						resolve( result );
+					}
+				};
+				this._rejector = reject;
+			} );
+		}
 		return this._promise;
 	}
 
-	async start(): Promise<IExtractResult>
+	async start(): Promise<boolean>
 	{
-		if ( this._running ) {
-			return this._promise;
+		if ( this._running || this._terminated ) {
+			return false;
 		}
 		else if ( this._readStream ) {
 			this._pipe();
 			this._readStream.resume();
-			return this._promise;
+			return true;
 		}
 
 		this._running = true;
+		this._promise = this.promise; // Make sure a promise exists when starting.
 
 		// If the destination already exists, make sure its valid.
 		if ( await Common.fsExists( this._to ) ) {
@@ -106,19 +107,20 @@ export class ExtractHandle
 			throw new Error( 'Couldn\'t create destination folder path' );
 		}
 
+		// Check terminated again because between checking the fs and now it could've changed.
 		if ( this._terminated ) {
-			return {
-				success: false,
-				files: [],
-			};
+			return false;
 		}
 
+		return new Promise<boolean>( ( resolve ) => this.extract( resolve ) );
+	}
+
+	private async extract( resolve: ( result: boolean ) => any )
+	{
 		let files: string[] = [];
-		let result = await new Promise<boolean>( ( resolve, reject ) =>
+		let result = await new Promise<boolean>( ( _resolve, _reject ) =>
 		{
 			this._readStream = fs.createReadStream( this._from );
-			this._resolver = resolve;
-			this._rejector = reject;
 
 			// If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
 			if ( !this._running ) {
@@ -141,15 +143,18 @@ export class ExtractHandle
 				},
 			} ) );
 
-			this._extractStream.on( 'finish', () => this._resolver( true ) );
-			this._extractStream.on( 'error', ( err ) => this._rejector( err ) );
+			this._extractStream.on( 'finish', () => _resolve( true ) );
+			this._extractStream.on( 'error', ( err ) => _reject( err ) );
 			if ( this._options.decompressStream ) {
 				this._options.decompressStream.pipe( this._extractStream );
 			}
 
 			this._pipe();
+			resolve( true );
 		} );
 
+		// If we're here we should be running because it can only trigger the stream's finish event if we've resumed the reading pipes.
+		// So here its safe to continue on the assumption that we werent stopped or terminated and delete the source file if needed
 		if ( result && this._options.deleteSource ) {
 
 			// Remove the source file, but throw only if there was an error and the file still exists.
@@ -159,10 +164,10 @@ export class ExtractHandle
 			}
 		}
 
-		return {
+		this._resolver( {
 			success: result,
 			files: files,
-		};
+		} );
 	}
 
 	private _pipe()
