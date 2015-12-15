@@ -60,10 +60,13 @@ describe( 'Extractor', function()
 
 		await handle.promise;
 
-		return Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
+		let extractHandle = Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
 			deleteSource: true,
 			overwrite: true,
-		} ).promise;
+		} );
+
+		await extractHandle.start();
+		return extractHandle.promise;
 	} );
 
 	it( 'Should work with tar.xz files', async () =>
@@ -83,10 +86,13 @@ describe( 'Extractor', function()
 
 		await handle.promise;
 
-		return Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
+		let extractHandle = Extractor.extract( handle.to, path.join( 'test-files', 'extracted', path.basename( handle.to ) ), {
 			deleteSource: true,
 			overwrite: true,
-		} ).promise;
+		} );
+
+		await extractHandle.start();
+		return extractHandle.promise;
 	} );
 
 	it( 'Should allow resumable extraction', async ( done ) =>
@@ -95,6 +101,8 @@ describe( 'Extractor', function()
 			deleteSource: false,
 			overwrite: true,
 		} );
+
+		await extractionHandle.start();
 
 		let waited = false;
 		extractionHandle.promise.then( () =>
