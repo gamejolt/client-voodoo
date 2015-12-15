@@ -1,2 +1,4 @@
 /node_modules
 /test-files
+/build/**/*.map
+/build/**/*-spec.js
