@@ -13,6 +13,7 @@ interface QueueState
 
 	events: {
 		onProgress?: ( progress: IDownloadProgress ) => any;
+		onPatching?: Function;
 		onPaused?: Function;
 		onResumed?: Function;
 		onCanceled?: Function;
@@ -23,6 +24,9 @@ export abstract class VoodooQueue
 {
 	private static _maxDownloads: number = 3;
 	private static _maxExtractions: number = 3;
+
+	private static _settingDownloads: boolean = false;
+	private static _settingExtractions: boolean = false;
 
 	private static _patches: Map<PatchHandle, QueueState> = new Map<PatchHandle, QueueState>();
 
@@ -66,6 +70,16 @@ export abstract class VoodooQueue
 		this.log( patch, 'Updated time left' );
 	}
 
+	private static onPatching( patch: PatchHandle, state: QueueState, progress )
+	{
+		this.log( patch, 'Patching' );
+
+		let concurrentPatches = this.fetch( true, false );
+		if ( concurrentPatches.length >= this._maxExtractions ) {
+			this.pausePatch( patch, state );
+		}
+	}
+
 	private static onPaused( patch: PatchHandle, state: QueueState )
 	{
 		this.log( patch, 'Paused' );
@@ -88,7 +102,7 @@ export abstract class VoodooQueue
 		this.dequeue( patch );
 	}
 
-	static enqueue( patch: PatchHandle )
+	static async enqueue( patch: PatchHandle )
 	{
 		if ( patch.isFinished() ) {
 			return null;
@@ -99,22 +113,23 @@ export abstract class VoodooQueue
 		let concurrentPatches = this.fetch( true, isDownloading );
 
 		let state: QueueState = {
-			queued: concurrentPatches.length < operationLimit,
+			queued: concurrentPatches.length >= operationLimit,
 			expectingManagement: false,
 			timeLeft: Infinity,
 			managed: true,
 			events: {},
 		};
 		state.events.onProgress = this.onProgress.bind( this, patch, state );
+		state.events.onPatching = this.onPatching.bind( this, patch, state );
 		state.events.onPaused = this.onPaused.bind( this, patch, state );
 		state.events.onResumed = this.onResumed.bind( this, patch, state );
 		state.events.onCanceled = this.onCanceled.bind( this, patch, state );
 
 		this._patches.set( patch, state );
-		this.log( patch, 'Enqueued a patch' );
 
 		patch
 			.onProgress( SampleUnit.KBps, state.events.onProgress )
+			.onPatching( state.events.onPatching )
 			.onPaused( state.events.onPaused )
 			.onResumed( state.events.onResumed )
 			.onCanceled( state.events.onCanceled )
@@ -127,6 +142,11 @@ export abstract class VoodooQueue
 				this.log( patch, 'Finished' );
 				this.dequeue( patch );
 			} );
+
+		if ( state.queued ) {
+			await this.pausePatch( patch, state );
+		}
+		this.log( patch, 'Enqueued a patch' );
 
 		return state;
 	}
@@ -142,6 +162,7 @@ export abstract class VoodooQueue
 		this.log( patch, 'Deregistering events' );
 		patch
 			.deregisterOnProgress( state.events.onProgress )
+			.deregisterOnPatching( state.events.onPatching )
 			.deregisterOnPaused( state.events.onPaused )
 			.deregisterOnResumed( state.events.onResumed )
 			.deregisterOnCanceled( state.events.onCanceled );
@@ -149,16 +170,7 @@ export abstract class VoodooQueue
 		state.managed = false;
 		this._patches.delete( patch );
 
-		// If the dequeued task was running - run another task instead
-		if ( !state.queued ) {
-			this.log( patch, 'Trying to resume a pending task if any' );
-			let pendingDownloads = this.fetch( false, true );
-			if ( pendingDownloads.length ) {
-				pendingDownloads[0].state.expectingManagement = true;
-				await pendingDownloads[0].patch.start();
-				pendingDownloads[0].state.expectingManagement = false;
-			}
-		}
+		await this.tick();
 	}
 
 	static get maxDownloads()
@@ -171,53 +183,95 @@ export abstract class VoodooQueue
 		return this._maxExtractions;
 	}
 
-	static async setMaxDownloads( newMaxDownloads: number )
+	private static async resumePatch( patch: PatchHandle, state: QueueState )
 	{
-		let currentlyDownloading = this.fetch( true, true );
-		let pendingDownloads = this.fetch( false, true );
+		state.expectingManagement = true;
+		let result: boolean;
+		try {
+			result = await patch.start();
+			if ( result ) {
+				state.queued = false;
+			}
+		}
+		catch ( err ) {
+			result = false;
+		}
+		state.expectingManagement = false;
+		return result;
+	}
 
-		this._maxDownloads = newMaxDownloads;
-		let patchesToResume = this._maxDownloads - currentlyDownloading.length;
+	private static async pausePatch( patch: PatchHandle, state: QueueState )
+	{
+		state.expectingManagement = true;
+		let result: boolean;
+		try {
+			result = await patch.stop();
+			if ( result ) {
+				state.queued = true;
+			}
+		}
+		catch ( err ) {
+			result = false;
+		}
+		state.expectingManagement = false;
+		return result;
+	}
+
+	static async tick( downloads?: boolean )
+	{
+		if ( typeof downloads !== 'boolean' ) {
+			await this.tick( false );
+			await this.tick( true );
+			return;
+		}
+
+		let running = this.fetch( true, downloads );
+		let pending = this.fetch( false, downloads );
+
+		let patchesToResume = ( downloads ? this._maxDownloads : this._maxExtractions ) - running.length;
 		if ( patchesToResume > 0 ) {
-			patchesToResume = Math.min( patchesToResume, pendingDownloads.length );
+			patchesToResume = Math.min( patchesToResume, pending.length );
 			for ( let i = 0; i < patchesToResume; i += 1 ) {
-				pendingDownloads[i].state.expectingManagement = true;
-				await pendingDownloads[i].patch.start();
-				pendingDownloads[i].state.expectingManagement = false;
+				this.resumePatch( pending[i].patch, pending[i].state );
 			}
 		}
 		else if ( patchesToResume < 0 ) {
 			let patchesToPause = -patchesToResume;
 			for ( let i = 0; i < patchesToPause; i += 1 ) {
-				currentlyDownloading[i].state.expectingManagement = true;
-				await currentlyDownloading[i].patch.stop();
-				currentlyDownloading[i].state.expectingManagement = false;
+				this.pausePatch( running[i].patch, running[i].state );
 			}
+		}
+	}
+
+	static async setMaxDownloads( newMaxDownloads: number )
+	{
+		if ( this._settingDownloads ) {
+			return false;
+		}
+		this._settingDownloads = true;
+
+		try {
+			this._maxDownloads = newMaxDownloads;
+			await this.tick( true );
+		}
+		finally {
+			this._settingDownloads = false;
 		}
 	}
 
 	static async setMaxExtractions( newMaxExtractions: number )
 	{
-		let currentlyExtracting = this.fetch( true, false );
-		let pendingExtractions = this.fetch( false, false );
-
-		this._maxExtractions = newMaxExtractions;
-		let patchesToResume = this._maxExtractions - currentlyExtracting.length;
-		if ( patchesToResume > 0 ) {
-			patchesToResume = Math.min( patchesToResume, pendingExtractions.length );
-			for ( let i = 0; i < patchesToResume; i += 1 ) {
-				pendingExtractions[i].state.expectingManagement = true;
-				await pendingExtractions[i].patch.start();
-				pendingExtractions[i].state.expectingManagement = false;
-			}
+		if ( this._settingExtractions ) {
+			return false;
 		}
-		else if ( patchesToResume < 0 ) {
-			let patchesToPause = -patchesToResume;
-			for ( let i = 0; i < patchesToPause; i += 1 ) {
-				currentlyExtracting[i].state.expectingManagement = true;
-				await currentlyExtracting[i].patch.stop();
-				currentlyExtracting[i].state.expectingManagement = false;
-			}
+		this._settingExtractions = true;
+
+		try {
+			this._maxExtractions = newMaxExtractions;
+			await this.tick( false );
+		}
+		finally {
+			this._settingExtractions = false;
 		}
 	}
 }

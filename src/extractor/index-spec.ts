@@ -50,11 +50,13 @@ describe( 'Extractor', function()
 			decompressStream: gzip(),
 		} );
 
-		handle.onProgress( SampleUnit.KBps, function( data )
-		{
-			console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-		} );
+		handle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.start();
 
 		await handle.promise;
 
@@ -71,11 +73,13 @@ describe( 'Extractor', function()
 			decompressStream: xz(),
 		} );
 
-		handle.onProgress( SampleUnit.KBps, function( data )
-		{
-			console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-		} );
+		handle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.start();
 
 		await handle.promise;
 

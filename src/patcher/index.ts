@@ -175,25 +175,33 @@ export class PatchHandle
 				} );
 
 				this._downloadHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
-				.promise
-					.then( () => this.patch() )
-					.then( () => this.onFinished() )
-					.catch( ( err ) => this.onError( err ) );
+					.start().then( () =>
+					{
+						this._state = PatchHandleState.DOWNLOADING;
+						if ( !this._emittedDownloading ) {
+							this._emitter.emit( 'downloading' );
+							this._emittedDownloading = true;
+						}
+						if ( this._wasStopped ) {
+							this._emitter.emit( 'resumed' );
+						}
+
+						return this._downloadHandle.promise
+							.then( () => this.patch() )
+							.then( () => this.onFinished() )
+							.catch( ( err ) => this.onError( err ) );
+					} );
 
 				// Make sure to not remove the temp download file if we're resuming.
 				this._options.overwrite = false;
 			}
+			else {
 
-			// This resumes if it already existed.
-			await this._downloadHandle.start();
-
-			this._state = PatchHandleState.DOWNLOADING;
-			if ( !this._emittedDownloading ) {
-				this._emitter.emit( 'downloading' );
-				this._emittedDownloading = true;
-			}
-			if ( this._wasStopped ) {
-				this._emitter.emit( 'resumed' );
+				// This resumes if it already existed.
+				await this._downloadHandle.start();
+				if ( this._wasStopped ) {
+					this._emitter.emit( 'resumed' );
+				}
 			}
 
 			return true;
@@ -205,7 +213,6 @@ export class PatchHandle
 				this._waitForStartPromise = null;
 			}
 
-			this._state = PatchHandleState.PATCHING;
 			this._extractHandle.start();
 
 			return true;
@@ -216,6 +223,7 @@ export class PatchHandle
 
 	private async _stop( terminate: boolean )
 	{
+		console.log( 'State: ' + this._state );
 		if ( this._state === PatchHandleState.DOWNLOADING ) {
 			console.log( 'Stopping download' );
 			this._state = PatchHandleState.STOPPING_DOWNLOAD;
@@ -270,14 +278,7 @@ export class PatchHandle
 	{
 		// TODO: restrict operations to the given directories.
 		this._state = PatchHandleState.PATCHING;
-		if ( !this._emittedPatching ) {
-			this._emitter.emit( 'patching' );
-			this._emittedPatching = true;
-		}
-		if ( this._wasStopped ) {
-			this._emitter.emit( 'resumed' );
-		}
-
+		console.log( 'Changing state to patching. State is ' + this._state );
 		let createdByOldBuild: string[];
 
 		// TODO: check if ./ is valid on windows platforms as well.
@@ -342,12 +343,26 @@ export class PatchHandle
 			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
 		}
 
+		console.log( 'State when starting patch: ' + this._state );
+		console.log( 'Waiting for start' );
 		await this.waitForStart();
+		console.log( 'Waited' );
 		this._extractHandle = Extractor.extract( this._tempFile, this._to, {
 			overwrite: true,
 			deleteSource: true,
 			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
 		} );
+
+		// TODO might need manual extractor start here
+		//this._state = PatchHandleState.PATCHING;
+		if ( !this._emittedPatching ) {
+			console.log( 'State when patching: ' + this._state );
+			this._emitter.emit( 'patching' );
+			this._emittedPatching = true;
+		}
+		if ( this._wasStopped ) {
+			this._emitter.emit( 'resumed' );
+		}
 
 		let extractResult = await this._extractHandle.promise;
 		if ( !extractResult.success ) {

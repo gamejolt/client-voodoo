@@ -47,22 +47,24 @@ describe( 'Downloader', function()
 		} );
 
 		let waited = false;
-		handle.onProgress( SampleUnit.KBps, async ( data ) =>
-		{
-			console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-			if ( data.progress > 0.5 && !waited ) {
-				console.log( 'Having a comic relief..' );
+		handle
+			.onProgress( SampleUnit.KBps, async ( data ) =>
+			{
+				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+				if ( data.progress > 0.5 && !waited ) {
+					console.log( 'Having a comic relief..' );
 
-				await handle.stop();
-				let wait = new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
-				await wait;
-				await handle.start();
+					await handle.stop();
+					let wait = new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
+					await wait;
+					await handle.start();
 
-				waited = true;
-				console.log( 'Had a comic relief!' );
-			}
-		} );
+					waited = true;
+					console.log( 'Had a comic relief!' );
+				}
+			} )
+			.start();
 
 		return handle.promise;
 	} );
@@ -74,11 +76,13 @@ describe( 'Downloader', function()
 			decompressStream: gzip(),
 		} );
 
-		handle.onProgress( SampleUnit.KBps, function( data )
-		{
-			console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-		} );
+		handle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.start();
 
 		return handle.promise;
 	} );
@@ -90,11 +94,13 @@ describe( 'Downloader', function()
 			decompressStream: xz(),
 		} );
 
-		handle.onProgress( SampleUnit.KBps, function( data )
-		{
-			console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-			console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-		} );
+		handle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.start();
 
 		return handle.promise;
 	} );
