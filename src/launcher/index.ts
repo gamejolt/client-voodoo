@@ -196,7 +196,7 @@ export class LaunchHandle
 				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.' );
 			}
 
-			let parsedPlist = plist( await Common.fsReadFile( plistPath, 'utf8' ) );
+			let parsedPlist = plist.parse( await Common.fsReadFile( plistPath, 'utf8' ) );
 			if ( !parsedPlist ) {
 				throw new Error( 'That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.' );
 			}

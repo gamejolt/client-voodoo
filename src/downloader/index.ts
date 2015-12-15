@@ -65,7 +65,6 @@ export class DownloadHandle
 
 		this._state = DownloadHandleState.STOPPED;
 		this._emitter = new EventEmitter();
-		this.start();
 	}
 
 	get url()
@@ -157,8 +156,7 @@ export class DownloadHandle
 			return false;
 		}
 
-		this.download();
-		return true;
+		return new Promise<boolean>( ( resolve ) => this.download( resolve ) );
 	}
 
 	async stop()
@@ -181,8 +179,9 @@ export class DownloadHandle
 		return true;
 	}
 
-	private download()
+	private download( resolve: ( result: boolean ) => any )
 	{
+
 		let hostUrl = url.parse( this._url );
 		let httpOptions: request.CoreOptions = {
 			headers: {
@@ -210,6 +209,7 @@ export class DownloadHandle
 					sample: sample,
 				} ) );
 				this._state = DownloadHandleState.STARTED;
+				resolve( true );
 
 				// Unsatisfiable request - most likely we've downloaded the whole thing already.
 				// TODO - send HEAD request to get content-length and compare.

@@ -115,12 +115,18 @@ describe( 'Patcher', function()
 			patchHandle
 				.onDownloading( async function()
 				{
+					try {
 					console.log( 'Downloading...' );
 					console.log( 'Pausing...' );
 					await patchHandle.stop();
 					await wait( 5000 );
 					console.log( 'Resuming...' );
 					await patchHandle.start();
+					}
+					catch ( err ) {
+						console.error( err );
+						console.log( err.stack );
+					}
 				} )
 				.onProgress( SampleUnit.KBps, function( data )
 				{
