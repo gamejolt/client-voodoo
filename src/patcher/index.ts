@@ -40,15 +40,13 @@ export abstract class Patcher
 {
 	static patch( url: string, build: GameJolt.IGameBuild, options?: IPatcherOptions ): PatchHandle
 	{
-		let patchHandle = new PatchHandle( url, build, options );
-		VoodooQueue.enqueue( patchHandle );
-		return patchHandle;
+		return new PatchHandle( url, build, options );
 	}
 }
 
 export class PatchHandle
 {
-	private _state: PatchHandleState;
+	private __state: PatchHandleState;
 	private _wasStopped: boolean;
 	private _to: string;
 	private _tempFile: string;
@@ -98,6 +96,17 @@ export class PatchHandle
 	get state()
 	{
 		return this._state;
+	}
+
+	get _state()
+	{
+		return this.__state;
+	}
+
+	set _state( state )
+	{
+		console.log( 'Setting state to ' + state + ' ' + ( new Error() ).stack.split('\n')[2] );
+		this.__state = state;
 	}
 
 	isDownloading()
@@ -175,7 +184,7 @@ export class PatchHandle
 				} );
 
 				this._downloadHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
-					.start().then( () =>
+					.start().then( async () =>
 					{
 						this._state = PatchHandleState.DOWNLOADING;
 						if ( !this._emittedDownloading ) {
@@ -185,6 +194,9 @@ export class PatchHandle
 						if ( this._wasStopped ) {
 							this._emitter.emit( 'resumed' );
 						}
+
+						// TODO consider putting this beofre emitting downloading event if we dont want to emit it for tasks that pend right away.
+						await VoodooQueue.enqueue( this );
 
 						return this._downloadHandle.promise
 							.then( () => this.patch() )
@@ -199,6 +211,7 @@ export class PatchHandle
 
 				// This resumes if it already existed.
 				await this._downloadHandle.start();
+				this._state = PatchHandleState.DOWNLOADING;
 				if ( this._wasStopped ) {
 					this._emitter.emit( 'resumed' );
 				}
@@ -212,6 +225,8 @@ export class PatchHandle
 				this._waitForStartResolver();
 				this._waitForStartPromise = null;
 			}
+
+			this._emitter.emit( 'resumed' );
 
 			this._extractHandle.start();
 
@@ -253,6 +268,7 @@ export class PatchHandle
 		}
 
 		console.log( 'Stopped' );
+		console.log( 'State: ' + this._state );
 		this._wasStopped = true;
 		if ( terminate ) {
 			this._emitter.emit( 'canceled' );

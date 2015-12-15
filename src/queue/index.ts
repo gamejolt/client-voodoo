@@ -7,7 +7,7 @@ import * as _ from 'lodash';
 interface QueueState
 {
 	queued: boolean;
-	expectingManagement: boolean;
+	expectingManagement: number;
 	timeLeft: number;
 	managed: boolean;
 
@@ -30,8 +30,30 @@ export abstract class VoodooQueue
 
 	private static _patches: Map<PatchHandle, QueueState> = new Map<PatchHandle, QueueState>();
 
+	static reset()
+	{
+		console.log( 'Resetting' );
+		let patchesToReset: PatchHandle[] = [];
+		for ( let patch of this._patches.keys() ) {
+			this.dequeue( patch );
+			patchesToReset.push( patch );
+		}
+		console.log( 'Restting ' + patchesToReset.length + ' patches' );
+
+		this._maxDownloads = 3;
+		this._maxExtractions = 3;
+
+		this._settingDownloads = false;
+		this._settingExtractions = false;
+
+		this._patches.clear();
+
+		return Promise.all( patchesToReset.map( ( patch ) => patch.cancel() ) );
+	}
+
 	static fetch( running: boolean, isDownloading?: boolean )
 	{
+		console.log( 'Fetching ' + ( running ? 'running' : 'pending' ) + ' ' + ( isDownloading ? 'downloading' : ( isDownloading === false ? 'patching' : 'all' ) ) + ' tasks' );
 		let patches = [];
 		this._patches.forEach( ( patchState, patch ) =>
 		{
@@ -75,7 +97,9 @@ export abstract class VoodooQueue
 		this.log( patch, 'Patching' );
 
 		let concurrentPatches = this.fetch( true, false );
-		if ( concurrentPatches.length >= this._maxExtractions ) {
+
+		// Use > and not >= because also counting self
+		if ( concurrentPatches.length > this._maxExtractions ) {
 			this.pausePatch( patch, state );
 		}
 	}
@@ -91,6 +115,7 @@ export abstract class VoodooQueue
 	private static onResumed( patch: PatchHandle, state: QueueState )
 	{
 		this.log( patch, 'Resumed' );
+		console.log( state );
 		if ( !state.expectingManagement ) {
 			this.dequeue( patch );
 		}
@@ -114,7 +139,7 @@ export abstract class VoodooQueue
 
 		let state: QueueState = {
 			queued: concurrentPatches.length >= operationLimit,
-			expectingManagement: false,
+			expectingManagement: 0,
 			timeLeft: Infinity,
 			managed: true,
 			events: {},
@@ -173,21 +198,13 @@ export abstract class VoodooQueue
 		await this.tick();
 	}
 
-	static get maxDownloads()
-	{
-		return this._maxDownloads;
-	}
-
-	static get maxExtractions()
-	{
-		return this._maxExtractions;
-	}
-
 	private static async resumePatch( patch: PatchHandle, state: QueueState )
 	{
-		state.expectingManagement = true;
+		this.log( patch, 'Resuming patch' );
+		state.expectingManagement += 1;
 		let result: boolean;
 		try {
+			console.log( 'Expecting management' );
 			result = await patch.start();
 			if ( result ) {
 				state.queued = false;
@@ -196,13 +213,15 @@ export abstract class VoodooQueue
 		catch ( err ) {
 			result = false;
 		}
-		state.expectingManagement = false;
+		console.log( 'Not expecting management' );
+		state.expectingManagement = Math.max( state.expectingManagement - 1, 0 );
 		return result;
 	}
 
 	private static async pausePatch( patch: PatchHandle, state: QueueState )
 	{
-		state.expectingManagement = true;
+		this.log( patch, 'Pausing patch' );
+		state.expectingManagement += 1;
 		let result: boolean;
 		try {
 			result = await patch.stop();
@@ -213,7 +232,7 @@ export abstract class VoodooQueue
 		catch ( err ) {
 			result = false;
 		}
-		state.expectingManagement = false;
+		state.expectingManagement = Math.max( state.expectingManagement - 1, 0 );
 		return result;
 	}
 
@@ -227,31 +246,52 @@ export abstract class VoodooQueue
 
 		let running = this.fetch( true, downloads );
 		let pending = this.fetch( false, downloads );
+		console.log( 'Running: ' + running.length + ', Pending: ' + pending.length );
 
 		let patchesToResume = ( downloads ? this._maxDownloads : this._maxExtractions ) - running.length;
 		if ( patchesToResume > 0 ) {
 			patchesToResume = Math.min( patchesToResume, pending.length );
+			console.log( 'Patches to resume: ' + patchesToResume );
 			for ( let i = 0; i < patchesToResume; i += 1 ) {
-				this.resumePatch( pending[i].patch, pending[i].state );
+				await this.resumePatch( pending[i].patch, pending[i].state );
 			}
 		}
 		else if ( patchesToResume < 0 ) {
 			let patchesToPause = -patchesToResume;
+			console.log( 'Patches to pause: ' + patchesToPause );
 			for ( let i = 0; i < patchesToPause; i += 1 ) {
-				this.pausePatch( running[i].patch, running[i].state );
+				await this.pausePatch( running[i].patch, running[i].state );
 			}
 		}
 	}
 
+	static get maxDownloads()
+	{
+		return this._maxDownloads;
+	}
+
+	static get maxExtractions()
+	{
+		return this._maxExtractions;
+	}
+
 	static async setMaxDownloads( newMaxDownloads: number )
 	{
+		console.log( 'Setting max downloads' );
 		if ( this._settingDownloads ) {
+			console.log( 'Nope' );
 			return false;
 		}
 		this._settingDownloads = true;
 
 		try {
 			this._maxDownloads = newMaxDownloads;
+
+			// Wait for next tick in case states change inside a patcher's onPause/onResume.
+			// Example: when a patcher is pended by the queue manager it calls the patch handle's onPause event (as part of stopping it)
+			// If in that event handler the max download count increases the task will not resume because the queue manager has yet
+			// to tag it as pending because it's waiting for it to stop completely, which only happens after onPause is called
+			await new Promise( ( resolve ) => process.nextTick( resolve ) );
 			await this.tick( true );
 		}
 		finally {
@@ -268,6 +308,7 @@ export abstract class VoodooQueue
 
 		try {
 			this._maxExtractions = newMaxExtractions;
+			await new Promise( ( resolve ) => process.nextTick( resolve ) );
 			await this.tick( false );
 		}
 		finally {
