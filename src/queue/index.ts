@@ -4,7 +4,7 @@ import { SampleUnit } from '../downloader/stream-speed';
 import { ExtractHandle } from '../extractor';
 import * as _ from 'lodash';
 
-interface QueueState
+interface IQueueState
 {
 	queued: boolean;
 	expectingManagement: number;
@@ -20,15 +20,31 @@ interface QueueState
 	}
 }
 
+interface IQueueProfile
+{
+	downloads: number;
+	extractions: number;
+}
+
 export abstract class VoodooQueue
 {
+	private static _fastProfile: IQueueProfile = {
+		downloads: 3,
+		extractions: 3,
+	}
+
+	private static _slowProfile: IQueueProfile = {
+		downloads: 0,
+		extractions: 0,
+	}
+
 	private static _maxDownloads: number = 3;
 	private static _maxExtractions: number = 3;
 
 	private static _settingDownloads: boolean = false;
 	private static _settingExtractions: boolean = false;
 
-	private static _patches: Map<PatchHandle, QueueState> = new Map<PatchHandle, QueueState>();
+	private static _patches: Map<PatchHandle, IQueueState> = new Map<PatchHandle, IQueueState>();
 
 	static reset()
 	{
@@ -70,7 +86,7 @@ export abstract class VoodooQueue
 		} );
 
 		let sorted = _.sortBy( patches, 'sort' );
-		let sortedPatches = sorted.map( ( value: { patch: PatchHandle, state: QueueState } ) =>
+		let sortedPatches = sorted.map( ( value: { patch: PatchHandle, state: IQueueState } ) =>
 		{
 			return {
 				patch: value.patch,
@@ -80,19 +96,36 @@ export abstract class VoodooQueue
 		return sortedPatches;
 	}
 
+	private static async applyProfile( profile: IQueueProfile )
+	{
+		this._maxDownloads = this._fastProfile.downloads;
+		this._maxExtractions = this._fastProfile.extractions;
+		await this.tick();
+	}
+
+	static async faster()
+	{
+		this.applyProfile( this._fastProfile );
+	}
+
+	static async slower()
+	{
+		this.applyProfile( this._slowProfile );
+	}
+
 	private static log( patch: PatchHandle, message: string )
 	{
 		let state = this._patches.get( patch );
 		console.log( 'Voodoo Queue: ' + message + ' ( ' + JSON.stringify( state ) + ' )' );
 	}
 
-	private static onProgress( patch: PatchHandle, state: QueueState, progress )
+	private static onProgress( patch: PatchHandle, state: IQueueState, progress )
 	{
 		state.timeLeft = progress.timeLeft;
 		this.log( patch, 'Updated time left' );
 	}
 
-	private static onPatching( patch: PatchHandle, state: QueueState, progress )
+	private static onPatching( patch: PatchHandle, state: IQueueState, progress )
 	{
 		this.log( patch, 'Patching' );
 
@@ -104,7 +137,7 @@ export abstract class VoodooQueue
 		}
 	}
 
-	private static onPaused( patch: PatchHandle, state: QueueState )
+	private static onPaused( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Paused' );
 		if ( state && !state.expectingManagement ) {
@@ -112,7 +145,7 @@ export abstract class VoodooQueue
 		}
 	}
 
-	private static onResumed( patch: PatchHandle, state: QueueState )
+	private static onResumed( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Resumed' );
 		console.log( state );
@@ -121,7 +154,7 @@ export abstract class VoodooQueue
 		}
 	}
 
-	private static onCanceled( patch: PatchHandle, state: QueueState )
+	private static onCanceled( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Cancelled' );
 		this.dequeue( patch );
@@ -137,7 +170,7 @@ export abstract class VoodooQueue
 		let operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
 		let concurrentPatches = this.fetch( true, isDownloading );
 
-		let state: QueueState = {
+		let state: IQueueState = {
 			queued: concurrentPatches.length >= operationLimit,
 			expectingManagement: 0,
 			timeLeft: Infinity,
@@ -198,7 +231,7 @@ export abstract class VoodooQueue
 		await this.tick();
 	}
 
-	private static async resumePatch( patch: PatchHandle, state: QueueState )
+	private static async resumePatch( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Resuming patch' );
 		state.expectingManagement += 1;
@@ -218,7 +251,7 @@ export abstract class VoodooQueue
 		return result;
 	}
 
-	private static async pausePatch( patch: PatchHandle, state: QueueState )
+	private static async pausePatch( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Pausing patch' );
 		state.expectingManagement += 1;

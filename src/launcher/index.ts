@@ -6,6 +6,7 @@ import * as os from 'os';
 import * as _ from 'lodash';
 import Common from '../common';
 import { PidFinder } from './pid-finder';
+import { VoodooQueue } from '../queue';
 let plist = require( 'plist' );
 
 export interface ILaunchOptions
@@ -15,6 +16,8 @@ export interface ILaunchOptions
 
 export abstract class Launcher
 {
+	private static _runningInstances: Map<number, LaunchInstanceHandle> = new Map<number, LaunchInstanceHandle>();
+
 	static launch( build: GameJolt.IGameBuild, os: string, arch: string, options?: ILaunchOptions ): LaunchHandle
 	{
 		return new LaunchHandle( build, os, arch, options );
@@ -22,7 +25,23 @@ export abstract class Launcher
 
 	static async attach( pid: number, pollInterval?: number )
 	{
-		return new LaunchInstanceHandle( pid, pollInterval );
+		if ( !this._runningInstances.has( pid ) ) {
+			this._runningInstances.set( pid, new LaunchInstanceHandle( pid, pollInterval ) );
+		};
+
+		let instance = this._runningInstances.get( pid );
+		instance.on( 'end', () => this.detach( pid ) );
+
+		await VoodooQueue.slower();
+
+		return instance;
+	}
+
+	static async detach( pid: number )
+	{
+		if ( this._runningInstances.delete( pid ) && this._runningInstances.size === 0 ) {
+			await VoodooQueue.faster();
+		}
 	}
 }
 
@@ -144,7 +163,7 @@ export class LaunchHandle
 		let pid = child.pid;
 		child.unref();
 
-		return new LaunchInstanceHandle( pid, pollInterval );
+		return Launcher.attach( pid, pollInterval );
 	}
 
 	private async startLinux( stat: fs.Stats, pollInterval: number )
@@ -163,7 +182,7 @@ export class LaunchHandle
 		let pid = child.pid;
 		child.unref();
 
-		return new LaunchInstanceHandle( pid, pollInterval );
+		return Launcher.attach( pid, pollInterval );
 	}
 
 	private async startMac( stat: fs.Stats, pollInterval: number )
@@ -225,7 +244,7 @@ export class LaunchHandle
 			child.unref();
 		}
 
-		return new LaunchInstanceHandle( pid, pollInterval );
+		return Launcher.attach( pid, pollInterval );
 	}
 }
 
