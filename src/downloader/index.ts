@@ -104,7 +104,7 @@ export class DownloadHandle
 		return this._promise;
 	}
 
-	async start()
+	async start( url?: string )
 	{
 		if ( this._state !== DownloadHandleState.STOPPED ) {
 			return false;
@@ -113,6 +113,7 @@ export class DownloadHandle
 		this._state = DownloadHandleState.STARTING;
 		this._promise = this.promise; // Make sure a promise exists when starting.
 
+		this._url = url || this._url;
 		this._totalSize = 0;
 		this._totalDownloaded = 0;
 

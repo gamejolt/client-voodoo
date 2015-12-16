@@ -16,7 +16,22 @@ export interface IPatcherOptions
 {
 	overwrite?: boolean;
 	decompressInDownload?: boolean;
-	generateUrl?: Function;
+}
+
+export interface IPatcherStartOptions
+{
+	url?: string;
+	voodooQueue?: boolean;
+}
+
+export interface IPatcherStopOptions
+{
+	voodooQueue?: boolean;
+}
+
+interface IPatcherInternalStopOptions extends IPatcherStopOptions
+{
+	terminate?: boolean;
 }
 
 export enum PatchHandleState
@@ -39,15 +54,20 @@ const FINISHED_STATES = [ PatchHandleState.FINISHING, PatchHandleState.FINISHED 
 
 export abstract class Patcher
 {
-	static patch( url: string, build: GameJolt.IGameBuild, options?: IPatcherOptions ): PatchHandle
+	static patch( generateUrl: ( () => Promise<string> ) | string, build: GameJolt.IGameBuild, options?: IPatcherOptions ): PatchHandle
 	{
-		return new PatchHandle( url, build, options );
+		let _generateUrl = ( typeof generateUrl === 'string' ) ? function() {
+			return Promise.resolve( generateUrl );
+		} : generateUrl;
+
+		return new PatchHandle( _generateUrl, build, options );
 	}
 }
 
 export class PatchHandle
 {
 	private __state: PatchHandleState;
+	private _url: string;
 	private _wasStopped: boolean;
 	private _to: string;
 	private _tempFile: string;
@@ -69,7 +89,7 @@ export class PatchHandle
 	private _waitForStartResolver: () => void;
 	private _waitForStartRejector: ( err: NodeJS.ErrnoException ) => void;
 
-	constructor( private _url: string, private _build: GameJolt.IGameBuild, private _options?: IPatcherOptions )
+	constructor( private _generateUrl: () => Promise<string>, private _build: GameJolt.IGameBuild, private _options?: IPatcherOptions )
 	{
 		this._options = _.defaults<IPatcherOptions>( this._options || {}, {
 			overwrite: false,
@@ -163,9 +183,8 @@ export class PatchHandle
 		return this._waitForStartPromise;
 	}
 
-	async start( url?: string )
+	async start( options?: IPatcherStartOptions )
 	{
-		this._url = url || this._url;
 		this._promise = this.promise;
 
 		if ( this._state === PatchHandleState.STOPPED_DOWNLOAD ) {
@@ -179,6 +198,12 @@ export class PatchHandle
 			this._archiveListFile = path.join( this._build.install_dir, '.gj-archive-file-list' );
 			this._patchListFile = path.join( this._build.install_dir, '.gj-patch-file' );
 			this._to = this._build.install_dir;
+
+			let newUrl = ( options && options.url ) ? options.url : null;
+			if ( !newUrl && this._generateUrl ) {
+				newUrl = await this._generateUrl();
+			}
+			this._url = newUrl || this._url;
 
 			if ( !this._downloadHandle ) {
 				this._downloadHandle = Downloader.download( this._url, this._tempFile, {
@@ -195,7 +220,7 @@ export class PatchHandle
 							this._emittedDownloading = true;
 						}
 						if ( this._wasStopped ) {
-							this._emitter.emit( 'resumed' );
+							this._emitter.emit( 'resumed', options && options.voodooQueue );
 						}
 
 						// TODO consider putting this beofre emitting downloading event if we dont want to emit it for tasks that pend right away.
@@ -213,10 +238,10 @@ export class PatchHandle
 			else {
 
 				// This resumes if it already existed.
-				await this._downloadHandle.start();
+				await this._downloadHandle.start( this._url );
 				this._state = PatchHandleState.DOWNLOADING;
 				if ( this._wasStopped ) {
-					this._emitter.emit( 'resumed' );
+					this._emitter.emit( 'resumed', options && options.voodooQueue );
 				}
 			}
 
@@ -229,7 +254,7 @@ export class PatchHandle
 				this._waitForStartPromise = null;
 			}
 
-			this._emitter.emit( 'resumed' );
+			this._emitter.emit( 'resumed', options && options.voodooQueue );
 
 			this._extractHandle.start();
 
@@ -239,7 +264,7 @@ export class PatchHandle
 		return false;
 	}
 
-	private async _stop( terminate: boolean )
+	private async _stop( options?: IPatcherInternalStopOptions )
 	{
 		console.log( 'State: ' + this._state );
 		if ( this._state === PatchHandleState.DOWNLOADING ) {
@@ -258,7 +283,7 @@ export class PatchHandle
 			console.log( 'Stopping patch' );
 			this._state = PatchHandleState.STOPPING_PATCH;
 
-			if ( this._extractHandle && !( await this._extractHandle.stop( terminate ) ) ) {
+			if ( this._extractHandle && !( await this._extractHandle.stop( options && options.terminate ) ) ) {
 				console.log( 'Failed to stop patch' );
 				this._state = PatchHandleState.PATCHING;
 				return false;
@@ -273,24 +298,32 @@ export class PatchHandle
 		console.log( 'Stopped' );
 		console.log( 'State: ' + this._state );
 		this._wasStopped = true;
-		if ( terminate ) {
+		if ( options && options.terminate ) {
 			this._emitter.emit( 'canceled' );
 		}
 		else {
-			this._emitter.emit( 'stopped' );
+			this._emitter.emit( 'stopped', options && options.voodooQueue );
 		}
 		this.waitForStart();
 		return true;
 	}
 
-	async stop()
+	async stop( options?: IPatcherStopOptions )
 	{
-		return this._stop( false );
+		let stopOptions = _.assign<IPatcherStopOptions, IPatcherInternalStopOptions>( options || { voodooQueue: false }, {
+			terminate: false,
+		} );
+
+		return this._stop( stopOptions );
 	}
 
-	async cancel()
+	async cancel( options?: IPatcherStopOptions )
 	{
-		return this._stop( true );
+		let stopOptions = _.assign<IPatcherStopOptions, IPatcherInternalStopOptions>( options || { voodooQueue: false }, {
+			terminate: true,
+		} );
+
+		return this._stop( stopOptions );
 	}
 
 	private async patch()
@@ -501,25 +534,25 @@ export class PatchHandle
 		return this;
 	}
 
-	onPaused( fn: Function )
+	onPaused( fn: ( voodooQueue: boolean ) => any )
 	{
 		this._emitter.addListener( 'stopped', fn );
 		return this;
 	}
 
-	deregisterOnPaused( fn: Function )
+	deregisterOnPaused( fn: ( voodooQueue: boolean ) => any )
 	{
 		this._emitter.removeListener( 'stopped', fn );
 		return this;
 	}
 
-	onResumed( fn: Function )
+	onResumed( fn: ( voodooQueue: boolean ) => any )
 	{
 		this._emitter.addListener( 'resumed', fn );
 		return this;
 	}
 
-	deregisterOnResumed( fn: Function )
+	deregisterOnResumed( fn: ( voodooQueue: boolean ) => any )
 	{
 		this._emitter.removeListener( 'resumed', fn );
 		return this;

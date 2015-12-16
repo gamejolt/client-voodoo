@@ -7,7 +7,6 @@ import * as _ from 'lodash';
 interface IQueueState
 {
 	queued: boolean;
-	expectingManagement: number;
 	timeLeft: number;
 	managed: boolean;
 
@@ -15,8 +14,8 @@ interface IQueueState
 		onProgress?: ( progress: IDownloadProgress ) => any;
 		onPatching?: Function;
 		onExtractProgress?: ( progress: IExtractProgress ) => any;
-		onPaused?: Function;
-		onResumed?: Function;
+		onPaused?: ( voodooQueue: boolean ) => any;
+		onResumed?: ( voodooQueue: boolean ) => any;
 		onCanceled?: Function;
 	}
 }
@@ -144,19 +143,19 @@ export abstract class VoodooQueue
 		this.log( patch, 'Updated time left' );
 	}
 
-	private static onPaused( patch: PatchHandle, state: IQueueState )
+	private static onPaused( patch: PatchHandle, state: IQueueState, voodooQueue: boolean )
 	{
 		this.log( patch, 'Paused' );
-		if ( state && !state.expectingManagement ) {
+		if ( state && !voodooQueue ) {
 			this.dequeue( patch );
 		}
 	}
 
-	private static onResumed( patch: PatchHandle, state: IQueueState )
+	private static onResumed( patch: PatchHandle, state: IQueueState, voodooQueue: boolean )
 	{
 		this.log( patch, 'Resumed' );
 		console.log( state );
-		if ( !state.expectingManagement ) {
+		if ( !voodooQueue ) {
 			this.dequeue( patch );
 		}
 	}
@@ -179,7 +178,6 @@ export abstract class VoodooQueue
 
 		let state: IQueueState = {
 			queued: concurrentPatches.length >= operationLimit,
-			expectingManagement: 0,
 			timeLeft: Infinity,
 			managed: true,
 			events: {},
@@ -244,11 +242,10 @@ export abstract class VoodooQueue
 	private static async resumePatch( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Resuming patch' );
-		state.expectingManagement += 1;
 		let result: boolean;
 		try {
 			console.log( 'Expecting management' );
-			result = await patch.start();
+			result = await patch.start( { voodooQueue: true } );
 			if ( result ) {
 				state.queued = false;
 			}
@@ -257,17 +254,15 @@ export abstract class VoodooQueue
 			result = false;
 		}
 		console.log( 'Not expecting management' );
-		state.expectingManagement = Math.max( state.expectingManagement - 1, 0 );
 		return result;
 	}
 
 	private static async pausePatch( patch: PatchHandle, state: IQueueState )
 	{
 		this.log( patch, 'Pausing patch' );
-		state.expectingManagement += 1;
 		let result: boolean;
 		try {
-			result = await patch.stop();
+			result = await patch.stop( { voodooQueue: true } );
 			if ( result ) {
 				state.queued = true;
 			}
@@ -275,7 +270,6 @@ export abstract class VoodooQueue
 		catch ( err ) {
 			result = false;
 		}
-		state.expectingManagement = Math.max( state.expectingManagement - 1, 0 );
 		return result;
 	}
 
