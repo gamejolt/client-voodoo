@@ -11,39 +11,39 @@ describe( 'Patcher', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	let build: GameJolt.IGameBuild = {
+	let localPackage: GameJolt.IGamePackage = {
 		id: 1,
-		game_id: 1,
-		folder: 'test',
-		type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
-		package: {
-			id: 1,
-			title: 'test',
-			description: 'test',
-		},
+		title: 'test',
+		description: 'test',
 		release: {
 			id: 1,
 			version_number: '1.0.0',
+		},
+		build: {
+			id: 1,
+			game_id: 1,
+			folder: 'test',
+			type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+			archive_type: 'tar.xz',
+			os_windows: false,
+			os_windows_64: false,
+			os_mac: false,
+			os_mac_64: false,
+			os_linux: true,
+			os_linux_64: false,
+			os_other: false,
+			modified_on: 1,
 		},
 		file: {
 			id: 1,
 			filename: 'GJGas.exe.tar.xz',
 			filesize: 1,
 		},
-		archive_type: 'tar.xz',
 		launch_options: [ {
 			id: 1,
 			os: 'linux',
 			executable_path: 'GJGas.exe',
 		} ],
-		os_windows: false,
-		os_windows_64: false,
-		os_mac: false,
-		os_mac_64: false,
-		os_linux: true,
-		os_linux_64: false,
-		os_other: false,
-		modified_on: 1,
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 	}
 
@@ -80,7 +80,7 @@ describe( 'Patcher', function()
 
 	it( 'Should work', async () =>
 	{
-		let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+		let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
 			overwrite: true,
 			decompressInDownload: false,
 		} );
@@ -116,7 +116,7 @@ describe( 'Patcher', function()
 	it( 'Should be resumable after pausing right away', async ( done ) =>
 	{
 		try {
-			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
 				overwrite: true,
 				decompressInDownload: false,
 			} );
@@ -168,7 +168,7 @@ describe( 'Patcher', function()
 	it( 'Should be resumable after pausing while downloading', async ( done ) =>
 	{
 		try {
-			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
 				overwrite: true,
 				decompressInDownload: false,
 			} );
@@ -216,10 +216,10 @@ describe( 'Patcher', function()
 	{
 		try {
 			console.log( 'Preparing...' );
-			await Common.mkdirp( build.install_dir );
-			await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build.install_dir, '.gj-tempDownload' ) );
+			await Common.mkdirp( localPackage.install_dir );
+			await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage.install_dir, '.gj-tempDownload' ) );
 
-			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
 				overwrite: false, // false because im tricking patcher into thinking it already downloaded a hugeass file.
 				decompressInDownload: false,
 			} );
@@ -266,10 +266,10 @@ describe( 'Patcher', function()
 	{
 		try {
 			console.log( 'Preparing...' );
-			await Common.mkdirp( build.install_dir );
-			await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build.install_dir, '.gj-tempDownload' ) );
+			await Common.mkdirp( localPackage.install_dir );
+			await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage.install_dir, '.gj-tempDownload' ) );
 
-			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
 				overwrite: false, // false because im tricking patcher into thinking it already downloaded a hugeass file.
 				decompressInDownload: false,
 			} );

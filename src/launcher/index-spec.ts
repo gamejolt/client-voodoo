@@ -41,43 +41,43 @@ describe( 'Launcher', function()
 	it( 'Should work', async ( done ) =>
 	{
 		try {
-			let build: GameJolt.IGameBuild = {
+			let localPackage: GameJolt.IGamePackage = {
 				id: 1,
-				game_id: 1,
-				folder: 'test',
-				type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
-				package: {
-					id: 1,
-					title: 'test',
-					description: 'test',
-				},
+				title: 'test',
+				description: 'test',
 				release: {
 					id: 1,
 					version_number: '1.0.0',
+				},
+				build: {
+					id: 1,
+					game_id: 1,
+					folder: 'test',
+					type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+					archive_type: 'tar.xz',
+					os_windows: false,
+					os_windows_64: false,
+					os_mac: false,
+					os_mac_64: false,
+					os_linux: true,
+					os_linux_64: false,
+					os_other: false,
+					modified_on: 1,
 				},
 				file: {
 					id: 1,
 					filename: 'GJGas.exe.tar.xz',
 					filesize: 1,
 				},
-				archive_type: 'tar.xz',
 				launch_options: [ {
 					id: 1,
 					os: 'linux',
 					executable_path: 'GJGas.exe',
 				} ],
-				os_windows: false,
-				os_windows_64: false,
-				os_mac: false,
-				os_mac_64: false,
-				os_linux: true,
-				os_linux_64: false,
-				os_other: false,
-				modified_on: 1,
 				install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 			}
 
-			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', build, {
+			let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
 				overwrite: true,
 				decompressInDownload: false,
 			} );
@@ -100,7 +100,7 @@ describe( 'Launcher', function()
 
 			await patchHandle.promise;
 
-			let launchHandle = Launcher.launch( build, 'linux', '32' );
+			let launchHandle = Launcher.launch( localPackage, 'linux', '32' );
 			let launchInstance = await launchHandle.promise;
 			await new Promise( ( resolve ) => launchInstance.on( 'end', resolve ) );
 			done();
