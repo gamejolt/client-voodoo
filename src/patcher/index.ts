@@ -221,6 +221,7 @@ export class PatchHandle
 						}
 						if ( this._wasStopped ) {
 							this._emitter.emit( 'resumed', options && options.voodooQueue );
+							this._wasStopped = false;
 						}
 
 						// TODO consider putting this beofre emitting downloading event if we dont want to emit it for tasks that pend right away.
@@ -242,6 +243,7 @@ export class PatchHandle
 				this._state = PatchHandleState.DOWNLOADING;
 				if ( this._wasStopped ) {
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
+					this._wasStopped = false;
 				}
 			}
 
@@ -308,7 +310,7 @@ export class PatchHandle
 		return true;
 	}
 
-	async stop( options?: IPatcherStopOptions )
+	stop( options?: IPatcherStopOptions )
 	{
 		let stopOptions = _.assign<IPatcherStopOptions, IPatcherInternalStopOptions>( options || { voodooQueue: false }, {
 			terminate: false,
@@ -317,7 +319,7 @@ export class PatchHandle
 		return this._stop( stopOptions );
 	}
 
-	async cancel( options?: IPatcherStopOptions )
+	cancel( options?: IPatcherStopOptions )
 	{
 		let stopOptions = _.assign<IPatcherStopOptions, IPatcherInternalStopOptions>( options || { voodooQueue: false }, {
 			terminate: true,
@@ -421,6 +423,7 @@ export class PatchHandle
 		}
 		if ( this._wasStopped ) {
 			this._emitter.emit( 'resumed' );
+			this._wasStopped = false;
 		}
 
 		let extractResult = await this._extractHandle.promise;

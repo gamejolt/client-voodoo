@@ -198,6 +198,7 @@ describe( 'Voodoo queue', function()
 		await VoodooQueue.setMaxDownloads( 1 );
 
 		let firstFinishedDownloading = false;
+		let resumed = false;
 
 		let patch = getPatch();
 		patch
@@ -207,14 +208,22 @@ describe( 'Voodoo queue', function()
 				patch2
 					.onPaused( Common.test( () =>
 					{
+						console.log( 'PAUSED' );
 						expect( patch2.state ).to.eq( PatchHandleState.STOPPED_DOWNLOAD );
 						expect( firstFinishedDownloading ).to.eq( false );
 					}, done ) )
 					.onResumed( Common.test( () =>
 					{
+						console.log( 'RESUMED' );
 						expect( patch2.state ).to.eq( PatchHandleState.DOWNLOADING );
 						expect( firstFinishedDownloading ).to.eq( true );
-						done();
+						resumed = true;
+					}, done ) )
+					.onProgress( SampleUnit.KBps, Common.test( () =>
+					{
+						if ( resumed ) {
+							done();
+						}
 					}, done ) );
 			}, done ) )
 			.onPatching( () => { firstFinishedDownloading = true } );
@@ -232,6 +241,7 @@ describe( 'Voodoo queue', function()
 		await VoodooQueue.setMaxExtractions( 1 );
 
 		let firstFinished = false;
+		let resumed = false;
 
 		let patch = getPatch( null, {
 			overwrite: false,
@@ -259,7 +269,13 @@ describe( 'Voodoo queue', function()
 						console.log( 'Second resumed' );
 						expect( patch2.state ).to.eq( PatchHandleState.PATCHING );
 						expect( firstFinished ).to.eq( true );
-						done();
+						resumed = true;
+					}, done ) )
+					.onExtractProgress( SampleUnit.KBps, Common.test( () =>
+					{
+						if ( resumed ) {
+							done();
+						}
 					}, done ) );
 				await patch2.promise;
 				console.log( 'Second finished' );
@@ -342,5 +358,25 @@ describe( 'Voodoo queue', function()
 			.onPaused( () => done() );
 
 		await patch.promise;
+	} ) );
+
+	it( 'Should let two patch instances run concurrently without blocking each other', Common.test( async ( done ) =>
+	{
+		let patch = getPatch();
+		patch
+			.onPaused( Common.test( () =>
+			{
+				throw new Error( 'Patch 1 got paused' );
+			}, done ) );
+
+		let patch2 = getPatch( null, null, localPackage2 );
+		patch2
+			.onPaused( Common.test( () =>
+			{
+				throw new Error( 'Patch 2 got paused' );
+			}, done ) );
+
+		await Promise.all( [ patch.promise, patch2.promise ] );
+		done();
 	} ) );
 } );
