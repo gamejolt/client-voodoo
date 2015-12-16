@@ -4,13 +4,13 @@ var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
 var _map = require("babel-runtime/core-js/map");
 
 var _map2 = _interopRequireDefault(_map);
+
+var _promise = require("babel-runtime/core-js/promise");
+
+var _promise2 = _interopRequireDefault(_promise);
 
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
@@ -83,8 +83,11 @@ var Patcher = (function () {
 
     (0, _createClass3.default)(Patcher, null, [{
         key: "patch",
-        value: function patch(url, build, options) {
-            return new PatchHandle(url, build, options);
+        value: function patch(generateUrl, localPackage, options) {
+            var _generateUrl = typeof generateUrl === 'string' ? function () {
+                return _promise2.default.resolve(generateUrl);
+            } : generateUrl;
+            return new PatchHandle(_generateUrl, localPackage, options);
         }
     }]);
     return Patcher;
@@ -93,11 +96,11 @@ var Patcher = (function () {
 exports.Patcher = Patcher;
 
 var PatchHandle = (function () {
-    function PatchHandle(_url, _build, _options) {
+    function PatchHandle(_generateUrl, _localPackage, _options) {
         (0, _classCallCheck3.default)(this, PatchHandle);
 
-        this._url = _url;
-        this._build = _build;
+        this._generateUrl = _generateUrl;
+        this._localPackage = _localPackage;
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
             overwrite: false,
@@ -129,10 +132,10 @@ var PatchHandle = (function () {
     }, {
         key: "_getDecompressStream",
         value: function _getDecompressStream() {
-            if (!this._build.archive_type) {
+            if (!this._localPackage.build.archive_type) {
                 return null;
             }
-            switch (this._build.archive_type) {
+            switch (this._localPackage.build.archive_type) {
                 case 'tar.xz':
                     return require('lzma-native').createDecompressor();
                 case 'tar.gz':
@@ -179,19 +182,19 @@ var PatchHandle = (function () {
         }
     }, {
         key: "start",
-        value: function start(url) {
+        value: function start(options) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
                 var _this2 = this;
 
+                var newUrl;
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
                         switch (_context3.prev = _context3.next) {
                             case 0:
-                                this._url = url || this._url;
                                 this._promise = this.promise;
 
                                 if (!(this._state === PatchHandleState.STOPPED_DOWNLOAD)) {
-                                    _context3.next = 22;
+                                    _context3.next = 27;
                                     break;
                                 }
 
@@ -200,13 +203,28 @@ var PatchHandle = (function () {
                                     this._waitForStartResolver();
                                     this._waitForStartPromise = null;
                                 }
-                                this._tempFile = path.join(this._build.install_dir, '.gj-tempDownload');
-                                this._archiveListFile = path.join(this._build.install_dir, '.gj-archive-file-list');
-                                this._patchListFile = path.join(this._build.install_dir, '.gj-patch-file');
-                                this._to = this._build.install_dir;
+                                this._tempFile = path.join(this._localPackage.install_dir, '.gj-tempDownload');
+                                this._archiveListFile = path.join(this._localPackage.install_dir, '.gj-archive-file-list');
+                                this._patchListFile = path.join(this._localPackage.install_dir, '.gj-patch-file');
+                                this._to = this._localPackage.install_dir;
+                                newUrl = options && options.url ? options.url : null;
+
+                                if (!(!newUrl && this._generateUrl)) {
+                                    _context3.next = 13;
+                                    break;
+                                }
+
+                                _context3.next = 12;
+                                return this._generateUrl();
+
+                            case 12:
+                                newUrl = _context3.sent;
+
+                            case 13:
+                                this._url = newUrl || this._url;
 
                                 if (this._downloadHandle) {
-                                    _context3.next = 15;
+                                    _context3.next = 20;
                                     break;
                                 }
 
@@ -230,7 +248,7 @@ var PatchHandle = (function () {
                                                             this._emittedDownloading = true;
                                                         }
                                                         if (this._wasStopped) {
-                                                            this._emitter.emit('resumed');
+                                                            this._emitter.emit('resumed', options && options.voodooQueue);
                                                         }
                                                         // TODO consider putting this beofre emitting downloading event if we dont want to emit it for tasks that pend right away.
                                                         _context2.next = 5;
@@ -255,25 +273,25 @@ var PatchHandle = (function () {
                                 });
                                 // Make sure to not remove the temp download file if we're resuming.
                                 this._options.overwrite = false;
-                                _context3.next = 19;
+                                _context3.next = 24;
                                 break;
 
-                            case 15:
-                                _context3.next = 17;
-                                return this._downloadHandle.start();
-
-                            case 17:
-                                this._state = PatchHandleState.DOWNLOADING;
-                                if (this._wasStopped) {
-                                    this._emitter.emit('resumed');
-                                }
-
-                            case 19:
-                                return _context3.abrupt("return", true);
+                            case 20:
+                                _context3.next = 22;
+                                return this._downloadHandle.start(this._url);
 
                             case 22:
+                                this._state = PatchHandleState.DOWNLOADING;
+                                if (this._wasStopped) {
+                                    this._emitter.emit('resumed', options && options.voodooQueue);
+                                }
+
+                            case 24:
+                                return _context3.abrupt("return", true);
+
+                            case 27:
                                 if (!(this._state === PatchHandleState.STOPPED_PATCH)) {
-                                    _context3.next = 28;
+                                    _context3.next = 33;
                                     break;
                                 }
 
@@ -282,14 +300,14 @@ var PatchHandle = (function () {
                                     this._waitForStartResolver();
                                     this._waitForStartPromise = null;
                                 }
-                                this._emitter.emit('resumed');
+                                this._emitter.emit('resumed', options && options.voodooQueue);
                                 this._extractHandle.start();
                                 return _context3.abrupt("return", true);
 
-                            case 28:
+                            case 33:
                                 return _context3.abrupt("return", false);
 
-                            case 29:
+                            case 34:
                             case "end":
                                 return _context3.stop();
                         }
@@ -299,7 +317,7 @@ var PatchHandle = (function () {
         }
     }, {
         key: "_stop",
-        value: function _stop(terminate) {
+        value: function _stop(options) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
                 return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
@@ -348,7 +366,7 @@ var PatchHandle = (function () {
                                 }
 
                                 _context4.next = 20;
-                                return this._extractHandle.stop(terminate);
+                                return this._extractHandle.stop(options && options.terminate);
 
                             case 20:
                                 _context4.t0 = !_context4.sent;
@@ -375,10 +393,10 @@ var PatchHandle = (function () {
                                 console.log('Stopped');
                                 console.log('State: ' + this._state);
                                 this._wasStopped = true;
-                                if (terminate) {
+                                if (options && options.terminate) {
                                     this._emitter.emit('canceled');
                                 } else {
-                                    this._emitter.emit('stopped');
+                                    this._emitter.emit('stopped', options && options.voodooQueue);
                                 }
                                 this.waitForStart();
                                 return _context4.abrupt("return", true);
@@ -393,15 +411,19 @@ var PatchHandle = (function () {
         }
     }, {
         key: "stop",
-        value: function stop() {
+        value: function stop(options) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+                var stopOptions;
                 return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
                         switch (_context5.prev = _context5.next) {
                             case 0:
-                                return _context5.abrupt("return", this._stop(false));
+                                stopOptions = _.assign(options || { voodooQueue: false }, {
+                                    terminate: false
+                                });
+                                return _context5.abrupt("return", this._stop(stopOptions));
 
-                            case 1:
+                            case 2:
                             case "end":
                                 return _context5.stop();
                         }
@@ -411,15 +433,19 @@ var PatchHandle = (function () {
         }
     }, {
         key: "cancel",
-        value: function cancel() {
+        value: function cancel(options) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+                var stopOptions;
                 return _regenerator2.default.wrap(function _callee6$(_context6) {
                     while (1) {
                         switch (_context6.prev = _context6.next) {
                             case 0:
-                                return _context6.abrupt("return", this._stop(true));
+                                stopOptions = _.assign(options || { voodooQueue: false }, {
+                                    terminate: true
+                                });
+                                return _context6.abrupt("return", this._stop(stopOptions));
 
-                            case 1:
+                            case 2:
                             case "end":
                                 return _context6.stop();
                         }

@@ -82,8 +82,10 @@ var Launcher = (function () {
 
     (0, _createClass3.default)(Launcher, null, [{
         key: "launch",
-        value: function launch(build, os, arch, options) {
-            return new LaunchHandle(build, os, arch, options);
+
+        // Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
+        value: function launch(localPackage, os, arch, options) {
+            return new LaunchHandle(localPackage, os, arch, options);
         }
     }, {
         key: "attach",
@@ -151,10 +153,10 @@ Launcher._runningInstances = new _map2.default();
 exports.Launcher = Launcher;
 
 var LaunchHandle = (function () {
-    function LaunchHandle(_build, _os, _arch, options) {
+    function LaunchHandle(_localPackage, _os, _arch, options) {
         (0, _classCallCheck3.default)(this, LaunchHandle);
 
-        this._build = _build;
+        this._localPackage = _localPackage;
         this._os = _os;
         this._arch = _arch;
         options = options || {
@@ -172,7 +174,7 @@ var LaunchHandle = (function () {
             var _iteratorError = undefined;
 
             try {
-                for (var _iterator = (0, _getIterator3.default)(this._build.launch_options), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                for (var _iterator = (0, _getIterator3.default)(this._localPackage.launch_options), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var launchOption = _step.value;
 
                     var lOs = launchOption.os.split('_');
@@ -275,7 +277,7 @@ var LaunchHandle = (function () {
                             case 3:
                                 executablePath = launchOption.executable_path.replace(/\//, path.sep);
 
-                                this._file = path.join(this._build.install_dir, executablePath);
+                                this._file = path.join(this._localPackage.install_dir, executablePath);
                                 // If the destination already exists, make sure its valid.
                                 _context4.next = 7;
                                 return common_1.default.fsExists(this._file);
@@ -525,9 +527,9 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "build",
+        key: "package",
         get: function get() {
-            return this._build;
+            return this._localPackage;
         }
     }, {
         key: "file",

@@ -96,7 +96,7 @@ var DownloadHandle = (function () {
 
     (0, _createClass3.default)(DownloadHandle, [{
         key: "start",
-        value: function start() {
+        value: function start(url) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this = this;
 
@@ -115,121 +115,122 @@ var DownloadHandle = (function () {
                             case 2:
                                 this._state = DownloadHandleState.STARTING;
                                 this._promise = this.promise; // Make sure a promise exists when starting.
+                                this._url = url || this._url;
                                 this._totalSize = 0;
                                 this._totalDownloaded = 0;
-                                _context.prev = 6;
-                                _context.next = 9;
+                                _context.prev = 7;
+                                _context.next = 10;
                                 return common_1.default.fsExists(this._to);
 
-                            case 9:
+                            case 10:
                                 if (!_context.sent) {
-                                    _context.next = 27;
+                                    _context.next = 28;
                                     break;
                                 }
 
-                                _context.next = 12;
+                                _context.next = 13;
                                 return common_1.default.fsStat(this._to);
 
-                            case 12:
+                            case 13:
                                 stat = _context.sent;
 
                                 if (stat.isFile()) {
-                                    _context.next = 17;
+                                    _context.next = 18;
                                     break;
                                 }
 
                                 throw new Error('Can\'t resume downloading because the destination isn\'t a file.');
 
-                            case 17:
+                            case 18:
                                 if (!this._options.overwrite) {
-                                    _context.next = 24;
+                                    _context.next = 25;
                                     break;
                                 }
 
-                                _context.next = 20;
+                                _context.next = 21;
                                 return common_1.default.fsUnlink(this._to);
 
-                            case 20:
+                            case 21:
                                 unlinked = _context.sent;
 
                                 if (!unlinked) {
-                                    _context.next = 23;
+                                    _context.next = 24;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download because destination cannot be overwritten.');
 
-                            case 23:
+                            case 24:
                                 stat.size = 0;
 
-                            case 24:
+                            case 25:
                                 this._totalDownloaded = stat.size;
-                                _context.next = 42;
+                                _context.next = 43;
                                 break;
 
-                            case 27:
+                            case 28:
                                 toDir = path.dirname(this._to);
-                                _context.next = 30;
+                                _context.next = 31;
                                 return common_1.default.fsExists(toDir);
 
-                            case 30:
+                            case 31:
                                 if (!_context.sent) {
-                                    _context.next = 38;
+                                    _context.next = 39;
                                     break;
                                 }
 
-                                _context.next = 33;
+                                _context.next = 34;
                                 return common_1.default.fsStat(toDir);
 
-                            case 33:
+                            case 34:
                                 dirStat = _context.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 36;
+                                    _context.next = 37;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download to destination because the path is invalid.');
 
-                            case 36:
-                                _context.next = 42;
+                            case 37:
+                                _context.next = 43;
                                 break;
 
-                            case 38:
-                                _context.next = 40;
+                            case 39:
+                                _context.next = 41;
                                 return common_1.default.mkdirp(toDir);
 
-                            case 40:
+                            case 41:
                                 if (_context.sent) {
-                                    _context.next = 42;
+                                    _context.next = 43;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the destination folder path');
 
-                            case 42:
+                            case 43:
                                 this._options.overwrite = false;
-                                _context.next = 49;
+                                _context.next = 50;
                                 break;
 
-                            case 45:
-                                _context.prev = 45;
-                                _context.t0 = _context["catch"](6);
+                            case 46:
+                                _context.prev = 46;
+                                _context.t0 = _context["catch"](7);
 
                                 this.onError(_context.t0);
                                 return _context.abrupt("return", false);
 
-                            case 49:
+                            case 50:
                                 return _context.abrupt("return", new _promise2.default(function (resolve) {
                                     return _this.download(resolve);
                                 }));
 
-                            case 50:
+                            case 51:
                             case "end":
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[6, 45]]);
+                }, _callee, this, [[7, 46]]);
             }));
         }
     }, {

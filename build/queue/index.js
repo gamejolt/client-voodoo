@@ -218,18 +218,18 @@ var VoodooQueue = (function () {
         }
     }, {
         key: "onPaused",
-        value: function onPaused(patch, state) {
+        value: function onPaused(patch, state, voodooQueue) {
             this.log(patch, 'Paused');
-            if (state && !state.expectingManagement) {
+            if (state && !voodooQueue) {
                 this.dequeue(patch);
             }
         }
     }, {
         key: "onResumed",
-        value: function onResumed(patch, state) {
+        value: function onResumed(patch, state, voodooQueue) {
             this.log(patch, 'Resumed');
             console.log(state);
-            if (!state.expectingManagement) {
+            if (!voodooQueue) {
                 this.dequeue(patch);
             }
         }
@@ -263,7 +263,6 @@ var VoodooQueue = (function () {
                                 concurrentPatches = this.fetch(true, isDownloading);
                                 state = {
                                     queued: concurrentPatches.length >= operationLimit,
-                                    expectingManagement: 0,
                                     timeLeft: Infinity,
                                     managed: true,
                                     events: {}
@@ -349,40 +348,38 @@ var VoodooQueue = (function () {
                         switch (_context6.prev = _context6.next) {
                             case 0:
                                 this.log(patch, 'Resuming patch');
-                                state.expectingManagement += 1;
                                 result = undefined;
-                                _context6.prev = 3;
+                                _context6.prev = 2;
 
                                 console.log('Expecting management');
-                                _context6.next = 7;
-                                return patch.start();
+                                _context6.next = 6;
+                                return patch.start({ voodooQueue: true });
 
-                            case 7:
+                            case 6:
                                 result = _context6.sent;
 
                                 if (result) {
                                     state.queued = false;
                                 }
-                                _context6.next = 14;
+                                _context6.next = 13;
                                 break;
 
-                            case 11:
-                                _context6.prev = 11;
-                                _context6.t0 = _context6["catch"](3);
+                            case 10:
+                                _context6.prev = 10;
+                                _context6.t0 = _context6["catch"](2);
 
                                 result = false;
 
-                            case 14:
+                            case 13:
                                 console.log('Not expecting management');
-                                state.expectingManagement = Math.max(state.expectingManagement - 1, 0);
                                 return _context6.abrupt("return", result);
 
-                            case 17:
+                            case 15:
                             case "end":
                                 return _context6.stop();
                         }
                     }
-                }, _callee6, this, [[3, 11]]);
+                }, _callee6, this, [[2, 10]]);
             }));
         }
     }, {
@@ -395,37 +392,35 @@ var VoodooQueue = (function () {
                         switch (_context7.prev = _context7.next) {
                             case 0:
                                 this.log(patch, 'Pausing patch');
-                                state.expectingManagement += 1;
                                 result = undefined;
-                                _context7.prev = 3;
-                                _context7.next = 6;
-                                return patch.stop();
+                                _context7.prev = 2;
+                                _context7.next = 5;
+                                return patch.stop({ voodooQueue: true });
 
-                            case 6:
+                            case 5:
                                 result = _context7.sent;
 
                                 if (result) {
                                     state.queued = true;
                                 }
-                                _context7.next = 13;
+                                _context7.next = 12;
                                 break;
 
-                            case 10:
-                                _context7.prev = 10;
-                                _context7.t0 = _context7["catch"](3);
+                            case 9:
+                                _context7.prev = 9;
+                                _context7.t0 = _context7["catch"](2);
 
                                 result = false;
 
-                            case 13:
-                                state.expectingManagement = Math.max(state.expectingManagement - 1, 0);
+                            case 12:
                                 return _context7.abrupt("return", result);
 
-                            case 15:
+                            case 13:
                             case "end":
                                 return _context7.stop();
                         }
                     }
-                }, _callee7, this, [[3, 10]]);
+                }, _callee7, this, [[2, 9]]);
             }));
         }
     }, {
