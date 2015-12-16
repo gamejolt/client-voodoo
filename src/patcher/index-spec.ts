@@ -99,6 +99,15 @@ describe( 'Patcher', function()
 			{
 				console.log( 'Patching...' );
 			} )
+			.onExtractProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.onFile( function( file )
+			{
+				console.log( 'Extracted file: ' + file.name );
+			} )
 			.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
 
 		return patchHandle.promise;
@@ -137,6 +146,15 @@ describe( 'Patcher', function()
 				{
 					console.log( 'Patching...' );
 				} )
+				.onExtractProgress( SampleUnit.KBps, function( data )
+				{
+					console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+				} )
+				.onFile( function( file )
+				{
+					console.log( 'Extracted file: ' + file.name );
+				} )
 				.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
 
 			await patchHandle.promise;
@@ -174,6 +192,15 @@ describe( 'Patcher', function()
 				.onPatching( function()
 				{
 					console.log( 'Patching...' );
+				} )
+				.onExtractProgress( SampleUnit.KBps, function( data )
+				{
+					console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+				} )
+				.onFile( function( file )
+				{
+					console.log( 'Extracted file: ' + file.name );
 				} )
 				.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
 
@@ -216,6 +243,15 @@ describe( 'Patcher', function()
 					console.log( 'Resuming...' );
 					await patchHandle.start();
 				} )
+				.onExtractProgress( SampleUnit.KBps, function( data )
+				{
+					console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+				} )
+				.onFile( function( file )
+				{
+					console.log( 'Extracted file: ' + file.name );
+				} )
 				.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
 
 			await patchHandle.promise;
@@ -257,6 +293,15 @@ describe( 'Patcher', function()
 					await wait( 5000 );
 					console.log( 'Resuming...' );
 					/* await */ patchHandle.start(); // Dont await here before that makes you wait for the whole extraction to finish.
+				} )
+				.onExtractProgress( SampleUnit.KBps, function( data )
+				{
+					console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+				} )
+				.onFile( function( file )
+				{
+					console.log( 'Extracted file: ' + file.name );
 				} )
 				.start( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz' );
 

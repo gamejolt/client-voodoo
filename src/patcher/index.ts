@@ -5,6 +5,7 @@ import * as path from 'path';
 import { Transform } from 'stream';
 import { EventEmitter } from 'events';
 
+import { IEntryHeader } from 'tar-stream';
 import * as StreamSpeed from '../downloader/stream-speed';
 import { Downloader, DownloadHandle, IDownloadProgress } from '../downloader';
 import { Extractor, ExtractHandle, IExtractProgress } from '../extractor';
@@ -79,6 +80,7 @@ export class PatchHandle
 		this._downloadHandle = null;
 		this._extractHandle = null;
 		this._onProgressFuncMapping = new Map<Function, Function>();
+		this._onExtractProgressFuncMapping = new Map<Function, Function>();
 		this._emitter = new EventEmitter();
 	}
 
@@ -369,7 +371,10 @@ export class PatchHandle
 			deleteSource: true,
 			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
 		} );
-		this._extractHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitExtractProgress( progress ) )
+
+		this._extractHandle
+			.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitExtractProgress( progress ) )
+			.onFile( ( file ) => this.emitFile( file ) );
 
 		//  Wait for start before emitting the patching state to be sure everything's initialized properly.
 		await this._extractHandle.start();
@@ -484,6 +489,18 @@ export class PatchHandle
 		return this;
 	}
 
+	onFile( fn: ( file: IEntryHeader ) => any )
+	{
+		this._emitter.addListener( 'file', fn );
+		return this;
+	}
+
+	deregisterOnFile( fn: ( file: IEntryHeader ) => any )
+	{
+		this._emitter.removeListener( 'file', fn );
+		return this;
+	}
+
 	onPaused( fn: Function )
 	{
 		this._emitter.addListener( 'stopped', fn );
@@ -528,6 +545,11 @@ export class PatchHandle
 	private emitExtractProgress( progress: IExtractProgress )
 	{
 		this._emitter.emit( 'extract-progress', progress );
+	}
+
+	private emitFile( file: IEntryHeader )
+	{
+		this._emitter.emit( 'file', file );
 	}
 
 	private onError( err: NodeJS.ErrnoException )

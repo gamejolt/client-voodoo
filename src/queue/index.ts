@@ -1,7 +1,7 @@
 import { PatchHandle } from '../patcher';
 import { DownloadHandle, IDownloadProgress } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
-import { ExtractHandle } from '../extractor';
+import { ExtractHandle, IExtractProgress } from '../extractor';
 import * as _ from 'lodash';
 
 interface IQueueState
@@ -14,6 +14,7 @@ interface IQueueState
 	events: {
 		onProgress?: ( progress: IDownloadProgress ) => any;
 		onPatching?: Function;
+		onExtractProgress?: ( progress: IExtractProgress ) => any;
 		onPaused?: Function;
 		onResumed?: Function;
 		onCanceled?: Function;
@@ -119,7 +120,7 @@ export abstract class VoodooQueue
 		console.log( 'Voodoo Queue: ' + message + ' ( ' + JSON.stringify( state ) + ' )' );
 	}
 
-	private static onProgress( patch: PatchHandle, state: IQueueState, progress )
+	private static onProgress( patch: PatchHandle, state: IQueueState, progress: IDownloadProgress )
 	{
 		state.timeLeft = progress.timeLeft;
 		this.log( patch, 'Updated time left' );
@@ -135,6 +136,12 @@ export abstract class VoodooQueue
 		if ( concurrentPatches.length > this._maxExtractions ) {
 			this.pausePatch( patch, state );
 		}
+	}
+
+	private static onExtractProgress( patch: PatchHandle, state: IQueueState, progress: IExtractProgress )
+	{
+		state.timeLeft = progress.timeLeft;
+		this.log( patch, 'Updated time left' );
 	}
 
 	private static onPaused( patch: PatchHandle, state: IQueueState )
@@ -179,6 +186,7 @@ export abstract class VoodooQueue
 		};
 		state.events.onProgress = this.onProgress.bind( this, patch, state );
 		state.events.onPatching = this.onPatching.bind( this, patch, state );
+		state.events.onExtractProgress = this.onExtractProgress.bind( this, patch, state );
 		state.events.onPaused = this.onPaused.bind( this, patch, state );
 		state.events.onResumed = this.onResumed.bind( this, patch, state );
 		state.events.onCanceled = this.onCanceled.bind( this, patch, state );
@@ -188,6 +196,7 @@ export abstract class VoodooQueue
 		patch
 			.onProgress( SampleUnit.KBps, state.events.onProgress )
 			.onPatching( state.events.onPatching )
+			.onExtractProgress( SampleUnit.KBps, state.events.onExtractProgress )
 			.onPaused( state.events.onPaused )
 			.onResumed( state.events.onResumed )
 			.onCanceled( state.events.onCanceled )
@@ -221,6 +230,7 @@ export abstract class VoodooQueue
 		patch
 			.deregisterOnProgress( state.events.onProgress )
 			.deregisterOnPatching( state.events.onPatching )
+			.deregisterOnExtractProgress( state.events.onExtractProgress )
 			.deregisterOnPaused( state.events.onPaused )
 			.deregisterOnResumed( state.events.onResumed )
 			.deregisterOnCanceled( state.events.onCanceled );

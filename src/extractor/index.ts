@@ -247,12 +247,14 @@ export class ExtractHandle
 			.on( 'error', ( err ) => this._rejector( err ) );
 
 		this._readStream.pipe( this._streamSpeed );
+		this._streamSpeed.start();
 	}
 
 	private _unpipe()
 	{
 		this._readStream.unpipe();
 		this._readStream.removeAllListeners();
+		this._streamSpeed.stop();
 	}
 
 	async stop( terminate?: boolean )

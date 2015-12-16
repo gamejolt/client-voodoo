@@ -11,7 +11,7 @@ import * as del from 'del';
 
 import { EventEmitter } from 'events';
 
-describe( 'Patcher', function()
+describe( 'Voodoo queue', function()
 {
 	let app: express.Express;
 	let server: http.Server;
@@ -136,14 +136,23 @@ describe( 'Patcher', function()
 			{
 				console.log( 'Downloading...' );
 			} )
-			/*.onProgress( SampleUnit.KBps, function( data )
+			.onProgress( SampleUnit.KBps, function( data )
 			{
 				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
 				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + 'kbps' );
-			} )*/
+			} )
 			.onPatching( function()
 			{
 				console.log( 'Patching...' );
+			} )
+			.onExtractProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.onFile( function( file )
+			{
+				console.log( 'Extracted file: ' + file.name );
 			} )
 			.start( url || patchUrl );
 
