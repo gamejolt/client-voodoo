@@ -78,11 +78,24 @@ export class ExtractHandle
 			{
 				this._resolver = function( result: IExtractResult )
 				{
+					console.log( 'done' );
+					if ( this._streamSpeed ) {
+						console.log( 'Removing stream speed' );
+						this._streamSpeed.stop();
+					}
+
 					if ( !this._terminated ) {
 						resolve( result );
 					}
 				};
-				this._rejector = reject;
+				this._rejector = function( err )
+				{
+					if ( this._streamSpeed ) {
+						this._streamSpeed.stop();
+					}
+
+					reject( err );
+				};
 			} );
 		}
 		return this._promise;
@@ -147,55 +160,64 @@ export class ExtractHandle
 	private async extract( resolve: ( result: boolean ) => any )
 	{
 		let files: string[] = [];
-		let result = await new Promise<boolean>( ( _resolve, _reject ) =>
-		{
-			this._readStream = fs.createReadStream( this._from );
+		let result;
+		try {
+			result = await new Promise<boolean>( ( _resolve, _reject ) =>
+			{
+				this._readStream = fs.createReadStream( this._from );
 
-			// If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
-			if ( !this._running ) {
-				this.stop( false );
-			}
+				// If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
+				if ( !this._running ) {
+					this.stop( false );
+				}
 
-			let optionsMap = this._options.map;
-			this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
-				map: ( header: tar.IEntryHeader ) =>
-				{
-					if ( optionsMap ) {
-						header = optionsMap( header );
-					}
+				let optionsMap = this._options.map;
+				this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
+					map: ( header: tar.IEntryHeader ) =>
+					{
+						if ( optionsMap ) {
+							header = optionsMap( header );
+						}
 
-					// TODO: fuggin symlinks and the likes.
-					if ( header && header.type === 'file' ) {
-						files.push( header.name );
-						this.emitFile( header );
-					}
+						// TODO: fuggin symlinks and the likes.
+						if ( header && header.type === 'file' ) {
+							files.push( header.name );
+							this.emitFile( header );
+						}
 
-					return header;
-				},
-			} ) );
+						return header;
+					},
+				} ) );
 
-			this._extractStream.on( 'finish', () => _resolve( true ) );
-			this._extractStream.on( 'error', ( err ) => _reject( err ) );
+				this._extractStream.on( 'finish', () => _resolve( true ) );
+				this._extractStream.on( 'error', ( err ) => _reject( err ) );
 
-			this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
-			this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
-				progress: this._totalProcessed / this._totalSize,
-				timeLeft: Math.round( ( this._totalSize - this._totalProcessed ) / sample.currentAverage ),
-				sample: sample,
-			} ) );
+				this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
+				this._streamSpeed.stop(); //  Dont auto start. _pipe will take care of that
+				this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
+					progress: this._totalProcessed / this._totalSize,
+					timeLeft: Math.round( ( this._totalSize - this._totalProcessed ) / sample.currentAverage ),
+					sample: sample,
+				} ) );
 
-			if ( this._options.decompressStream ) {
-				this._streamSpeed
-					.pipe( this._options.decompressStream )
-					.pipe( this._extractStream );
-			}
-			else {
-				this._streamSpeed.pipe( this._extractStream );
-			}
+				if ( this._options.decompressStream ) {
+					this._streamSpeed
+						.pipe( this._options.decompressStream )
+						.pipe( this._extractStream );
+				}
+				else {
+					this._streamSpeed.pipe( this._extractStream );
+				}
 
-			this._pipe();
-			resolve( true );
-		} );
+				this._pipe();
+				resolve( true );
+			} );
+		}
+		catch ( err ) {
+			resolve( false );
+			this._rejector( err );
+			return;
+		}
 
 		// If we're here we should be running because it can only trigger the stream's finish event if we've resumed the reading pipes.
 		// So here its safe to continue on the assumption that we werent stopped or terminated and delete the source file if needed

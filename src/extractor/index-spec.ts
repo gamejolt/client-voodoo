@@ -5,6 +5,7 @@ import { Extractor } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
 import path = require( 'path' );
 import * as del from 'del';
+import { VoodooQueue } from '../queue';
 
 let gzip = require( 'gunzip-maybe' );
 let xz:Function = require( 'lzma-native' ).createDecompressor.bind( this, {
@@ -41,6 +42,11 @@ describe( 'Extractor', function()
 	beforeEach( () =>
 	{
 		return del( 'test-files/!(.gj-*)' );
+	} );
+
+	afterEach( () =>
+	{
+		return VoodooQueue.reset();
 	} );
 
 	it( 'Should work with tar.gz files', async () =>
