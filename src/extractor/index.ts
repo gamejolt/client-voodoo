@@ -2,7 +2,9 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as tar from 'tar-stream';
 import * as tarFS from 'tar-fs';
+import { EventEmitter } from 'events';
 import { Readable, Transform } from 'stream';
+import * as StreamSpeed from '../downloader/stream-speed';
 import Common from '../common';
 
 export interface IExtractOptions extends tarFS.IExtractOptions
@@ -10,6 +12,13 @@ export interface IExtractOptions extends tarFS.IExtractOptions
 	deleteSource?: boolean;
 	overwrite?: boolean;
 	decompressStream?: Transform;
+}
+
+export interface IExtractProgress
+{
+	progress: number;
+	timeLeft: number;
+	sample: StreamSpeed.ISampleData;
 }
 
 export interface IExtractResult
@@ -31,8 +40,14 @@ export class ExtractHandle
 	private _promise: Promise<IExtractResult>;
 	private _resolver: ( result: IExtractResult ) => any;
 	private _rejector: Function;
+
+	private _streamSpeed: StreamSpeed.StreamSpeed;
 	private _readStream: Readable;
 	private _extractStream: tar.Extract;
+	private _totalProcessed: number;
+	private _totalSize: number;
+
+	private _emitter: EventEmitter;
 	private _running: boolean;
 	private _terminated: boolean;
 
@@ -42,6 +57,8 @@ export class ExtractHandle
 			deleteSource: false,
 			overwrite: false,
 		} );
+
+		this._emitter = new EventEmitter();
 	}
 
 	get from(): string
@@ -84,6 +101,18 @@ export class ExtractHandle
 
 		this._running = true;
 		this._promise = this.promise; // Make sure a promise exists when starting.
+
+		if ( !( await Common.fsExists( this._from ) ) ) {
+			throw new Error( 'Can\'t extract to destination because the source does not exist' );
+		}
+
+		let srcStat = await Common.fsStat( this._from );
+		if ( !srcStat.isFile() ) {
+			throw new Error( 'Can\'t extract to destination because the source is not a valid file' );
+		}
+
+		this._totalSize = srcStat.size;
+		this._totalProcessed = 0;
 
 		// If the destination already exists, make sure its valid.
 		if ( await Common.fsExists( this._to ) ) {
@@ -131,22 +160,37 @@ export class ExtractHandle
 			this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
 				map: ( header: tar.IEntryHeader ) =>
 				{
-					// TODO: fuggin symlinks and the likes.
-					if ( header.type === 'file' ) {
-						files.push( header.name );
+					if ( optionsMap ) {
+						header = optionsMap( header );
 					}
 
-					if ( optionsMap ) {
-						return optionsMap( header );
+					// TODO: fuggin symlinks and the likes.
+					if ( header && header.type === 'file' ) {
+						files.push( header.name );
+						this.emitFile( header );
 					}
+
 					return header;
 				},
 			} ) );
 
 			this._extractStream.on( 'finish', () => _resolve( true ) );
 			this._extractStream.on( 'error', ( err ) => _reject( err ) );
+
+			this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
+			this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
+				progress: this._totalProcessed / this._totalSize,
+				timeLeft: Math.round( ( this._totalSize - this._totalProcessed ) / sample.currentAverage ),
+				sample: sample,
+			} ) );
+
 			if ( this._options.decompressStream ) {
-				this._options.decompressStream.pipe( this._extractStream );
+				this._streamSpeed
+					.pipe( this._options.decompressStream )
+					.pipe( this._extractStream );
+			}
+			else {
+				this._streamSpeed.pipe( this._extractStream );
 			}
 
 			this._pipe();
@@ -170,16 +214,39 @@ export class ExtractHandle
 		} );
 	}
 
+	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IExtractProgress ) => void )
+	{
+		this._emitter.addListener( 'progress', ( progress: IExtractProgress ) =>
+		{
+			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
+			fn( progress );
+		} );
+		return this;
+	}
+
+	private emitProgress( progress: IExtractProgress )
+	{
+		this._emitter.emit( 'progress', progress );
+	}
+
+	onFile( fn: ( file: tar.IEntryHeader ) => void )
+	{
+		this._emitter.addListener( 'file', fn );
+		return this;
+	}
+
+	private emitFile( file: tar.IEntryHeader )
+	{
+		this._emitter.emit( 'file', file );
+	}
+
 	private _pipe()
 	{
-		this._readStream.on( 'error', ( err ) => this._rejector( err ) );
+		this._readStream
+			.on( 'data', ( data: string | Buffer ) => { this._totalProcessed += data.length } )
+			.on( 'error', ( err ) => this._rejector( err ) );
 
-		if ( this._options.decompressStream ) {
-			this._readStream.pipe( this._options.decompressStream )
-		}
-		else {
-			this._readStream.pipe( this._extractStream );
-		}
+		this._readStream.pipe( this._streamSpeed );
 	}
 
 	private _unpipe()

@@ -65,7 +65,18 @@ describe( 'Extractor', function()
 			overwrite: true,
 		} );
 
-		await extractHandle.start();
+		extractHandle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.onFile( function( file )
+			{
+				console.log( 'Extracted file: ' + file.name );
+			} )
+			.start();
+
 		return extractHandle.promise;
 	} );
 
@@ -91,21 +102,43 @@ describe( 'Extractor', function()
 			overwrite: true,
 		} );
 
-		await extractHandle.start();
+		extractHandle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.onFile( function( file )
+			{
+				console.log( 'Extracted file: ' + file.name );
+			} )
+			.start();
+
 		return extractHandle.promise;
 	} );
 
 	it( 'Should allow resumable extraction', async ( done ) =>
 	{
-		let extractionHandle = Extractor.extract( 'test-files/.gj-bigTempDownload.tar', path.join( 'test-files', 'extracted', path.basename( 'test' ) ), {
+		let extractHandle = Extractor.extract( 'test-files/.gj-bigTempDownload.tar', path.join( 'test-files', 'extracted', path.basename( 'test' ) ), {
 			deleteSource: false,
 			overwrite: true,
 		} );
 
-		await extractionHandle.start();
+		extractHandle
+			.onProgress( SampleUnit.KBps, function( data )
+			{
+				console.log( 'Extraction progress: ' + Math.floor( data.progress * 100 ) + '%' );
+				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+			} )
+			.onFile( function( file )
+			{
+				console.log( 'Extracted file: ' + file.name );
+			} );
+
+		await extractHandle.start();
 
 		let waited = false;
-		extractionHandle.promise.then( () =>
+		extractHandle.promise.then( () =>
 		{
 			if ( !waited ) {
 				done( new Error( 'Extraction finished too fast! Run again with a shorter delay.' ) );
@@ -119,13 +152,13 @@ describe( 'Extractor', function()
 		// Use a bigger file!
 		await new Promise( ( resolve ) => setTimeout( resolve, 100 ) );
 
-		await extractionHandle.stop();
+		await extractHandle.stop();
 		console.log( 'Stopping to smell the bees.' );
 		await new Promise( ( resolve ) => setTimeout( resolve, 3000 ) );
 		waited = true;
 		console.log( 'I meant flowers.' );
-		await extractionHandle.start();
+		await extractHandle.start();
 
-		await extractionHandle.promise;
+		await extractHandle.promise;
 	} );
 } );

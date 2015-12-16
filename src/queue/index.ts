@@ -34,8 +34,8 @@ export abstract class VoodooQueue
 	}
 
 	private static _slowProfile: IQueueProfile = {
-		downloads: 0,
-		extractions: 0,
+		downloads: 3,
+		extractions: 3,
 	}
 
 	private static _maxDownloads: number = 3;

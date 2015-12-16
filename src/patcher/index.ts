@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 
 import * as StreamSpeed from '../downloader/stream-speed';
 import { Downloader, DownloadHandle, IDownloadProgress } from '../downloader';
-import { Extractor, ExtractHandle } from '../extractor';
+import { Extractor, ExtractHandle, IExtractProgress } from '../extractor';
 import { VoodooQueue } from '../queue';
 import Common from '../common';
 
@@ -55,6 +55,7 @@ export class PatchHandle
 	private _downloadHandle: DownloadHandle;
 	private _extractHandle: ExtractHandle;
 	private _onProgressFuncMapping: Map<Function, Function>;
+	private _onExtractProgressFuncMapping: Map<Function, Function>;
 
 	private _promise: Promise<void>;
 	private _resolver: () => void;
@@ -368,6 +369,7 @@ export class PatchHandle
 			deleteSource: true,
 			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
 		} );
+		this._extractHandle.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitExtractProgress( progress ) )
 
 		//  Wait for start before emitting the patching state to be sure everything's initialized properly.
 		await this._extractHandle.start();
@@ -458,6 +460,30 @@ export class PatchHandle
 		return this;
 	}
 
+	onExtractProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => any )
+	{
+		let func = function( progress: IDownloadProgress )
+		{
+			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
+			progress.timeLeft
+			fn( progress );
+		};
+
+		this._onExtractProgressFuncMapping.set( fn, func );
+		this._emitter.addListener( 'extract-progress', func );
+		return this;
+	}
+
+	deregisterOnExtractProgress( fn: Function )
+	{
+		let func = this._onExtractProgressFuncMapping.get( fn );
+		if ( func ) {
+			this._emitter.removeListener( 'extract-progress', func );
+			this._onExtractProgressFuncMapping.delete( fn );
+		}
+		return this;
+	}
+
 	onPaused( fn: Function )
 	{
 		this._emitter.addListener( 'stopped', fn );
@@ -497,6 +523,11 @@ export class PatchHandle
 	private emitProgress( progress: IDownloadProgress )
 	{
 		this._emitter.emit( 'progress', progress );
+	}
+
+	private emitExtractProgress( progress: IExtractProgress )
+	{
+		this._emitter.emit( 'extract-progress', progress );
 	}
 
 	private onError( err: NodeJS.ErrnoException )
