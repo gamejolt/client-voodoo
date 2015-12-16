@@ -15,75 +15,75 @@ describe( 'Voodoo queue', function()
 {
 	let app: express.Express;
 	let server: http.Server;
-	let build1: GameJolt.IGameBuild = {
+	let localPackage1: GameJolt.IGamePackage = {
 		id: 1,
-		game_id: 1,
-		folder: 'test',
-		type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
-		package: {
-			id: 1,
-			title: 'test',
-			description: 'test',
-		},
+		title: 'test',
+		description: 'test',
 		release: {
 			id: 1,
 			version_number: '1.0.0',
+		},
+		build: {
+			id: 1,
+			game_id: 1,
+			folder: 'test',
+			type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+			archive_type: 'tar.xz',
+			os_windows: false,
+			os_windows_64: false,
+			os_mac: false,
+			os_mac_64: false,
+			os_linux: true,
+			os_linux_64: false,
+			os_other: false,
+			modified_on: 1,
 		},
 		file: {
 			id: 1,
 			filename: 'GJGas.exe.tar.xz',
 			filesize: 1,
 		},
-		archive_type: 'tar.xz',
 		launch_options: [ {
 			id: 1,
 			os: 'linux',
 			executable_path: 'GJGas.exe',
 		} ],
-		os_windows: false,
-		os_windows_64: false,
-		os_mac: false,
-		os_mac_64: false,
-		os_linux: true,
-		os_linux_64: false,
-		os_other: false,
-		modified_on: 1,
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 	}
 
-	let build2: GameJolt.IGameBuild = {
-		id: 2,
-		game_id: 1,
-		folder: 'test',
-		type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
-		package: {
-			id: 1,
-			title: 'test',
-			description: 'test',
-		},
+	let localPackage2: GameJolt.IGamePackage = {
+		id: 1,
+		title: 'test',
+		description: 'test',
 		release: {
 			id: 1,
 			version_number: '1.0.0',
+		},
+		build: {
+			id: 2,
+			game_id: 1,
+			folder: 'test',
+			type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+			archive_type: 'tar.xz',
+			os_windows: false,
+			os_windows_64: false,
+			os_mac: false,
+			os_mac_64: false,
+			os_linux: true,
+			os_linux_64: false,
+			os_other: false,
+			modified_on: 1,
 		},
 		file: {
 			id: 1,
 			filename: 'GJGas.exe.tar.xz',
 			filesize: 1,
 		},
-		archive_type: 'tar.xz',
 		launch_options: [ {
 			id: 1,
 			os: 'linux',
 			executable_path: 'GJGas.exe',
 		} ],
-		os_windows: false,
-		os_windows_64: false,
-		os_mac: false,
-		os_mac_64: false,
-		os_linux: true,
-		os_linux_64: false,
-		os_other: false,
-		modified_on: 1,
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-2' ) ),
 	}
 	let patchUrl = 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz';
@@ -124,9 +124,9 @@ describe( 'Voodoo queue', function()
 		return VoodooQueue.reset();
 	} );
 
-	function getPatch( url?: string, options?: IPatcherOptions, build?: GameJolt.IGameBuild )
+	function getPatch( url?: string, options?: IPatcherOptions, localPackage?: GameJolt.IGamePackage )
 	{
-		let patchHandle = Patcher.patch( url || patchUrl, build || build1, options || {
+		let patchHandle = Patcher.patch( url || patchUrl, localPackage || localPackage1, options || {
 			overwrite: true,
 			decompressInDownload: false,
 		} );
@@ -180,8 +180,8 @@ describe( 'Voodoo queue', function()
 	it( 'Should pend an extraction task', Common.test( async ( done ) =>
 	{
 		console.log( 'Preparing...' );
-		await Common.mkdirp( build1.install_dir );
-		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build1.install_dir, '.gj-tempDownload' ) );
+		await Common.mkdirp( localPackage1.install_dir );
+		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage1.install_dir, '.gj-tempDownload' ) );
 
 		await VoodooQueue.setMaxExtractions( 0 );
 		let patch = getPatch();
@@ -203,7 +203,7 @@ describe( 'Voodoo queue', function()
 		patch
 			.onDownloading( Common.test( () =>
 			{
-				let patch2 = getPatch( null, null, build2 );
+				let patch2 = getPatch( null, null, localPackage2 );
 				patch2
 					.onPaused( Common.test( () =>
 					{
@@ -224,10 +224,10 @@ describe( 'Voodoo queue', function()
 	it( 'Should pend a second extraction task and resume it when the first finishes', Common.test( async ( done ) =>
 	{
 		console.log( 'Preparing...' );
-		await Common.mkdirp( build1.install_dir );
-		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build1.install_dir, '.gj-tempDownload' ) );
-		await Common.mkdirp( build2.install_dir );
-		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build2.install_dir, '.gj-tempDownload' ) );
+		await Common.mkdirp( localPackage1.install_dir );
+		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage1.install_dir, '.gj-tempDownload' ) );
+		await Common.mkdirp( localPackage2.install_dir );
+		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage2.install_dir, '.gj-tempDownload' ) );
 
 		await VoodooQueue.setMaxExtractions( 1 );
 
@@ -245,7 +245,7 @@ describe( 'Voodoo queue', function()
 				let patch2 = getPatch( null, {
 					overwrite: false,
 					decompressInDownload: false
-				}, build2 );
+				}, localPackage2 );
 
 				patch2
 					.onPaused( Common.test( () =>
@@ -288,8 +288,8 @@ describe( 'Voodoo queue', function()
 	it( 'Should pend an extraction task and resume it upon increasing the limit', Common.test( async ( done ) =>
 	{
 		console.log( 'Preparing...' );
-		await Common.mkdirp( build1.install_dir );
-		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build1.install_dir, '.gj-tempDownload' ) );
+		await Common.mkdirp( localPackage1.install_dir );
+		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage1.install_dir, '.gj-tempDownload' ) );
 
 		await VoodooQueue.setMaxExtractions( 0 );
 
@@ -325,8 +325,8 @@ describe( 'Voodoo queue', function()
 	it( 'Should pend an extraction task upon decreasing the limit', Common.test( async ( done ) =>
 	{
 		console.log( 'Preparing...' );
-		await Common.mkdirp( build1.install_dir );
-		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( build1.install_dir, '.gj-tempDownload' ) );
+		await Common.mkdirp( localPackage1.install_dir );
+		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage1.install_dir, '.gj-tempDownload' ) );
 
 		let patch = getPatch( null, {
 			 overwrite: false,

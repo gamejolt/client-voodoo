@@ -54,13 +54,13 @@ const FINISHED_STATES = [ PatchHandleState.FINISHING, PatchHandleState.FINISHED 
 
 export abstract class Patcher
 {
-	static patch( generateUrl: ( () => Promise<string> ) | string, build: GameJolt.IGameBuild, options?: IPatcherOptions ): PatchHandle
+	static patch( generateUrl: ( () => Promise<string> ) | string, localPackage: GameJolt.IGamePackage, options?: IPatcherOptions ): PatchHandle
 	{
 		let _generateUrl = ( typeof generateUrl === 'string' ) ? function() {
 			return Promise.resolve( generateUrl );
 		} : generateUrl;
 
-		return new PatchHandle( _generateUrl, build, options );
+		return new PatchHandle( _generateUrl, localPackage, options );
 	}
 }
 
@@ -89,7 +89,7 @@ export class PatchHandle
 	private _waitForStartResolver: () => void;
 	private _waitForStartRejector: ( err: NodeJS.ErrnoException ) => void;
 
-	constructor( private _generateUrl: () => Promise<string>, private _build: GameJolt.IGameBuild, private _options?: IPatcherOptions )
+	constructor( private _generateUrl: () => Promise<string>, private _localPackage: GameJolt.IGamePackage, private _options?: IPatcherOptions )
 	{
 		this._options = _.defaults<IPatcherOptions>( this._options || {}, {
 			overwrite: false,
@@ -149,11 +149,11 @@ export class PatchHandle
 
 	private _getDecompressStream()
 	{
-		if ( !this._build.archive_type ) {
+		if ( !this._localPackage.build.archive_type ) {
 			return null;
 		}
 
-		switch ( this._build.archive_type ) {
+		switch ( this._localPackage.build.archive_type ) {
 			case 'tar.xz':
 				return require( 'lzma-native' ).createDecompressor();
 
@@ -194,10 +194,10 @@ export class PatchHandle
 				this._waitForStartPromise = null;
 			}
 
-			this._tempFile = path.join( this._build.install_dir, '.gj-tempDownload' );
-			this._archiveListFile = path.join( this._build.install_dir, '.gj-archive-file-list' );
-			this._patchListFile = path.join( this._build.install_dir, '.gj-patch-file' );
-			this._to = this._build.install_dir;
+			this._tempFile = path.join( this._localPackage.install_dir, '.gj-tempDownload' );
+			this._archiveListFile = path.join( this._localPackage.install_dir, '.gj-archive-file-list' );
+			this._patchListFile = path.join( this._localPackage.install_dir, '.gj-patch-file' );
+			this._to = this._localPackage.install_dir;
 
 			let newUrl = ( options && options.url ) ? options.url : null;
 			if ( !newUrl && this._generateUrl ) {

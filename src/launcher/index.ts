@@ -18,9 +18,10 @@ export abstract class Launcher
 {
 	private static _runningInstances: Map<number, LaunchInstanceHandle> = new Map<number, LaunchInstanceHandle>();
 
-	static launch( build: GameJolt.IGameBuild, os: string, arch: string, options?: ILaunchOptions ): LaunchHandle
+	// Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
+	static launch( localPackage: GameJolt.IGamePackage, os: string, arch: string, options?: ILaunchOptions ): LaunchHandle
 	{
-		return new LaunchHandle( build, os, arch, options );
+		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
 	static async attach( pid: number, pollInterval?: number )
@@ -50,7 +51,7 @@ export class LaunchHandle
 	private _promise: Promise<LaunchInstanceHandle>;
 	private _file: string;
 
-	constructor( private _build: GameJolt.IGameBuild, private _os: string, private _arch: string, options?: ILaunchOptions )
+	constructor( private _localPackage: GameJolt.IGamePackage, private _os: string, private _arch: string, options?: ILaunchOptions )
 	{
 		options = options || {
 			pollInterval: 1000,
@@ -59,9 +60,9 @@ export class LaunchHandle
 		this._promise = this.start( options.pollInterval );
 	}
 
-	get build()
+	get package()
 	{
-		return this._build;
+		return this._localPackage;
 	}
 
 	get file()
@@ -77,7 +78,7 @@ export class LaunchHandle
 	private findLaunchOption()
 	{
 		let result: GameJolt.IGameBuildLaunchOptions = null;
-		for ( let launchOption of this._build.launch_options ) {
+		for ( let launchOption of this._localPackage.launch_options ) {
 			let lOs = launchOption.os.split( '_' );
 			if ( lOs.length === 1 ) {
 				lOs.push( '32' );
@@ -123,7 +124,7 @@ export class LaunchHandle
 		}
 
 		var executablePath = launchOption.executable_path.replace( /\//, path.sep );
-		this._file = path.join( this._build.install_dir, executablePath );
+		this._file = path.join( this._localPackage.install_dir, executablePath );
 
 		// If the destination already exists, make sure its valid.
 		if ( !(await Common.fsExists( this._file ) ) ) {
