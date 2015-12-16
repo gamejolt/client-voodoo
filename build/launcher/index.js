@@ -16,6 +16,10 @@ var _getIterator2 = require("babel-runtime/core-js/get-iterator");
 
 var _getIterator3 = _interopRequireDefault(_getIterator2);
 
+var _map = require("babel-runtime/core-js/map");
+
+var _map2 = _interopRequireDefault(_map);
+
 var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -68,6 +72,7 @@ var events_1 = require('events');
 var childProcess = require('child_process');
 var common_1 = require('../common');
 var pid_finder_1 = require('./pid-finder');
+var queue_1 = require('../queue');
 var plist = require('plist');
 
 var Launcher = (function () {
@@ -84,13 +89,29 @@ var Launcher = (function () {
         key: "attach",
         value: function attach(pid, pollInterval) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+                var _this = this;
+
+                var instance;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                return _context.abrupt("return", new LaunchInstanceHandle(pid, pollInterval));
+                                if (!this._runningInstances.has(pid)) {
+                                    this._runningInstances.set(pid, new LaunchInstanceHandle(pid, pollInterval));
+                                }
+                                ;
+                                instance = this._runningInstances.get(pid);
 
-                            case 1:
+                                instance.on('end', function () {
+                                    return _this.detach(pid);
+                                });
+                                _context.next = 6;
+                                return queue_1.VoodooQueue.slower();
+
+                            case 6:
+                                return _context.abrupt("return", instance);
+
+                            case 7:
                             case "end":
                                 return _context.stop();
                         }
@@ -98,10 +119,35 @@ var Launcher = (function () {
                 }, _callee, this);
             }));
         }
+    }, {
+        key: "detach",
+        value: function detach(pid) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+                return _regenerator2.default.wrap(function _callee2$(_context2) {
+                    while (1) {
+                        switch (_context2.prev = _context2.next) {
+                            case 0:
+                                if (!(this._runningInstances.delete(pid) && this._runningInstances.size === 0)) {
+                                    _context2.next = 3;
+                                    break;
+                                }
+
+                                _context2.next = 3;
+                                return queue_1.VoodooQueue.faster();
+
+                            case 3:
+                            case "end":
+                                return _context2.stop();
+                        }
+                    }
+                }, _callee2, this);
+            }));
+        }
     }]);
     return Launcher;
 })();
 
+Launcher._runningInstances = new _map2.default();
 exports.Launcher = Launcher;
 
 var LaunchHandle = (function () {
@@ -160,29 +206,29 @@ var LaunchHandle = (function () {
     }, {
         key: "ensureExecutable",
         value: function ensureExecutable(file, stat) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
                 var mode, uid, gid;
-                return _regenerator2.default.wrap(function _callee2$(_context2) {
+                return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
-                        switch (_context2.prev = _context2.next) {
+                        switch (_context3.prev = _context3.next) {
                             case 0:
                                 if (stat) {
-                                    _context2.next = 4;
+                                    _context3.next = 4;
                                     break;
                                 }
 
-                                _context2.next = 3;
+                                _context3.next = 3;
                                 return common_1.default.fsStat(file);
 
                             case 3:
-                                stat = _context2.sent;
+                                stat = _context3.sent;
 
                             case 4:
                                 // Make sure the file is executable
                                 mode = stat.mode;
 
                                 if (mode) {
-                                    _context2.next = 7;
+                                    _context3.next = 7;
                                     break;
                                 }
 
@@ -193,34 +239,34 @@ var LaunchHandle = (function () {
                                 gid = stat.gid;
 
                                 if (!(!(mode & parseInt('0001', 8)) && !(mode & parseInt('0010', 8)) && process.getgid && gid === process.getgid() && !(mode & parseInt('0100', 8)) && process.getuid && uid === process.getuid())) {
-                                    _context2.next = 12;
+                                    _context3.next = 12;
                                     break;
                                 }
 
-                                _context2.next = 12;
+                                _context3.next = 12;
                                 return common_1.default.chmod(file, '0777');
 
                             case 12:
                             case "end":
-                                return _context2.stop();
+                                return _context3.stop();
                         }
                     }
-                }, _callee2, this);
+                }, _callee3, this);
             }));
         }
     }, {
         key: "start",
         value: function start(pollInterval) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
                 var launchOption, executablePath, stat;
-                return _regenerator2.default.wrap(function _callee3$(_context3) {
+                return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
-                        switch (_context3.prev = _context3.next) {
+                        switch (_context4.prev = _context4.next) {
                             case 0:
                                 launchOption = this.findLaunchOption();
 
                                 if (launchOption) {
-                                    _context3.next = 3;
+                                    _context4.next = 3;
                                     break;
                                 }
 
@@ -231,74 +277,40 @@ var LaunchHandle = (function () {
 
                                 this._file = path.join(this._build.install_dir, executablePath);
                                 // If the destination already exists, make sure its valid.
-                                _context3.next = 7;
+                                _context4.next = 7;
                                 return common_1.default.fsExists(this._file);
 
                             case 7:
-                                if (_context3.sent) {
-                                    _context3.next = 9;
+                                if (_context4.sent) {
+                                    _context4.next = 9;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file doesn\'t exist.');
 
                             case 9:
-                                _context3.next = 11;
+                                _context4.next = 11;
                                 return common_1.default.fsStat(this._file);
 
                             case 11:
-                                stat = _context3.sent;
-                                _context3.t0 = process.platform;
-                                _context3.next = _context3.t0 === 'win32' ? 15 : _context3.t0 === 'linux' ? 16 : _context3.t0 === 'darwin' ? 17 : 18;
+                                stat = _context4.sent;
+                                _context4.t0 = process.platform;
+                                _context4.next = _context4.t0 === 'win32' ? 15 : _context4.t0 === 'linux' ? 16 : _context4.t0 === 'darwin' ? 17 : 18;
                                 break;
 
                             case 15:
-                                return _context3.abrupt("return", this.startWindows(stat, pollInterval));
+                                return _context4.abrupt("return", this.startWindows(stat, pollInterval));
 
                             case 16:
-                                return _context3.abrupt("return", this.startLinux(stat, pollInterval));
+                                return _context4.abrupt("return", this.startLinux(stat, pollInterval));
 
                             case 17:
-                                return _context3.abrupt("return", this.startMac(stat, pollInterval));
+                                return _context4.abrupt("return", this.startMac(stat, pollInterval));
 
                             case 18:
                                 throw new Error('What potato are you running on? Detected platform: ' + process.platform);
 
                             case 19:
-                            case "end":
-                                return _context3.stop();
-                        }
-                    }
-                }, _callee3, this);
-            }));
-        }
-    }, {
-        key: "startWindows",
-        value: function startWindows(stat, pollInterval) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
-                var child, pid;
-                return _regenerator2.default.wrap(function _callee4$(_context4) {
-                    while (1) {
-                        switch (_context4.prev = _context4.next) {
-                            case 0:
-                                if (stat.isFile()) {
-                                    _context4.next = 2;
-                                    break;
-                                }
-
-                                throw new Error('Can\'t launch because the file isn\'t valid.');
-
-                            case 2:
-                                child = childProcess.spawn(this._file, [], {
-                                    cwd: path.dirname(this._file),
-                                    detached: true
-                                });
-                                pid = child.pid;
-
-                                child.unref();
-                                return _context4.abrupt("return", new LaunchInstanceHandle(pid, pollInterval));
-
-                            case 6:
                             case "end":
                                 return _context4.stop();
                         }
@@ -307,8 +319,8 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startLinux",
-        value: function startLinux(stat, pollInterval) {
+        key: "startWindows",
+        value: function startWindows(stat, pollInterval) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
                 var child, pid;
                 return _regenerator2.default.wrap(function _callee5$(_context5) {
@@ -323,10 +335,6 @@ var LaunchHandle = (function () {
                                 throw new Error('Can\'t launch because the file isn\'t valid.');
 
                             case 2:
-                                _context5.next = 4;
-                                return this.ensureExecutable(this._file, stat);
-
-                            case 4:
                                 child = childProcess.spawn(this._file, [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
@@ -334,9 +342,9 @@ var LaunchHandle = (function () {
                                 pid = child.pid;
 
                                 child.unref();
-                                return _context5.abrupt("return", new LaunchInstanceHandle(pid, pollInterval));
+                                return _context5.abrupt("return", Launcher.attach(pid, pollInterval));
 
-                            case 8:
+                            case 6:
                             case "end":
                                 return _context5.stop();
                         }
@@ -345,22 +353,60 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startMac",
-        value: function startMac(stat, pollInterval) {
+        key: "startLinux",
+        value: function startLinux(stat, pollInterval) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
-                var pid, child, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName;
+                var child, pid;
                 return _regenerator2.default.wrap(function _callee6$(_context6) {
                     while (1) {
                         switch (_context6.prev = _context6.next) {
                             case 0:
-                                pid = undefined;
-
-                                if (!stat.isFile()) {
-                                    _context6.next = 9;
+                                if (stat.isFile()) {
+                                    _context6.next = 2;
                                     break;
                                 }
 
+                                throw new Error('Can\'t launch because the file isn\'t valid.');
+
+                            case 2:
                                 _context6.next = 4;
+                                return this.ensureExecutable(this._file, stat);
+
+                            case 4:
+                                child = childProcess.spawn(this._file, [], {
+                                    cwd: path.dirname(this._file),
+                                    detached: true
+                                });
+                                pid = child.pid;
+
+                                child.unref();
+                                return _context6.abrupt("return", Launcher.attach(pid, pollInterval));
+
+                            case 8:
+                            case "end":
+                                return _context6.stop();
+                        }
+                    }
+                }, _callee6, this);
+            }));
+        }
+    }, {
+        key: "startMac",
+        value: function startMac(stat, pollInterval) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+                var pid, child, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName;
+                return _regenerator2.default.wrap(function _callee7$(_context7) {
+                    while (1) {
+                        switch (_context7.prev = _context7.next) {
+                            case 0:
+                                pid = undefined;
+
+                                if (!stat.isFile()) {
+                                    _context7.next = 9;
+                                    break;
+                                }
+
+                                _context7.next = 4;
                                 return this.ensureExecutable(this._file, stat);
 
                             case 4:
@@ -371,12 +417,12 @@ var LaunchHandle = (function () {
 
                                 pid = child.pid;
                                 child.unref();
-                                _context6.next = 44;
+                                _context7.next = 45;
                                 break;
 
                             case 9:
-                                if (this._file.toLowerCase().endsWith('.app')) {
-                                    _context6.next = 11;
+                                if (!(!this._file.toLowerCase().endsWith('.app') && !this._file.toLowerCase().endsWith('.app/'))) {
+                                    _context7.next = 11;
                                     break;
                                 }
 
@@ -384,80 +430,81 @@ var LaunchHandle = (function () {
 
                             case 11:
                                 plistPath = path.join(this._file, 'Contents', 'Info.plist');
-                                _context6.next = 14;
+                                _context7.next = 14;
                                 return common_1.default.fsExists(plistPath);
 
                             case 14:
-                                if (_context6.sent) {
-                                    _context6.next = 16;
+                                if (_context7.sent) {
+                                    _context7.next = 16;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.');
 
                             case 16:
-                                _context6.next = 18;
+                                _context7.next = 18;
                                 return common_1.default.fsStat(plistPath);
 
                             case 18:
-                                plistStat = _context6.sent;
+                                plistStat = _context7.sent;
 
                                 if (plistStat.isFile()) {
-                                    _context6.next = 21;
+                                    _context7.next = 21;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.');
 
                             case 21:
-                                _context6.next = 23;
+                                _context7.t0 = plist;
+                                _context7.next = 24;
                                 return common_1.default.fsReadFile(plistPath, 'utf8');
 
-                            case 23:
-                                _context6.t0 = _context6.sent;
-                                parsedPlist = plist(_context6.t0);
+                            case 24:
+                                _context7.t1 = _context7.sent;
+                                parsedPlist = _context7.t0.parse.call(_context7.t0, _context7.t1);
 
                                 if (parsedPlist) {
-                                    _context6.next = 27;
+                                    _context7.next = 28;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.');
 
-                            case 27:
+                            case 28:
                                 macosPath = path.join(this._file, 'Contents', 'MacOS');
-                                _context6.next = 30;
+                                _context7.next = 31;
                                 return common_1.default.fsExists(macosPath);
 
-                            case 30:
-                                if (_context6.sent) {
-                                    _context6.next = 32;
+                            case 31:
+                                if (_context7.sent) {
+                                    _context7.next = 33;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.');
 
-                            case 32:
-                                _context6.next = 34;
+                            case 33:
+                                _context7.next = 35;
                                 return common_1.default.fsStat(macosPath);
 
-                            case 34:
-                                macosStat = _context6.sent;
+                            case 35:
+                                macosStat = _context7.sent;
 
                                 if (macosStat.isDirectory()) {
-                                    _context6.next = 37;
+                                    _context7.next = 38;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. MacOS isn\'t a valid directory.');
 
-                            case 37:
+                            case 38:
                                 baseName = path.basename(this._file);
                                 executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
-                                _context6.next = 41;
+                                _context7.next = 42;
                                 return this.ensureExecutable(path.join(macosPath, executableName));
 
-                            case 41:
+                            case 42:
                                 child = childProcess.spawn('open ' + this._file, [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
@@ -466,15 +513,15 @@ var LaunchHandle = (function () {
                                 pid = child.pid;
                                 child.unref();
 
-                            case 44:
-                                return _context6.abrupt("return", new LaunchInstanceHandle(pid, pollInterval));
-
                             case 45:
+                                return _context7.abrupt("return", Launcher.attach(pid, pollInterval));
+
+                            case 46:
                             case "end":
-                                return _context6.stop();
+                                return _context7.stop();
                         }
                     }
-                }, _callee6, this);
+                }, _callee7, this);
             }));
         }
     }, {
@@ -504,27 +551,27 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
     function LaunchInstanceHandle(_pid, pollInterval) {
         (0, _classCallCheck3.default)(this, LaunchInstanceHandle);
 
-        var _this = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(LaunchInstanceHandle).call(this));
+        var _this2 = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(LaunchInstanceHandle).call(this));
 
-        _this._pid = _pid;
-        _this._interval = setInterval(function () {
-            return _this.tick();
+        _this2._pid = _pid;
+        _this2._interval = setInterval(function () {
+            return _this2.tick();
         }, pollInterval || 1000);
-        return _this;
+        return _this2;
     }
 
     (0, _createClass3.default)(LaunchInstanceHandle, [{
         key: "tick",
         value: function tick() {
-            var _this2 = this;
+            var _this3 = this;
 
             pid_finder_1.PidFinder.find(this._pid).then(function (result) {
                 if (!result) {
                     throw new Error('Process doesn\'t exist anymore');
                 }
             }).catch(function (err) {
-                clearInterval(_this2._interval);
-                _this2.emit('end', err);
+                clearInterval(_this3._interval);
+                _this3.emit('end', err);
             });
         }
     }, {

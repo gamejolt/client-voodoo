@@ -92,13 +92,14 @@ var DownloadHandle = (function () {
         });
         this._state = DownloadHandleState.STOPPED;
         this._emitter = new events_1.EventEmitter();
-        this.start();
     }
 
     (0, _createClass3.default)(DownloadHandle, [{
         key: "start",
         value: function start() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+                var _this = this;
+
                 var stat, unlinked, toDir, dirStat;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -219,10 +220,11 @@ var DownloadHandle = (function () {
                                 return _context.abrupt("return", false);
 
                             case 49:
-                                this.download();
-                                return _context.abrupt("return", true);
+                                return _context.abrupt("return", new _promise2.default(function (resolve) {
+                                    return _this.download(resolve);
+                                }));
 
-                            case 51:
+                            case 50:
                             case "end":
                                 return _context.stop();
                         }
@@ -266,8 +268,8 @@ var DownloadHandle = (function () {
         }
     }, {
         key: "download",
-        value: function download() {
-            var _this = this;
+        value: function download(resolve) {
+            var _this2 = this;
 
             var hostUrl = url.parse(this._url);
             var httpOptions = {
@@ -282,48 +284,49 @@ var DownloadHandle = (function () {
                 if (response.statusCode === 301) {
                     return;
                 }
-                _this._response = response;
-                _this._streamSpeed = new StreamSpeed.StreamSpeed(_this._options);
-                _this._streamSpeed.onSample(function (sample) {
-                    return _this.emitProgress({
-                        progress: _this._totalDownloaded / _this._totalSize,
-                        timeLeft: Math.round((_this._totalSize - _this._totalDownloaded) / sample.currentAverage),
+                _this2._response = response;
+                _this2._streamSpeed = new StreamSpeed.StreamSpeed(_this2._options);
+                _this2._streamSpeed.onSample(function (sample) {
+                    return _this2.emitProgress({
+                        progress: _this2._totalDownloaded / _this2._totalSize,
+                        timeLeft: Math.round((_this2._totalSize - _this2._totalDownloaded) / sample.currentAverage),
                         sample: sample
                     });
                 });
-                _this._state = DownloadHandleState.STARTED;
+                _this2._state = DownloadHandleState.STARTED;
+                resolve(true);
                 // Unsatisfiable request - most likely we've downloaded the whole thing already.
                 // TODO - send HEAD request to get content-length and compare.
-                if (_this._response.statusCode === 416) {
-                    return _this.onFinished();
+                if (_this2._response.statusCode === 416) {
+                    return _this2.onFinished();
                 }
                 // Expecting the partial response status code
-                if (_this._response.statusCode !== 206) {
-                    return _this.onError(new Error('Bad status code ' + _this._response.statusCode));
+                if (_this2._response.statusCode !== 206) {
+                    return _this2.onError(new Error('Bad status code ' + _this2._response.statusCode));
                 }
-                if (!_this._response.headers || !_this._response.headers['content-range']) {
-                    return _this.onError(new Error('Missing or invalid content-range response header'));
+                if (!_this2._response.headers || !_this2._response.headers['content-range']) {
+                    return _this2.onError(new Error('Missing or invalid content-range response header'));
                 }
                 try {
-                    _this._totalSize = parseInt(_this._response.headers['content-range'].split('/')[1]);
+                    _this2._totalSize = parseInt(_this2._response.headers['content-range'].split('/')[1]);
                 } catch (err) {
-                    return _this.onError(new Error('Invalid content-range header: ' + _this._response.headers['content-range']));
+                    return _this2.onError(new Error('Invalid content-range header: ' + _this2._response.headers['content-range']));
                 }
-                if (_this._options.decompressStream) {
-                    _this._request.pipe(_this._streamSpeed).pipe(_this._options.decompressStream).pipe(_this._destStream);
+                if (_this2._options.decompressStream) {
+                    _this2._request.pipe(_this2._streamSpeed).pipe(_this2._options.decompressStream).pipe(_this2._destStream);
                 } else {
-                    _this._request.pipe(_this._streamSpeed).pipe(_this._destStream);
+                    _this2._request.pipe(_this2._streamSpeed).pipe(_this2._destStream);
                 }
-                _this._destStream.on('finish', function () {
-                    return _this.onFinished();
+                _this2._destStream.on('finish', function () {
+                    return _this2.onFinished();
                 });
-                _this._destStream.on('error', function (err) {
-                    return _this.onError(err);
+                _this2._destStream.on('error', function (err) {
+                    return _this2.onError(err);
                 });
             }).on('data', function (data) {
-                _this._totalDownloaded += data.length;
+                _this2._totalDownloaded += data.length;
             }).on('error', function (err) {
-                return _this.onError(err);
+                return _this2.onError(err);
             });
             // 	this._response.on( 'data', ( data ) =>
             // 	{
@@ -392,12 +395,12 @@ var DownloadHandle = (function () {
     }, {
         key: "promise",
         get: function get() {
-            var _this2 = this;
+            var _this3 = this;
 
             if (!this._promise) {
                 this._promise = new _promise2.default(function (resolve, reject) {
-                    _this2._resolver = resolve;
-                    _this2._rejector = reject;
+                    _this3._resolver = resolve;
+                    _this3._rejector = reject;
                 });
             }
             return this._promise;

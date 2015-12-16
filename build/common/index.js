@@ -74,6 +74,24 @@ var fsCopy = function fsCopy(from, to) {
 };
 var fsReadDir = Bluebird.promisify(fs.readdir);
 var fsReadDirRecursively = Bluebird.promisify(require('recursive-readdir'));
+var test = function test(fn, done) {
+    var func = function func(_done) {
+        try {
+            var result = fn(_done);
+            if (result && typeof result.then === 'function' && typeof result.catch === 'function') {
+                result.catch(function (err) {
+                    return _done(err);
+                });
+            }
+        } catch (err) {
+            _done(err);
+        }
+    };
+    if (done) {
+        func = func.bind(this, done);
+    }
+    return func;
+};
 exports.default = {
     mkdirp: mkdirp,
     fsUnlink: fsUnlink,
@@ -84,6 +102,7 @@ exports.default = {
     fsStat: fsStat,
     fsCopy: fsCopy,
     fsReadDir: fsReadDir,
-    fsReadDirRecursively: fsReadDirRecursively
+    fsReadDirRecursively: fsReadDirRecursively,
+    test: test
 };
 //# sourceMappingURL=index.js.map
