@@ -249,6 +249,7 @@ var PatchHandle = (function () {
                                                         }
                                                         if (this._wasStopped) {
                                                             this._emitter.emit('resumed', options && options.voodooQueue);
+                                                            this._wasStopped = false;
                                                         }
                                                         // TODO consider putting this beofre emitting downloading event if we dont want to emit it for tasks that pend right away.
                                                         _context2.next = 5;
@@ -284,6 +285,7 @@ var PatchHandle = (function () {
                                 this._state = PatchHandleState.DOWNLOADING;
                                 if (this._wasStopped) {
                                     this._emitter.emit('resumed', options && options.voodooQueue);
+                                    this._wasStopped = false;
                                 }
 
                             case 24:
@@ -412,58 +414,30 @@ var PatchHandle = (function () {
     }, {
         key: "stop",
         value: function stop(options) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
-                var stopOptions;
-                return _regenerator2.default.wrap(function _callee5$(_context5) {
-                    while (1) {
-                        switch (_context5.prev = _context5.next) {
-                            case 0:
-                                stopOptions = _.assign(options || { voodooQueue: false }, {
-                                    terminate: false
-                                });
-                                return _context5.abrupt("return", this._stop(stopOptions));
-
-                            case 2:
-                            case "end":
-                                return _context5.stop();
-                        }
-                    }
-                }, _callee5, this);
-            }));
+            var stopOptions = _.assign(options || { voodooQueue: false }, {
+                terminate: false
+            });
+            return this._stop(stopOptions);
         }
     }, {
         key: "cancel",
         value: function cancel(options) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
-                var stopOptions;
-                return _regenerator2.default.wrap(function _callee6$(_context6) {
-                    while (1) {
-                        switch (_context6.prev = _context6.next) {
-                            case 0:
-                                stopOptions = _.assign(options || { voodooQueue: false }, {
-                                    terminate: true
-                                });
-                                return _context6.abrupt("return", this._stop(stopOptions));
-
-                            case 2:
-                            case "end":
-                                return _context6.stop();
-                        }
-                    }
-                }, _callee6, this);
-            }));
+            var stopOptions = _.assign(options || { voodooQueue: false }, {
+                terminate: true
+            });
+            return this._stop(stopOptions);
         }
     }, {
         key: "patch",
         value: function patch() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
                 var _this4 = this;
 
                 var createdByOldBuild, currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles, _createdByOldBuild, extractResult, newBuildFiles, filesToRemove, unlinks;
 
-                return _regenerator2.default.wrap(function _callee7$(_context7) {
+                return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
-                        switch (_context7.prev = _context7.next) {
+                        switch (_context5.prev = _context5.next) {
                             case 0:
                                 // TODO: restrict operations to the given directories.
                                 this._state = PatchHandleState.STARTING_PATCH;
@@ -471,112 +445,112 @@ var PatchHandle = (function () {
                                 createdByOldBuild = undefined;
                                 // TODO: check if ./ is valid on windows platforms as well.
 
-                                _context7.next = 5;
+                                _context5.next = 5;
                                 return common_1.default.fsReadDirRecursively(this._to);
 
                             case 5:
-                                _context7.t0 = function (file) {
+                                _context5.t0 = function (file) {
                                     return !path.basename(file).startsWith('.gj-');
                                 };
 
-                                _context7.t1 = function (file) {
+                                _context5.t1 = function (file) {
                                     return './' + path.relative(_this4._to, file);
                                 };
 
-                                currentFiles = _context7.sent.filter(_context7.t0).map(_context7.t1);
-                                _context7.next = 10;
+                                currentFiles = _context5.sent.filter(_context5.t0).map(_context5.t1);
+                                _context5.next = 10;
                                 return common_1.default.fsExists(this._patchListFile);
 
                             case 10:
-                                if (!_context7.sent) {
-                                    _context7.next = 21;
+                                if (!_context5.sent) {
+                                    _context5.next = 21;
                                     break;
                                 }
 
-                                _context7.next = 13;
+                                _context5.next = 13;
                                 return common_1.default.fsStat(this._patchListFile);
 
                             case 13:
-                                stat = _context7.sent;
+                                stat = _context5.sent;
 
                                 if (stat.isFile()) {
-                                    _context7.next = 16;
+                                    _context5.next = 16;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the patch file isn\'t a file.');
 
                             case 16:
-                                _context7.next = 18;
+                                _context5.next = 18;
                                 return common_1.default.fsReadFile(this._patchListFile, 'utf8');
 
                             case 18:
-                                createdByOldBuild = _context7.sent.split("\n");
-                                _context7.next = 59;
+                                createdByOldBuild = _context5.sent.split("\n");
+                                _context5.next = 59;
                                 break;
 
                             case 21:
-                                _context7.next = 23;
+                                _context5.next = 23;
                                 return common_1.default.fsExists(this._archiveListFile);
 
                             case 23:
-                                if (!_context7.sent) {
-                                    _context7.next = 31;
+                                if (!_context5.sent) {
+                                    _context5.next = 31;
                                     break;
                                 }
 
-                                _context7.next = 26;
+                                _context5.next = 26;
                                 return common_1.default.fsStat(this._archiveListFile);
 
                             case 26:
-                                stat = _context7.sent;
+                                stat = _context5.sent;
 
                                 if (stat.isFile()) {
-                                    _context7.next = 29;
+                                    _context5.next = 29;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the archive file list isn\'t a file.');
 
                             case 29:
-                                _context7.next = 46;
+                                _context5.next = 46;
                                 break;
 
                             case 31:
                                 archiveListFileDir = path.dirname(this._archiveListFile);
-                                _context7.next = 34;
+                                _context5.next = 34;
                                 return common_1.default.fsExists(archiveListFileDir);
 
                             case 34:
-                                if (!_context7.sent) {
-                                    _context7.next = 42;
+                                if (!_context5.sent) {
+                                    _context5.next = 42;
                                     break;
                                 }
 
-                                _context7.next = 37;
+                                _context5.next = 37;
                                 return common_1.default.fsStat(archiveListFileDir);
 
                             case 37:
-                                dirStat = _context7.sent;
+                                dirStat = _context5.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context7.next = 40;
+                                    _context5.next = 40;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the path to the archive file list is invalid.');
 
                             case 40:
-                                _context7.next = 46;
+                                _context5.next = 46;
                                 break;
 
                             case 42:
-                                _context7.next = 44;
+                                _context5.next = 44;
                                 return common_1.default.mkdirp(archiveListFileDir);
 
                             case 44:
-                                if (_context7.sent) {
-                                    _context7.next = 46;
+                                if (_context5.sent) {
+                                    _context5.next = 46;
                                     break;
                                 }
 
@@ -584,36 +558,36 @@ var PatchHandle = (function () {
 
                             case 46:
                                 oldBuildFiles = undefined;
-                                _context7.next = 49;
+                                _context5.next = 49;
                                 return common_1.default.fsExists(this._archiveListFile);
 
                             case 49:
-                                if (_context7.sent) {
-                                    _context7.next = 53;
+                                if (_context5.sent) {
+                                    _context5.next = 53;
                                     break;
                                 }
 
                                 oldBuildFiles = currentFiles;
-                                _context7.next = 56;
+                                _context5.next = 56;
                                 break;
 
                             case 53:
-                                _context7.next = 55;
+                                _context5.next = 55;
                                 return common_1.default.fsReadFile(this._archiveListFile, 'utf8');
 
                             case 55:
-                                oldBuildFiles = _context7.sent.split("\n");
+                                oldBuildFiles = _context5.sent.split("\n");
 
                             case 56:
                                 // Files that the old build created are files in the file system that are not listed in the old build files
                                 _createdByOldBuild = _.difference(currentFiles, oldBuildFiles);
-                                _context7.next = 59;
+                                _context5.next = 59;
                                 return common_1.default.fsWriteFile(this._patchListFile, _createdByOldBuild.join("\n"));
 
                             case 59:
                                 console.log('State when starting patch: ' + this._state);
                                 console.log('Waiting for start');
-                                _context7.next = 63;
+                                _context5.next = 63;
                                 return this.waitForStart();
 
                             case 63:
@@ -629,7 +603,7 @@ var PatchHandle = (function () {
                                     return _this4.emitFile(file);
                                 });
                                 //  Wait for start before emitting the patching state to be sure everything's initialized properly.
-                                _context7.next = 68;
+                                _context5.next = 68;
                                 return this._extractHandle.start();
 
                             case 68:
@@ -642,15 +616,16 @@ var PatchHandle = (function () {
                                 }
                                 if (this._wasStopped) {
                                     this._emitter.emit('resumed');
+                                    this._wasStopped = false;
                                 }
-                                _context7.next = 73;
+                                _context5.next = 73;
                                 return this._extractHandle.promise;
 
                             case 73:
-                                extractResult = _context7.sent;
+                                extractResult = _context5.sent;
 
                                 if (extractResult.success) {
-                                    _context7.next = 76;
+                                    _context5.next = 76;
                                     break;
                                 }
 
@@ -664,7 +639,7 @@ var PatchHandle = (function () {
                                 filesToRemove = _.difference(currentFiles, newBuildFiles, createdByOldBuild);
                                 // TODO: use del lib
 
-                                _context7.next = 81;
+                                _context5.next = 81;
                                 return _promise2.default.all(filesToRemove.map(function (file) {
                                     return common_1.default.fsUnlink(path.resolve(_this4._to, file)).then(function (err) {
                                         if (err) {
@@ -675,19 +650,19 @@ var PatchHandle = (function () {
                                 }));
 
                             case 81:
-                                unlinks = _context7.sent;
-                                _context7.next = 84;
+                                unlinks = _context5.sent;
+                                _context5.next = 84;
                                 return common_1.default.fsWriteFile(this._archiveListFile, newBuildFiles.join("\n"));
 
                             case 84:
-                                return _context7.abrupt("return", true);
+                                return _context5.abrupt("return", true);
 
                             case 85:
                             case "end":
-                                return _context7.stop();
+                                return _context5.stop();
                         }
                     }
-                }, _callee7, this);
+                }, _callee5, this);
             }));
         }
     }, {
