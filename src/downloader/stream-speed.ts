@@ -168,6 +168,7 @@ export class StreamSpeed extends PassThrough
 	onSample( cb: ( sample?: ISampleData ) => any )
 	{
 		this.emitter.on( 'sample', cb );
+		return this;
 	}
 }
 

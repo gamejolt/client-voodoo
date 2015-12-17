@@ -4,6 +4,7 @@ import { Downloader } from './index';
 import path = require( 'path' );
 import { SampleUnit } from './stream-speed';
 import * as del from 'del';
+import Common from '../common';
 
 let gzip = require( 'gunzip-maybe' );
 let xz = require( 'lzma-native' ).createDecompressor;
@@ -40,34 +41,121 @@ describe( 'Downloader', function()
 		return del( 'test-files/!(.gj-*)' );
 	} );
 
-	it( 'Should download a resumable file', async () =>
+	it( 'Should download a resumable file', Common.test( async ( done ) =>
 	{
 		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
 			overwrite: true,
 		} );
 
 		let waited = false;
+		let paused = false;
+
 		handle
-			.onProgress( SampleUnit.KBps, async ( data ) =>
+			.onProgress( SampleUnit.KBps, ( data ) =>
 			{
-				console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
-				console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
-				if ( data.progress > 0.5 && !waited ) {
-					console.log( 'Having a comic relief..' );
+				Common.test( async () =>
+				{
+					console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+					if ( data.progress > 0.5 && !waited ) {
+						if ( paused ) {
+							throw new Error( 'Got onProgress event while paused' );
+						}
+						console.log( 'Having a comic relief..' );
 
-					await handle.stop();
-					let wait = new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
-					await wait;
-					await handle.start();
+						await handle.stop();
+						paused = true;
+						let wait = new Promise( ( resolve ) => setTimeout( resolve, 3000 ) );
+						await wait;
+						await handle.start();
 
-					waited = true;
-					console.log( 'Had a comic relief!' );
-				}
+						waited = true;
+						paused = false;
+						console.log( 'Had a comic relief!' );
+					}
+				}, done ).apply( this );
 			} )
 			.start();
 
-		return handle.promise;
-	} );
+		await handle.promise;
+		done();
+	} ) );
+
+	it( 'Should handle pausing right away', Common.test( async ( done ) =>
+	{
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
+			overwrite: true,
+		} );
+
+		let waited = false;
+		let paused = false;
+
+		handle
+			.onProgress( SampleUnit.KBps, ( data ) =>
+			{
+				Common.test( async () =>
+				{
+					console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+					if ( paused ) {
+						throw new Error( 'Got onProgress event while paused' );
+					}
+				}, done ).apply( this );
+			} )
+			.start();
+
+		// Waiting for one tick to allow .start() to take effect (happens on next tick due to delayed promise resolving)
+		let wait = new Promise( ( resolve ) => setTimeout( resolve, 1 ) );
+		await wait;
+
+		console.log( 'Having a comic relief..' );
+		await handle.stop();
+		paused = true;
+		wait = new Promise( ( resolve ) => setTimeout( resolve, 2000 ) );
+		await wait;
+		await handle.start();
+
+		waited = true;
+		paused = false;
+		console.log( 'Had a comic relief!' );
+
+		await handle.promise;
+		done();
+	} ) );
+
+	it( 'Should continue normally when state is stopped and started during startup', Common.test( async ( done ) =>
+	{
+		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
+			overwrite: true,
+		} );
+
+		handle
+			.onProgress( SampleUnit.KBps, ( data ) =>
+			{
+				Common.test( async () =>
+				{
+					console.log( 'Download progress: ' + Math.floor( data.progress * 100 ) + '%' );
+					console.log( 'Current speed: ' + Math.floor( data.sample.current ) + ' kbps (' + data.sample.currentAverage + ' kbps current average), peak: ' + Math.floor( data.sample.peak ) + ' kbps, low: ' + Math.floor( data.sample.low ) + ', average: ' + Math.floor( data.sample.average ) + ' kbps' );
+				}, done ).apply( this );
+			} )
+			.start();
+
+		// Waiting for one tick to allow .start() to take effect (happens on next tick due to delayed promise resolving)
+		let wait = new Promise( ( resolve ) => setTimeout( resolve, 1 ) );
+		await wait;
+
+		console.log( 'Stopping..' );
+		handle.stop();
+
+		wait = new Promise( ( resolve ) => setTimeout( resolve, 1 ) );
+		await wait;
+
+		console.log( 'Starting again...' );
+		handle.start();
+
+		await handle.promise;
+		done();
+	} ) );
 
 	it( 'Should download a gzip file', async () =>
 	{
