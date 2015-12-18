@@ -102,20 +102,20 @@ export abstract class VoodooQueue
 		return sortedPatches;
 	}
 
-	private static async applyProfile( profile: IQueueProfile )
+	private static applyProfile( profile: IQueueProfile )
 	{
-		this._maxDownloads = this._fastProfile.downloads;
-		this._maxExtractions = this._fastProfile.extractions;
-		await this.tick();
+		this._maxDownloads = profile.downloads;
+		this._maxExtractions = profile.extractions;
+		this.tick();
 	}
 
-	static async faster()
+	static faster()
 	{
 		this.log( 'Applying faster profile' );
 		this.applyProfile( this._fastProfile );
 	}
 
-	static async slower()
+	static slower()
 	{
 		this.log( 'Applying slower profile' );
 		this.applyProfile( this._slowProfile );

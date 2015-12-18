@@ -33,7 +33,7 @@ export abstract class Launcher
 		let instance = this._runningInstances.get( pid );
 		instance.on( 'end', () => this.detach( pid ) );
 
-		await VoodooQueue.slower();
+		VoodooQueue.slower();
 
 		return instance;
 	}
@@ -41,7 +41,7 @@ export abstract class Launcher
 	static async detach( pid: number )
 	{
 		if ( this._runningInstances.delete( pid ) && this._runningInstances.size === 0 ) {
-			await VoodooQueue.faster();
+			VoodooQueue.faster();
 		}
 	}
 }
@@ -79,14 +79,21 @@ export class LaunchHandle
 	{
 		let result: GameJolt.IGameBuildLaunchOptions = null;
 		for ( let launchOption of this._localPackage.launch_options ) {
-			let lOs = launchOption.os.split( '_' );
-			if ( lOs.length === 1 ) {
+			let lOs = launchOption.os ? launchOption.os.split( '_' ) : [];
+			if ( lOs.length === 0 ) {
+				lOs = [ null, '32' ];
+			}
+			else if ( lOs.length === 1 ) {
 				lOs.push( '32' );
 			}
+
 			if ( lOs[0] === this._os ) {
 				if ( lOs[1] === this._arch ) {
 					return launchOption;
 				}
+				result = launchOption;
+			}
+			else if ( lOs[0] === null && !result ) {
 				result = launchOption;
 			}
 		}
@@ -123,7 +130,8 @@ export class LaunchHandle
 			throw new Error( 'Can\'t find valid launch options for the given os/arch' );
 		}
 
-		var executablePath = launchOption.executable_path.replace( /\//, path.sep );
+		var executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
+		executablePath = executablePath.replace( /\//, path.sep );
 		this._file = path.join( this._localPackage.install_dir, executablePath );
 
 		// If the destination already exists, make sure its valid.
