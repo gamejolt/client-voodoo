@@ -130,6 +130,7 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
         key: 'onSample',
         value: function onSample(cb) {
             this.emitter.on('sample', cb);
+            return this;
         }
     }], [{
         key: 'convertSample',

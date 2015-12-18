@@ -54,6 +54,7 @@ var events_1 = require('events');
 var _ = require('lodash');
 var request = require('request');
 var StreamSpeed = require('./stream-speed');
+var Resumable = require('../common/resumable');
 var common_1 = require('../common');
 
 var Downloader = (function () {
@@ -63,203 +64,181 @@ var Downloader = (function () {
 
     (0, _createClass3.default)(Downloader, null, [{
         key: "download",
-        value: function download(from, to, options) {
-            return new DownloadHandle(from, to, options);
+        value: function download(generateUrl, to, options) {
+            return new DownloadHandle(generateUrl, to, options);
         }
     }]);
     return Downloader;
 })();
 
 exports.Downloader = Downloader;
-(function (DownloadHandleState) {
-    DownloadHandleState[DownloadHandleState["STARTED"] = 0] = "STARTED";
-    DownloadHandleState[DownloadHandleState["STARTING"] = 1] = "STARTING";
-    DownloadHandleState[DownloadHandleState["STOPPED"] = 2] = "STOPPED";
-    DownloadHandleState[DownloadHandleState["STOPPING"] = 3] = "STOPPING";
-    DownloadHandleState[DownloadHandleState["FINISHED"] = 4] = "FINISHED";
-})(exports.DownloadHandleState || (exports.DownloadHandleState = {}));
-var DownloadHandleState = exports.DownloadHandleState;
+function log(message) {
+    console.log('Downloader: ' + message);
+}
 
 var DownloadHandle = (function () {
-    function DownloadHandle(_url, _to, _options) {
+    function DownloadHandle(_generateUrl, _to, _options) {
+        var _this = this;
+
         (0, _classCallCheck3.default)(this, DownloadHandle);
 
-        this._url = _url;
+        this._generateUrl = _generateUrl;
         this._to = _to;
         this._options = _options;
         this._options = _.defaults(this._options || {}, {
             overwrite: false
         });
-        this._state = DownloadHandleState.STOPPED;
+        this._promise = new _promise2.default(function (resolve, reject) {
+            _this._resolver = resolve;
+            _this._rejector = reject;
+        });
         this._emitter = new events_1.EventEmitter();
+        this._resumable = new Resumable.Resumable();
+        this._totalSize = 0;
+        this._totalDownloaded = 0;
     }
 
     (0, _createClass3.default)(DownloadHandle, [{
-        key: "start",
-        value: function start(url) {
+        key: "prepareFS",
+        value: function prepareFS() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                var _this = this;
-
                 var stat, unlinked, toDir, dirStat;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                if (!(this._state !== DownloadHandleState.STOPPED)) {
-                                    _context.next = 2;
-                                    break;
-                                }
-
-                                return _context.abrupt("return", false);
-
-                            case 2:
-                                this._state = DownloadHandleState.STARTING;
-                                this._promise = this.promise; // Make sure a promise exists when starting.
-                                this._url = url || this._url;
-                                this._totalSize = 0;
-                                this._totalDownloaded = 0;
-                                _context.prev = 7;
-                                _context.next = 10;
+                                log('Preparing fs');
+                                // If the actual file already exists, we resume download.
+                                _context.next = 3;
                                 return common_1.default.fsExists(this._to);
 
-                            case 10:
+                            case 3:
                                 if (!_context.sent) {
-                                    _context.next = 28;
+                                    _context.next = 21;
                                     break;
                                 }
 
-                                _context.next = 13;
+                                _context.next = 6;
                                 return common_1.default.fsStat(this._to);
 
-                            case 13:
+                            case 6:
                                 stat = _context.sent;
 
                                 if (stat.isFile()) {
-                                    _context.next = 18;
+                                    _context.next = 11;
                                     break;
                                 }
 
                                 throw new Error('Can\'t resume downloading because the destination isn\'t a file.');
 
-                            case 18:
+                            case 11:
                                 if (!this._options.overwrite) {
-                                    _context.next = 25;
+                                    _context.next = 18;
                                     break;
                                 }
 
-                                _context.next = 21;
+                                _context.next = 14;
                                 return common_1.default.fsUnlink(this._to);
 
-                            case 21:
+                            case 14:
                                 unlinked = _context.sent;
 
                                 if (!unlinked) {
-                                    _context.next = 24;
+                                    _context.next = 17;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download because destination cannot be overwritten.');
 
-                            case 24:
+                            case 17:
                                 stat.size = 0;
 
-                            case 25:
+                            case 18:
                                 this._totalDownloaded = stat.size;
-                                _context.next = 43;
+                                _context.next = 36;
                                 break;
 
-                            case 28:
+                            case 21:
                                 toDir = path.dirname(this._to);
-                                _context.next = 31;
+                                _context.next = 24;
                                 return common_1.default.fsExists(toDir);
 
-                            case 31:
+                            case 24:
                                 if (!_context.sent) {
-                                    _context.next = 39;
+                                    _context.next = 32;
                                     break;
                                 }
 
-                                _context.next = 34;
+                                _context.next = 27;
                                 return common_1.default.fsStat(toDir);
 
-                            case 34:
+                            case 27:
                                 dirStat = _context.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 37;
+                                    _context.next = 30;
                                     break;
                                 }
 
                                 throw new Error('Can\'t download to destination because the path is invalid.');
 
-                            case 37:
-                                _context.next = 43;
+                            case 30:
+                                _context.next = 36;
                                 break;
 
-                            case 39:
-                                _context.next = 41;
+                            case 32:
+                                _context.next = 34;
                                 return common_1.default.mkdirp(toDir);
 
-                            case 41:
+                            case 34:
                                 if (_context.sent) {
-                                    _context.next = 43;
+                                    _context.next = 36;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the destination folder path');
 
-                            case 43:
+                            case 36:
                                 this._options.overwrite = false;
-                                _context.next = 50;
-                                break;
 
-                            case 46:
-                                _context.prev = 46;
-                                _context.t0 = _context["catch"](7);
-
-                                this.onError(_context.t0);
-                                return _context.abrupt("return", false);
-
-                            case 50:
-                                return _context.abrupt("return", new _promise2.default(function (resolve) {
-                                    return _this.download(resolve);
-                                }));
-
-                            case 51:
+                            case 37:
                             case "end":
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[7, 46]]);
+                }, _callee, this);
             }));
         }
     }, {
-        key: "stop",
-        value: function stop() {
+        key: "generateUrl",
+        value: function generateUrl() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+                var _generateUrl;
+
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
-                                if (!(this._state !== DownloadHandleState.STARTED)) {
-                                    _context2.next = 2;
+                                log('Generating url');
+                                _generateUrl = this._generateUrl;
+
+                                if (!(typeof _generateUrl === 'string')) {
+                                    _context2.next = 6;
                                     break;
                                 }
 
-                                return _context2.abrupt("return", false);
+                                this._url = _generateUrl;
+                                _context2.next = 9;
+                                break;
 
-                            case 2:
-                                this._state = DownloadHandleState.STOPPING;
-                                this._streamSpeed.stop();
-                                this._response.removeAllListeners();
-                                this._destStream.removeAllListeners();
-                                this._response.unpipe(this._destStream);
-                                this._destStream.close();
-                                this._request.abort();
-                                this._state = DownloadHandleState.STOPPED;
-                                return _context2.abrupt("return", true);
+                            case 6:
+                                _context2.next = 8;
+                                return _generateUrl();
 
-                            case 11:
+                            case 8:
+                                this._url = _context2.sent;
+
+                            case 9:
                             case "end":
                                 return _context2.stop();
                         }
@@ -269,9 +248,10 @@ var DownloadHandle = (function () {
         }
     }, {
         key: "download",
-        value: function download(resolve) {
+        value: function download() {
             var _this2 = this;
 
+            log('Downloading from ' + this._url);
             var hostUrl = url.parse(this._url);
             var httpOptions = {
                 headers: {
@@ -282,6 +262,7 @@ var DownloadHandle = (function () {
                 flags: 'a'
             });
             this._request = request.get(this._url, httpOptions).on('response', function (response) {
+                // If received a redirect, simply skip the response and wait for the next one
                 if (response.statusCode === 301) {
                     return;
                 }
@@ -293,13 +274,14 @@ var DownloadHandle = (function () {
                         timeLeft: Math.round((_this2._totalSize - _this2._totalDownloaded) / sample.currentAverage),
                         sample: sample
                     });
+                }).on('error', function (err) {
+                    return _this2.onError(err);
                 });
-                _this2._state = DownloadHandleState.STARTED;
-                resolve(true);
                 // Unsatisfiable request - most likely we've downloaded the whole thing already.
                 // TODO - send HEAD request to get content-length and compare.
                 if (_this2._response.statusCode === 416) {
-                    return _this2.onFinished();
+                    _this2.onFinished();
+                    return;
                 }
                 // Expecting the partial response status code
                 if (_this2._response.statusCode !== 206) {
@@ -324,21 +306,96 @@ var DownloadHandle = (function () {
                 _this2._destStream.on('error', function (err) {
                     return _this2.onError(err);
                 });
+                _this2._resumable.started();
+                _this2._emitter.emit('started');
+                log('Resumable state: started');
             }).on('data', function (data) {
                 _this2._totalDownloaded += data.length;
             }).on('error', function (err) {
-                return _this2.onError(err);
+                if (!_this2._response) {
+                    throw err;
+                } else {
+                    _this2.onError(err);
+                }
             });
-            // 	this._response.on( 'data', ( data ) =>
-            // 	{
-            // 		this._totalDownloaded += data.length;
-            // 	} );
-            // 	this._destStream.on( 'finish', () => this.onFinished() );
-            // 	this._response.on( 'error', ( err ) => this.onError( err ) );
-            // 	this._destStream.on( 'error', ( err ) => this.onError( err ) );
-            // } );
-            // this._request.on( 'error', ( err ) => this.onError( err ) );
-            // this._request.end();
+        }
+    }, {
+        key: "start",
+        value: function start() {
+            log('Starting resumable');
+            this._resumable.start({ cb: this.onStarting, context: this });
+        }
+    }, {
+        key: "onStarting",
+        value: function onStarting() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+                return _regenerator2.default.wrap(function _callee3$(_context3) {
+                    while (1) {
+                        switch (_context3.prev = _context3.next) {
+                            case 0:
+                                log('Resumable state: starting');
+                                _context3.prev = 1;
+                                _context3.next = 4;
+                                return this.prepareFS();
+
+                            case 4:
+                                _context3.next = 6;
+                                return this.generateUrl();
+
+                            case 6:
+                                this.download();
+                                _context3.next = 13;
+                                break;
+
+                            case 9:
+                                _context3.prev = 9;
+                                _context3.t0 = _context3["catch"](1);
+
+                                log('I hate you babel: ' + _context3.t0.message + '\n' + _context3.t0.stack);
+                                this.onError(_context3.t0);
+
+                            case 13:
+                            case "end":
+                                return _context3.stop();
+                        }
+                    }
+                }, _callee3, this, [[1, 9]]);
+            }));
+        }
+    }, {
+        key: "onStarted",
+        value: function onStarted(cb) {
+            this._emitter.once('started', cb);
+            return this;
+        }
+    }, {
+        key: "stop",
+        value: function stop() {
+            log('Stopping resumable');
+            this._resumable.stop({ cb: this.onStopping, context: this });
+        }
+    }, {
+        key: "onStopping",
+        value: function onStopping() {
+            log('Resumable state: stopping');
+            this._streamSpeed.stop();
+            this._streamSpeed = null;
+            this._response.removeAllListeners();
+            this._destStream.removeAllListeners();
+            this._response.unpipe(this._destStream);
+            this._destStream.close();
+            this._destStream = null;
+            this._request.abort();
+            this._request = null;
+            this._resumable.stopped();
+            this._emitter.emit('stopped');
+            log('Resumable state: stopped');
+        }
+    }, {
+        key: "onStopped",
+        value: function onStopped(cb) {
+            this._emitter.once('stopped', cb);
+            return this;
         }
     }, {
         key: "onProgress",
@@ -357,15 +414,29 @@ var DownloadHandle = (function () {
     }, {
         key: "onError",
         value: function onError(err) {
-            this.stop();
+            var _this3 = this;
+
+            this._resumable.stop({ cb: function cb() {
+                    return _this3.onErrorStopping(err);
+                }, context: this }, true);
+        }
+    }, {
+        key: "onErrorStopping",
+        value: function onErrorStopping(err) {
+            this.onStopping();
+            this._resumable.finished();
             this._rejector(err);
-            this._promise = null;
         }
     }, {
         key: "onFinished",
         value: function onFinished() {
-            this.stop();
-            this._state = DownloadHandleState.FINISHED;
+            if (this._resumable.state === Resumable.State.STARTING) {
+                this._resumable.started();
+                this._emitter.emit('started');
+                log('Resumable state: started');
+            }
+            this.onStopping();
+            this._resumable.finished();
             this._resolver();
         }
     }, {
@@ -381,7 +452,7 @@ var DownloadHandle = (function () {
     }, {
         key: "state",
         get: function get() {
-            return this._state;
+            return this._resumable.state;
         }
     }, {
         key: "totalSize",
@@ -396,14 +467,6 @@ var DownloadHandle = (function () {
     }, {
         key: "promise",
         get: function get() {
-            var _this3 = this;
-
-            if (!this._promise) {
-                this._promise = new _promise2.default(function (resolve, reject) {
-                    _this3._resolver = resolve;
-                    _this3._rejector = reject;
-                });
-            }
             return this._promise;
         }
     }]);

@@ -40,4 +40,5 @@ __export(require('./extractor'));
 __export(require('./launcher'));
 __export(require('./patcher'));
 __export(require('./uninstaller'));
+__export(require('./queue'));
 //# sourceMappingURL=index.js.map
