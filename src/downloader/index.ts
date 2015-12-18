@@ -33,7 +33,7 @@ export interface IDownloadProgress
 }
 
 function log( message ) {
-	console.log( message );
+	console.log( 'Downloader: ' + message );
 }
 
 export class DownloadHandle
@@ -62,12 +62,16 @@ export class DownloadHandle
 			overwrite: false,
 		} );
 
-		//this._state = DownloadHandleState.STOPPED;
+		this._promise = new Promise<void>( ( resolve, reject ) =>
+		{
+			this._resolver = resolve;
+			this._rejector = reject;
+		} );
+
 		this._emitter = new EventEmitter();
 		this._resumable = new Resumable.Resumable();
 		this._totalSize = 0;
 		this._totalDownloaded = 0;
-		this._promise = this.promise;
 	}
 
 	get url()
@@ -97,13 +101,6 @@ export class DownloadHandle
 
 	get promise()
 	{
-		if ( !this._promise ) {
-			this._promise = new Promise<void>( ( resolve, reject ) =>
-			{
-				this._resolver = resolve;
-				this._rejector = reject;
-			} );
-		}
 		return this._promise;
 	}
 
@@ -159,91 +156,90 @@ export class DownloadHandle
 	private download()
 	{
 		log( 'Downloading from ' + this._url );
-		return new Promise<void>( ( resolve, reject ) =>
-		{
-			let hostUrl = url.parse( this._url );
-			let httpOptions: request.CoreOptions = {
-				headers: {
-					'Range': 'bytes=' + this._totalDownloaded.toString() + '-',
-				},
-			};
+		let hostUrl = url.parse( this._url );
+		let httpOptions: request.CoreOptions = {
+			headers: {
+				'Range': 'bytes=' + this._totalDownloaded.toString() + '-',
+			},
+		};
 
-			this._destStream = fs.createWriteStream( this._to, {
-				flags: 'a',
-			} );
-
-			this._request = request.get( this._url, httpOptions )
-				.on( 'response', ( response: http.IncomingMessage ) =>
-				{
-					// If received a redirect, simply skip the response and wait for the next one
-					if ( response.statusCode === 301 ) {
-						return;
-					}
-
-					this._response = response;
-
-					this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
-					this._streamSpeed
-						.onSample( ( sample ) => this.emitProgress( {
-							progress: this._totalDownloaded / this._totalSize,
-							timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
-							sample: sample,
-						} ) )
-						.on( 'error', ( err ) => this.onError( err ) );
-
-					// Unsatisfiable request - most likely we've downloaded the whole thing already.
-					// TODO - send HEAD request to get content-length and compare.
-					if ( this._response.statusCode === 416 ) {
-						this.onFinished();
-						return;
-					}
-
-					// Expecting the partial response status code
-					if ( this._response.statusCode !== 206 ) {
-						return this.onError( new Error( 'Bad status code ' + this._response.statusCode ) );
-					}
-
-					if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
-						return this.onError( new Error( 'Missing or invalid content-range response header' ) );
-					}
-
-					try {
-						this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
-					}
-					catch ( err ) {
-						return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
-					}
-
-					if ( this._options.decompressStream ) {
-						this._request
-							.pipe( this._streamSpeed )
-							.pipe( this._options.decompressStream )
-							.pipe( this._destStream );
-					}
-					else {
-						this._request
-							.pipe( this._streamSpeed )
-							.pipe( this._destStream );
-					}
-
-					this._destStream.on( 'finish', () => this.onFinished() );
-					this._destStream.on( 'error', ( err ) => this.onError( err ) );
-					resolve();
-				} )
-				.on( 'data', ( data ) =>
-				{
-					this._totalDownloaded += data.length;
-				} )
-				.on( 'error', ( err ) =>
-				{
-					if ( !this._response ) {
-						reject( err );
-					}
-					else {
-						this.onError( err );
-					}
-				} );
+		this._destStream = fs.createWriteStream( this._to, {
+			flags: 'a',
 		} );
+
+		this._request = request.get( this._url, httpOptions )
+			.on( 'response', ( response: http.IncomingMessage ) =>
+			{
+				// If received a redirect, simply skip the response and wait for the next one
+				if ( response.statusCode === 301 ) {
+					return;
+				}
+
+				this._response = response;
+
+				this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
+				this._streamSpeed
+					.onSample( ( sample ) => this.emitProgress( {
+						progress: this._totalDownloaded / this._totalSize,
+						timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
+						sample: sample,
+					} ) )
+					.on( 'error', ( err ) => this.onError( err ) );
+
+				// Unsatisfiable request - most likely we've downloaded the whole thing already.
+				// TODO - send HEAD request to get content-length and compare.
+				if ( this._response.statusCode === 416 ) {
+					this.onFinished();
+					return;
+				}
+
+				// Expecting the partial response status code
+				if ( this._response.statusCode !== 206 ) {
+					return this.onError( new Error( 'Bad status code ' + this._response.statusCode ) );
+				}
+
+				if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
+					return this.onError( new Error( 'Missing or invalid content-range response header' ) );
+				}
+
+				try {
+					this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
+				}
+				catch ( err ) {
+					return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
+				}
+
+				if ( this._options.decompressStream ) {
+					this._request
+						.pipe( this._streamSpeed )
+						.pipe( this._options.decompressStream )
+						.pipe( this._destStream );
+				}
+				else {
+					this._request
+						.pipe( this._streamSpeed )
+						.pipe( this._destStream );
+				}
+
+				this._destStream.on( 'finish', () => this.onFinished() );
+				this._destStream.on( 'error', ( err ) => this.onError( err ) );
+
+				this._resumable.started();
+				log( 'Resumable state: started' );
+			} )
+			.on( 'data', ( data ) =>
+			{
+				this._totalDownloaded += data.length;
+			} )
+			.on( 'error', ( err ) =>
+			{
+				if ( !this._response ) {
+					throw err;
+				}
+				else {
+					this.onError( err );
+				}
+			} );
 	}
 
 	start()
@@ -258,14 +254,12 @@ export class DownloadHandle
 		try {
 			await this.prepareFS();
 			await this.generateUrl();
-			await this.download();
+			this.download();
 		}
 		catch ( err ) {
 			log( 'I hate you babel: ' + err.message + '\n' + err.stack );
+			this.onError( err );
 		}
-
-		this._resumable.started();
-		log( 'Resumable state: started' );
 	}
 
 	stop()
@@ -274,7 +268,7 @@ export class DownloadHandle
 		this._resumable.stop( { cb: this.onStopping, context: this } );
 	}
 
-	private async onStopping()
+	private onStopping()
 	{
 		log( 'Resumable state: stopping' );
 		this._streamSpeed.stop();
@@ -314,14 +308,13 @@ export class DownloadHandle
 	private async onErrorStopping( err: NodeJS.ErrnoException )
 	{
 		await this.onStopping();
+		this._resumable.finished();
 		this._rejector( err );
-		this._promise = null;
 	}
 
 	private async onFinished()
 	{
 		await this.onStopping();
-		// this._state = DownloadHandleState.FINISHED;
 		this._resumable.finished();
 		this._resolver();
 	}
