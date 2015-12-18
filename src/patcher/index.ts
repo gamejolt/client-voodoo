@@ -40,7 +40,7 @@ interface IPatchPrepareResult
 	currentFiles: string[];
 }
 
-export enum PatchHandleState
+export enum PatchOperation
 {
 	STOPPED,
 	DOWNLOADING,
@@ -62,7 +62,7 @@ function log( message ) {
 
 export class PatchHandle
 {
-	private _state: PatchHandleState;
+	private _state: PatchOperation;
 	private _url: string;
 	private _wasStopped: boolean;
 	private _to: string;
@@ -94,7 +94,7 @@ export class PatchHandle
 			decompressInDownload: false,
 		} );
 
-		this._state = PatchHandleState.STOPPED;
+		this._state = PatchOperation.STOPPED;
 		this._firstRun = true;
 		this._downloadHandle = null;
 		this._extractHandle = null;
@@ -127,17 +127,32 @@ export class PatchHandle
 
 	isDownloading()
 	{
-		return this._state === PatchHandleState.DOWNLOADING;
+		return this._state === PatchOperation.DOWNLOADING || this._state === PatchOperation.STOPPED;
 	}
 
 	isPatching()
 	{
-		return this._state === PatchHandleState.PATCHING && this._resumable.state !== Resumable.State.FINISHED;
+		return this._state === PatchOperation.PATCHING;
 	}
 
 	isFinished()
 	{
-		return this._state === PatchHandleState.PATCHING && this._resumable.state === Resumable.State.FINISHED;
+		return this._state === PatchOperation.FINISHED;
+	}
+
+	isRunning()
+	{
+		switch ( this._state ) {
+			case PatchOperation.DOWNLOADING:
+				return this._downloadHandle.state === Resumable.State.STARTING || this._downloadHandle.state === Resumable.State.STARTED;
+
+			case PatchOperation.PATCHING:
+				return this._extractHandle.state === Resumable.State.STARTING || this._extractHandle.state === Resumable.State.STARTED;
+
+			default:
+				return false;
+
+		}
 	}
 
 	private _getDecompressStream()
@@ -163,22 +178,24 @@ export class PatchHandle
 
 	private download()
 	{
-		this._state = PatchHandleState.DOWNLOADING;
-		this._downloadHandle = Downloader.download( this._generateUrl, this._tempFile, {
-			overwrite: this._options.overwrite,
-			decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
+		return new Promise<{ promise: Promise<void> }>( ( resolve ) =>
+		{
+			this._state = PatchOperation.DOWNLOADING;
+			this._downloadHandle = Downloader.download( this._generateUrl, this._tempFile, {
+				overwrite: this._options.overwrite,
+				decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
+			} );
+
+			this._downloadHandle
+				.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
+				.onStarted( () => resolve( { promise: this._downloadHandle.promise } ) )
+				.start();
 		} );
-
-		this._downloadHandle
-			.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
-			.start();
-
-		return this._downloadHandle.promise;
 	}
 
 	private async patchPrepare(): Promise<IPatchPrepareResult>
 	{
-		this._state = PatchHandleState.PATCHING;
+		this._state = PatchOperation.PATCHING;
 
 		let createdByOldBuild: string[];
 
@@ -271,23 +288,24 @@ export class PatchHandle
 		await Common.fsWriteFile( this._archiveListFile, newBuildFiles.join( "\n" ) );
 	}
 
-	private async patch()
+	private patch()
 	{
 		// TODO: restrict operations to the given directories.
 
-		// await this.waitForStart();
-		this._extractHandle = Extractor.extract( this._tempFile, this._to, {
-			overwrite: true,
-			deleteSource: true,
-			decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
+		return new Promise<{ promise: Promise<IExtractResult> }>( ( resolve ) =>
+		{
+			this._extractHandle = Extractor.extract( this._tempFile, this._to, {
+				overwrite: true,
+				deleteSource: true,
+				decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
+			} );
+
+			this._extractHandle
+				.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitExtractProgress( progress ) )
+				.onFile( ( file ) => this.emitFile( file ) )
+				.onStarted( () => resolve( { promise: this._extractHandle.promise } ) )
+				.start();
 		} );
-
-		this._extractHandle
-			.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitExtractProgress( progress ) )
-			.onFile( ( file ) => this.emitFile( file ) )
-			.start();
-
-		return this._extractHandle.promise;
 	}
 
 	start( options?: IPatcherStartOptions )
@@ -302,17 +320,17 @@ export class PatchHandle
 		if ( this._firstRun ) {
 			this._firstRun = false;
 			try {
-				VoodooQueue.enqueue( this );
+				VoodooQueue.manage( this );
 
-				let waitForDownload = this.download();
+				let waitForDownload = await this.download();
 				this._emitter.emit( 'downloading' );
 				this._resumable.started();
-				await waitForDownload;
+				await waitForDownload.promise;
 
 				let prepareResult = await this.patchPrepare();
-				let waitForPatch = this.patch();
+				let waitForPatch = await this.patch();
 				this._emitter.emit( 'patching' );
-				let unpackResult = await waitForPatch;
+				let unpackResult = await waitForPatch.promise;
 
 				await this.finalizePatch( prepareResult, unpackResult );
 				this.onFinished();
@@ -323,7 +341,7 @@ export class PatchHandle
 			}
 		}
 		else {
-			if ( this._state === PatchHandleState.DOWNLOADING ) {
+			if ( this._state === PatchOperation.DOWNLOADING ) {
 				this._downloadHandle.onStarted( () =>
 				{
 					this._resumable.started();
@@ -331,7 +349,7 @@ export class PatchHandle
 					log( 'Resumable state: started' );
 				} ).start();
 			}
-			else if ( this._state === PatchHandleState.PATCHING ) {
+			else if ( this._state === PatchOperation.PATCHING ) {
 				this._extractHandle.onStarted( () =>
 				{
 					this._resumable.started();
@@ -354,7 +372,7 @@ export class PatchHandle
 
 	private async onStopping( options: IPatcherInternalStopOptions )
 	{
-		if ( this._state === PatchHandleState.DOWNLOADING ) {
+		if ( this._state === PatchOperation.DOWNLOADING ) {
 			this._downloadHandle.onStopped( () =>
 			{
 				this._resumable.stopped();
@@ -362,7 +380,7 @@ export class PatchHandle
 				log( 'Resumable state: stopped' );
 			} ).stop();
 		}
-		else if ( this._state === PatchHandleState.PATCHING ) {
+		else if ( this._state === PatchOperation.PATCHING ) {
 			this._extractHandle.onStopped( () =>
 			{
 				this._resumable.stopped();

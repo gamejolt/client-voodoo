@@ -4,3 +4,4 @@ export * from './extractor';
 export * from './launcher';
 export * from './patcher';
 export * from './uninstaller';
+export * from './queue';

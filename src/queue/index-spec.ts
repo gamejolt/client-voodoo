@@ -3,7 +3,7 @@ import express = require( 'express' );
 import http = require( 'http' );
 import { Downloader } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
-import { Patcher, IPatcherOptions, PatchHandleState } from '../patcher';
+import { Patcher, IPatcherOptions, PatchOperation } from '../patcher';
 import { VoodooQueue } from './index';
 import path = require( 'path' );
 import Common from '../common';
@@ -121,7 +121,7 @@ describe( 'Voodoo queue', function()
 
 	afterEach( () =>
 	{
-		return VoodooQueue.reset();
+		return VoodooQueue.reset( true );
 	} );
 
 	function getPatch( url?: string, options?: IPatcherOptions, localPackage?: GameJolt.IGamePackage )
@@ -154,7 +154,7 @@ describe( 'Voodoo queue', function()
 			{
 				console.log( 'Extracted file: ' + file.name );
 			} )
-			.start( url || patchUrl );
+			.start();
 
 		return patchHandle;
 	}
@@ -171,7 +171,8 @@ describe( 'Voodoo queue', function()
 		let patch = getPatch();
 		patch.onPaused( Common.test( () =>
 		{
-			expect( patch.state ).to.eq( PatchHandleState.STOPPED_DOWNLOAD );
+			expect( patch.state ).to.eq( PatchOperation.DOWNLOADING );
+			expect( patch.isRunning() ).to.eq( false );
 			done();
 		}, done ) );
 		await patch.promise;
@@ -187,7 +188,8 @@ describe( 'Voodoo queue', function()
 		let patch = getPatch();
 		patch.onPaused( Common.test( () =>
 		{
-			expect( patch.state ).to.eq( PatchHandleState.STOPPED_PATCH );
+			expect( patch.state ).to.eq( PatchOperation.PATCHING );
+			expect( patch.isRunning() ).to.eq( false );
 			done();
 		}, done ) );
 		await patch.promise;
@@ -209,13 +211,15 @@ describe( 'Voodoo queue', function()
 					.onPaused( Common.test( () =>
 					{
 						console.log( 'PAUSED' );
-						expect( patch2.state ).to.eq( PatchHandleState.STOPPED_DOWNLOAD );
+						expect( patch2.state ).to.eq( PatchOperation.DOWNLOADING );
+						expect( patch2.isRunning() ).to.eq( false );
 						expect( firstFinishedDownloading ).to.eq( false );
 					}, done ) )
 					.onResumed( Common.test( () =>
 					{
 						console.log( 'RESUMED' );
-						expect( patch2.state ).to.eq( PatchHandleState.DOWNLOADING );
+						expect( patch2.state ).to.eq( PatchOperation.DOWNLOADING );
+						expect( patch2.isRunning() ).to.eq( true );
 						expect( firstFinishedDownloading ).to.eq( true );
 						resumed = true;
 					}, done ) )
@@ -261,18 +265,21 @@ describe( 'Voodoo queue', function()
 					.onPaused( Common.test( () =>
 					{
 						console.log( 'Second paused' );
-						expect( patch2.state ).to.eq( PatchHandleState.STOPPED_PATCH );
+						expect( patch2.state ).to.eq( PatchOperation.PATCHING );
+						expect( patch2.isRunning() ).to.eq( false );
 						expect( firstFinished ).to.eq( false );
 					}, done ) )
 					.onResumed( Common.test( () =>
 					{
 						console.log( 'Second resumed' );
-						expect( patch2.state ).to.eq( PatchHandleState.PATCHING );
+						expect( patch2.state ).to.eq( PatchOperation.PATCHING );
+						expect( patch2.isRunning() ).to.eq( true );
 						expect( firstFinished ).to.eq( true );
 						resumed = true;
 					}, done ) )
 					.onExtractProgress( SampleUnit.KBps, Common.test( () =>
 					{
+						expect( firstFinished ).to.eq( true );
 						if ( resumed ) {
 							done();
 						}
@@ -293,7 +300,9 @@ describe( 'Voodoo queue', function()
 		patch
 			.onPaused( Common.test( async () =>
 			{
-				expect( patch.state ).to.eq( PatchHandleState.STOPPED_DOWNLOAD );
+				expect( patch.state ).to.eq( PatchOperation.DOWNLOADING );
+				expect( patch.isRunning() ).to.eq( false );
+				await wait( 1000 );
 				await VoodooQueue.setMaxDownloads( 1 );
 			}, done ) )
 			.onResumed( () => done() );
@@ -316,7 +325,9 @@ describe( 'Voodoo queue', function()
 		patch
 			.onPaused( Common.test( async () =>
 			{
-				expect( patch.state ).to.eq( PatchHandleState.STOPPED_PATCH );
+				expect( patch.state ).to.eq( PatchOperation.PATCHING );
+				expect( patch.isRunning() ).to.eq( false );
+				await wait( 1000 );
 				await VoodooQueue.setMaxExtractions( 1 );
 			}, done ) )
 			.onResumed( () => done() );
@@ -330,8 +341,13 @@ describe( 'Voodoo queue', function()
 		patch
 			.onDownloading( Common.test( async () =>
 			{
-				expect( patch.state ).to.eq( PatchHandleState.DOWNLOADING );
+				expect( patch.state ).to.eq( PatchOperation.DOWNLOADING );
+				expect( patch.isRunning() ).to.eq( true );
 				await VoodooQueue.setMaxDownloads( 0 );
+			}, done ) )
+			.onProgress( SampleUnit.KBps, Common.test( () =>
+			{
+				throw new Error( 'Unexpected any progress events' );
 			}, done ) )
 			.onPaused( () => done() );
 
@@ -352,8 +368,13 @@ describe( 'Voodoo queue', function()
 		patch
 			.onPatching( Common.test( async () =>
 			{
-				expect( patch.state ).to.eq( PatchHandleState.PATCHING );
+				expect( patch.state ).to.eq( PatchOperation.PATCHING );
+				expect( patch.isRunning() ).to.eq( true );
 				await VoodooQueue.setMaxExtractions( 0 );
+			}, done ) )
+			.onExtractProgress( SampleUnit.KBps, Common.test( () =>
+			{
+				throw new Error( 'Unexpected any progress events' );
 			}, done ) )
 			.onPaused( () => done() );
 

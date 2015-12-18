@@ -79,9 +79,6 @@ export class Resumable
 		if ( this._currentState === State.STOPPED || force ) {
 			this._waitForStopResolver();
 		}
-		else {
-			console.log( 'Waiting to stop' );
-		}
 
 		return this._waitForStop;
 	}
@@ -132,9 +129,6 @@ export class Resumable
 
 		if ( this._currentState === State.STARTED || force ) {
 			this._waitForStartResolver();
-		}
-		else {
-			console.log( 'Waiting to start' );
 		}
 
 		return this._waitForStart;
