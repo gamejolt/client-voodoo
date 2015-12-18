@@ -563,6 +563,12 @@ export class PatchHandle
 
 	private onFinished()
 	{
+		if ( this._resumable.state === Resumable.State.STARTING ) {
+			log( 'Forced to stop before started. Marking as started first. ' );
+			this._resumable.started();
+			this._emitter.emit( 'started' );
+			log( 'Resumable state: started' );
+		}
 		this._resumable.finished();
 		this._resolver();
 	}
