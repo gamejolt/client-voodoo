@@ -316,11 +316,19 @@ export class DownloadHandle
 
 	private onError( err: NodeJS.ErrnoException )
 	{
-		this._resumable.stop( { cb: () => this.onErrorStopping( err ), context: this }, true );
+		log( err.message + '\n' + err.stack );
+		if ( this._resumable.state === Resumable.State.STARTING ) {
+			log( 'Forced to stop before started. Marking as started first. ' );
+			this._resumable.started();
+			this._emitter.emit( 'started' );
+			log( 'Resumable state: started' );
+		}
+		this._resumable.stop( { cb: this.onErrorStopping, args: [ err ], context: this }, true );
 	}
 
 	private onErrorStopping( err: NodeJS.ErrnoException )
 	{
+		log( 'Error' );
 		this.onStopping();
 		this._resumable.finished();
 		this._rejector( err );
@@ -328,12 +336,7 @@ export class DownloadHandle
 
 	private onFinished()
 	{
-		if ( this._resumable.state === Resumable.State.STARTING ) {
-			this._resumable.started();
-			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
-		}
-		
+		log( 'Finished' );
 		this.onStopping();
 		this._resumable.finished();
 		this._resolver();
