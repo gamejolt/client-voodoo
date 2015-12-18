@@ -5,6 +5,7 @@ import * as tarFS from 'tar-fs';
 import { EventEmitter } from 'events';
 import { Readable, Transform } from 'stream';
 import * as StreamSpeed from '../downloader/stream-speed';
+import * as Resumable from '../common/resumable';
 import Common from '../common';
 
 export interface IExtractOptions extends tarFS.IExtractOptions
@@ -23,7 +24,6 @@ export interface IExtractProgress
 
 export interface IExtractResult
 {
-	success: boolean;
 	files: string[];
 }
 
@@ -35,15 +35,22 @@ export abstract class Extractor
 	}
 }
 
+function log( message ) {
+	console.log( 'Extractor: ' + message );
+}
+
 export class ExtractHandle
 {
 	private _promise: Promise<IExtractResult>;
-	private _resolver: ( result: IExtractResult ) => any;
-	private _rejector: Function;
+	private _resolver: ( result: IExtractResult ) => void;
+	private _rejector: ( err: NodeJS.ErrnoException ) => void;
+	private _resumable: Resumable.Resumable;
+	private _firstRun: boolean;
 
 	private _streamSpeed: StreamSpeed.StreamSpeed;
 	private _readStream: Readable;
 	private _extractStream: tar.Extract;
+	private _extractedFiles: string[];
 	private _totalProcessed: number;
 	private _totalSize: number;
 
@@ -58,7 +65,18 @@ export class ExtractHandle
 			overwrite: false,
 		} );
 
+		this._firstRun = true;
+		this._promise = new Promise<IExtractResult>( ( resolve, reject ) =>
+		{
+			this._resolver = resolve;
+			this._rejector = reject;
+		} );
+
 		this._emitter = new EventEmitter();
+		this._resumable = new Resumable.Resumable();
+		this._extractedFiles = [];
+		this._totalSize = 0;
+		this._totalProcessed = 0;
 	}
 
 	get from(): string
@@ -71,57 +89,26 @@ export class ExtractHandle
 		return this._to;
 	}
 
+	get state()
+	{
+		return this._resumable.state;
+	}
+
 	get promise()
 	{
-		if ( !this._promise ) {
-			this._promise = new Promise<IExtractResult>( ( resolve, reject ) =>
-			{
-				this._resolver = function( result: IExtractResult )
-				{
-					console.log( 'done' );
-					if ( this._streamSpeed ) {
-						console.log( 'Removing stream speed' );
-						this._streamSpeed.stop();
-					}
-
-					if ( !this._terminated ) {
-						resolve( result );
-					}
-				};
-				this._rejector = function( err )
-				{
-					if ( this._streamSpeed ) {
-						this._streamSpeed.stop();
-					}
-
-					reject( err );
-				};
-			} );
-		}
 		return this._promise;
 	}
 
-	async start(): Promise<boolean>
+	private async prepareFS()
 	{
-		if ( this._running || this._terminated ) {
-			return false;
-		}
-		else if ( this._readStream ) {
-			this._pipe();
-			this._readStream.resume();
-			return true;
-		}
-
-		this._running = true;
-		this._promise = this.promise; // Make sure a promise exists when starting.
-
+		log( 'Preparing fs' );
 		if ( !( await Common.fsExists( this._from ) ) ) {
-			throw new Error( 'Can\'t extract to destination because the source does not exist' );
+			throw new Error( 'Can\'t unpack to destination because the source does not exist' );
 		}
 
 		let srcStat = await Common.fsStat( this._from );
 		if ( !srcStat.isFile() ) {
-			throw new Error( 'Can\'t extract to destination because the source is not a valid file' );
+			throw new Error( 'Can\'t unpack to destination because the source is not a valid file' );
 		}
 
 		this._totalSize = srcStat.size;
@@ -131,109 +118,169 @@ export class ExtractHandle
 		if ( await Common.fsExists( this._to ) ) {
 			let destStat = await Common.fsStat( this._to );
 			if ( !destStat.isDirectory() ) {
-				throw new Error( 'Can\'t extract to destination because its not a valid directory' );
+				throw new Error( 'Can\'t unpack to destination because its not a valid directory' );
 			}
 
-			// Don't extract to a non-empty directory.
+			// Don't unpack to a non-empty directory.
 			let filesInDest = await Common.fsReadDir( this._to );
 			if ( filesInDest && filesInDest.length > 0 ) {
 
-				// Allow extracting to a non empty directory only if the overwrite option is set.
+				// Allow unpacking to a non empty directory only if the overwrite option is set.
 				if ( !this._options.overwrite ) {
-					throw new Error( 'Can\'t extract to destination because it isnt empty' );
+					throw new Error( 'Can\'t unpack to destination because it isnt empty' );
 				}
 			}
 		}
-		// Create the folder path to extract to.
+		// Create the folder path to unpack to.
 		else if ( !( await Common.mkdirp( this._to ) ) ) {
 			throw new Error( 'Couldn\'t create destination folder path' );
 		}
-
-		// Check terminated again because between checking the fs and now it could've changed.
-		if ( this._terminated ) {
-			return false;
-		}
-
-		return new Promise<boolean>( ( resolve ) => this.extract( resolve ) );
 	}
 
-	private async extract( resolve: ( result: boolean ) => any )
+	private async unpack()
 	{
-		let files: string[] = [];
-		let result;
-		try {
-			result = await new Promise<boolean>( ( _resolve, _reject ) =>
-			{
-				this._readStream = fs.createReadStream( this._from );
+		log( 'Unpacking from ' + this._from + ' to ' + this._to );
+		return new Promise<void>( ( resolve, reject ) =>
+		{
+			this._readStream = fs.createReadStream( this._from );
 
-				// If stopped between starting and here, the stop wouldn't have registered this read stream. So just do it now.
-				if ( !this._running ) {
-					this.stop( false );
+			let optionsMap = this._options.map;
+			this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
+				map: ( header: tar.IEntryHeader ) =>
+				{
+					if ( optionsMap ) {
+						header = optionsMap( header );
+					}
+
+					// TODO: fuggin symlinks and the likes.
+					if ( header && header.type === 'file' ) {
+						this._extractedFiles.push( header.name );
+						this.emitFile( header );
+					}
+
+					return header;
+				},
+			} ) );
+
+			this._extractStream.on( 'finish', () => resolve() );
+			this._extractStream.on( 'error', ( err ) => reject( err ) );
+
+			this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
+			this._streamSpeed.stop(); //  Dont auto start. resume() will take care of that
+			this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
+				progress: this._totalProcessed / this._totalSize,
+				timeLeft: Math.round( ( this._totalSize - this._totalProcessed ) / sample.currentAverage ),
+				sample: sample,
+			} ) );
+
+			if ( this._options.decompressStream ) {
+				this._streamSpeed
+					.pipe( this._options.decompressStream )
+					.pipe( this._extractStream );
+			}
+			else {
+				this._streamSpeed.pipe( this._extractStream );
+			}
+
+			this.resume();
+
+			this._resumable.started();
+			this._emitter.emit( 'started' );
+			log( 'Resumable state: started' );
+		} );
+	}
+
+	start()
+	{
+		log( 'Starting resumable' );
+		this._resumable.start( { cb: this.onStarting, context: this } );
+	}
+
+	private async onStarting()
+	{
+		log( 'Resumable state: starting' );
+		if ( this._firstRun ) {
+			this._firstRun = false;
+			try {
+				await this.prepareFS();
+
+				// Somewhere in here the task will be marked as started, allowing it to pause and resume.
+				// This will return only after the archive has been fully extracted.
+				await this.unpack();
+				if ( this._options.deleteSource ) {
+
+					// Remove the source file, but throw only if there was an error and the file still exists.
+					let unlinked = await Common.fsUnlink( this._from );
+					if ( unlinked && ( await Common.fsExists( this._from ) ) ) {
+						throw unlinked;
+					}
 				}
 
-				let optionsMap = this._options.map;
-				this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
-					map: ( header: tar.IEntryHeader ) =>
-					{
-						if ( optionsMap ) {
-							header = optionsMap( header );
-						}
-
-						// TODO: fuggin symlinks and the likes.
-						if ( header && header.type === 'file' ) {
-							files.push( header.name );
-							this.emitFile( header );
-						}
-
-						return header;
-					},
-				} ) );
-
-				this._extractStream.on( 'finish', () => _resolve( true ) );
-				this._extractStream.on( 'error', ( err ) => _reject( err ) );
-
-				this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
-				this._streamSpeed.stop(); //  Dont auto start. _pipe will take care of that
-				this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
-					progress: this._totalProcessed / this._totalSize,
-					timeLeft: Math.round( ( this._totalSize - this._totalProcessed ) / sample.currentAverage ),
-					sample: sample,
-				} ) );
-
-				if ( this._options.decompressStream ) {
-					this._streamSpeed
-						.pipe( this._options.decompressStream )
-						.pipe( this._extractStream );
-				}
-				else {
-					this._streamSpeed.pipe( this._extractStream );
-				}
-
-				this._pipe();
-				resolve( true );
-			} );
+				this.onFinished();
+			}
+			catch ( err ) {
+				log( 'I really hate you babel: ' + err.message + '\n' + err.stack );
+				this.onError( err );
+			}
 		}
-		catch ( err ) {
-			resolve( false );
-			this._rejector( err );
-			return;
-		}
+		else {
+			this.resume();
 
-		// If we're here we should be running because it can only trigger the stream's finish event if we've resumed the reading pipes.
-		// So here its safe to continue on the assumption that we werent stopped or terminated and delete the source file if needed
-		if ( result && this._options.deleteSource ) {
+			this._resumable.started();
+			this._emitter.emit( 'started' );
+			log( 'Resumable state: started' );
+		}
+	}
+
+	onStarted( cb: Function )
+	{
+		this._emitter.once( 'started', cb );
+		return this;
+	}
+
+	stop( terminate?: boolean )
+	{
+		log( 'Stopping resumable' );
+		this._resumable.stop( { cb: terminate ? this.onTerminating : this.onStopping, context: this } );
+	}
+
+	private onStopping()
+	{
+		log( 'Resumable state: stopping' );
+
+		this.pause();
+
+		this._resumable.stopped();
+		this._emitter.emit( 'stopped' );
+		log( 'Resumable state: stopped' );
+	}
+
+	onStopped( cb: Function )
+	{
+		this._emitter.once( 'stopped', cb );
+		return this;
+	}
+
+	private async onTerminating()
+	{
+		log( 'Resumable state: stopping' );
+
+		let readStreamHack: any = this._readStream;
+		readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
+
+		if ( this._options.deleteSource ) {
 
 			// Remove the source file, but throw only if there was an error and the file still exists.
 			let unlinked = await Common.fsUnlink( this._from );
 			if ( unlinked && ( await Common.fsExists( this._from ) ) ) {
+				// TODO: what to do with this error
 				throw unlinked;
 			}
 		}
 
-		this._resolver( {
-			success: result,
-			files: files,
-		} );
+		this._resumable.stopped();
+		this._emitter.emit( 'stopped' );
+		log( 'Resumable state: stopped' );
 	}
 
 	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IExtractProgress ) => void )
@@ -262,35 +309,49 @@ export class ExtractHandle
 		this._emitter.emit( 'file', file );
 	}
 
-	private _pipe()
+	private resume()
 	{
 		this._readStream
 			.on( 'data', ( data: string | Buffer ) => { this._totalProcessed += data.length } )
 			.on( 'error', ( err ) => this._rejector( err ) );
 
 		this._readStream.pipe( this._streamSpeed );
+		this._readStream.resume();
+
 		this._streamSpeed.start();
 	}
 
-	private _unpipe()
+	private pause()
 	{
-		this._readStream.unpipe();
-		this._readStream.removeAllListeners();
-		this._streamSpeed.stop();
+		if ( this._readStream ) {
+			this._readStream.pause();
+			this._readStream.unpipe();
+			this._readStream.removeAllListeners();
+		}
+
+		if ( this._streamSpeed ) {
+			this._streamSpeed.stop();
+		}
 	}
 
-	async stop( terminate?: boolean )
+	private onError( err: NodeJS.ErrnoException )
 	{
-		this._running = false;
-		if ( terminate ) {
-			this._terminated = true;
-			let readStreamHack: any = this._readStream;
-			readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
-		}
-		else {
-			this._readStream.pause();
-			this._unpipe();
-		}
-		return true;
+		this._resumable.stop( { cb: () => this.onErrorStopping( err ), context: this }, true );
+	}
+
+	private onErrorStopping( err: NodeJS.ErrnoException )
+	{
+		this.pause();
+		this._resumable.finished();
+		this._rejector( err );
+	}
+
+	private onFinished()
+	{
+		this.pause();
+		this._resumable.finished();
+		this._resolver( {
+			files: this._extractedFiles,
+		} );
 	}
 }

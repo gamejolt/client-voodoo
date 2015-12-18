@@ -160,7 +160,7 @@ describe( 'Extractor', function()
 
 		await extractHandle.stop();
 		console.log( 'Stopping to smell the bees.' );
-		await new Promise( ( resolve ) => setTimeout( resolve, 3000 ) );
+		await new Promise( ( resolve ) => setTimeout( resolve, 5000 ) );
 		waited = true;
 		console.log( 'I meant flowers.' );
 		await extractHandle.start();

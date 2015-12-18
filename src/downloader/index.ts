@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 import { Transform } from 'stream';
 import * as request from 'request';
 import * as StreamSpeed from './stream-speed';
+import * as Resumable from '../common/resumable';
 import Common from '../common';
 
 export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
@@ -18,19 +19,10 @@ export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
 
 export abstract class Downloader
 {
-	static download( from: string, to: string, options?: IDownloadOptions ): DownloadHandle
+	static download( generateUrl: ( () => Promise<string> ) | string, to: string, options?: IDownloadOptions ): DownloadHandle
 	{
-		return new DownloadHandle( from, to, options );
+		return new DownloadHandle( generateUrl, to, options );
 	}
-}
-
-export enum DownloadHandleState
-{
-	STARTED,
-	STARTING,
-	STOPPED,
-	STOPPING,
-	FINISHED,
 }
 
 export interface IDownloadProgress
@@ -40,15 +32,22 @@ export interface IDownloadProgress
 	sample: StreamSpeed.ISampleData;
 }
 
+function log( message ) {
+	console.log( 'Downloader: ' + message );
+}
+
 export class DownloadHandle
 {
-	private _state: DownloadHandleState;
-
 	private _promise: Promise<void>;
 	private _resolver: () => void;
 	private _rejector: ( err: NodeJS.ErrnoException ) => void;
 	private _emitter: EventEmitter;
+	private _resumable: Resumable.Resumable;
 
+	private _queuedStart: boolean;
+	private _queuedStop: boolean;
+
+	private _url: string;
 	private _totalSize: number;
 	private _totalDownloaded: number;
 
@@ -57,14 +56,22 @@ export class DownloadHandle
 	private _request: request.Request;
 	private _response: http.IncomingMessage;
 
-	constructor( private _url: string, private _to: string, private _options: IDownloadOptions )
+	constructor( private _generateUrl: ( () => Promise<string> ) | string, private _to: string, private _options: IDownloadOptions )
 	{
 		this._options = _.defaults( this._options || {}, {
 			overwrite: false,
 		} );
 
-		this._state = DownloadHandleState.STOPPED;
+		this._promise = new Promise<void>( ( resolve, reject ) =>
+		{
+			this._resolver = resolve;
+			this._rejector = reject;
+		} );
+
 		this._emitter = new EventEmitter();
+		this._resumable = new Resumable.Resumable();
+		this._totalSize = 0;
+		this._totalDownloaded = 0;
 	}
 
 	get url()
@@ -79,7 +86,7 @@ export class DownloadHandle
 
 	get state()
 	{
-		return this._state;
+		return this._resumable.state;
 	}
 
 	get totalSize()
@@ -94,95 +101,61 @@ export class DownloadHandle
 
 	get promise()
 	{
-		if ( !this._promise ) {
-			this._promise = new Promise<void>( ( resolve, reject ) =>
-			{
-				this._resolver = resolve;
-				this._rejector = reject;
-			} );
-		}
 		return this._promise;
 	}
 
-	async start( url?: string )
+	private async prepareFS()
 	{
-		if ( this._state !== DownloadHandleState.STOPPED ) {
-			return false;
-		}
+		log( 'Preparing fs' );
+		// If the actual file already exists, we resume download.
+		if ( await Common.fsExists( this._to ) ) {
 
-		this._state = DownloadHandleState.STARTING;
-		this._promise = this.promise; // Make sure a promise exists when starting.
-
-		this._url = url || this._url;
-		this._totalSize = 0;
-		this._totalDownloaded = 0;
-
-		try {
-
-			// If the actual file already exists, we resume download.
-			if ( await Common.fsExists( this._to ) ) {
-
-				// Make sure the destination is a file.
-				let stat = await Common.fsStat( this._to );
-				if ( !stat.isFile() ) {
-					throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
-				}
-				else if ( this._options.overwrite ) {
-					let unlinked = await Common.fsUnlink( this._to );
-					if ( unlinked ) {
-						throw new Error( 'Can\'t download because destination cannot be overwritten.' );
-					}
-					stat.size = 0;
-				}
-				this._totalDownloaded = stat.size;
+			// Make sure the destination is a file.
+			let stat = await Common.fsStat( this._to );
+			if ( !stat.isFile() ) {
+				throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
 			}
-			// Otherwise, we validate the folder path.
-			else {
-				let toDir = path.dirname( this._to );
-				if ( await Common.fsExists( toDir ) ) {
-					let dirStat = await Common.fsStat( toDir );
-					if ( !dirStat.isDirectory() ) {
-						throw new Error( 'Can\'t download to destination because the path is invalid.' );
-					}
+			else if ( this._options.overwrite ) {
+				let unlinked = await Common.fsUnlink( this._to );
+				if ( unlinked ) {
+					throw new Error( 'Can\'t download because destination cannot be overwritten.' );
 				}
-				// Create the folder path.
-				else if ( !( await Common.mkdirp( toDir ) ) ) {
-					throw new Error( 'Couldn\'t create the destination folder path' );
+				stat.size = 0;
+			}
+			this._totalDownloaded = stat.size;
+		}
+		// Otherwise, we validate the folder path.
+		else {
+			let toDir = path.dirname( this._to );
+			if ( await Common.fsExists( toDir ) ) {
+				let dirStat = await Common.fsStat( toDir );
+				if ( !dirStat.isDirectory() ) {
+					throw new Error( 'Can\'t download to destination because the path is invalid.' );
 				}
 			}
-			this._options.overwrite = false;
+			// Create the folder path.
+			else if ( !( await Common.mkdirp( toDir ) ) ) {
+				throw new Error( 'Couldn\'t create the destination folder path' );
+			}
 		}
-		catch ( err ) {
-			this.onError( err );
-			return false;
-		}
-
-		return new Promise<boolean>( ( resolve ) => this.download( resolve ) );
+		this._options.overwrite = false;
 	}
 
-	async stop()
+	private async generateUrl()
 	{
-		if ( this._state !== DownloadHandleState.STARTED ) {
-			return false;
+		log( 'Generating url' );
+		let _generateUrl:any = this._generateUrl;
+		if ( typeof _generateUrl === 'string' ) {
+			this._url = _generateUrl;
 		}
-
-		this._state = DownloadHandleState.STOPPING;
-
-		this._streamSpeed.stop();
-		this._response.removeAllListeners();
-		this._destStream.removeAllListeners();
-		this._response.unpipe( this._destStream );
-		this._destStream.close();
-		this._request.abort();
-
-		this._state = DownloadHandleState.STOPPED;
-
-		return true;
+		else {
+			this._url = await _generateUrl();
+		}
 	}
 
-	private download( resolve: ( result: boolean ) => any )
+	private download()
 	{
-
+		log( 'Downloading from ' + this._url );
 		let hostUrl = url.parse( this._url );
 		let httpOptions: request.CoreOptions = {
 			headers: {
@@ -197,6 +170,7 @@ export class DownloadHandle
 		this._request = request.get( this._url, httpOptions )
 			.on( 'response', ( response: http.IncomingMessage ) =>
 			{
+				// If received a redirect, simply skip the response and wait for the next one
 				if ( response.statusCode === 301 ) {
 					return;
 				}
@@ -204,18 +178,19 @@ export class DownloadHandle
 				this._response = response;
 
 				this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
-				this._streamSpeed.onSample( ( sample ) => this.emitProgress( {
-					progress: this._totalDownloaded / this._totalSize,
-					timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
-					sample: sample,
-				} ) );
-				this._state = DownloadHandleState.STARTED;
-				resolve( true );
+				this._streamSpeed
+					.onSample( ( sample ) => this.emitProgress( {
+						progress: this._totalDownloaded / this._totalSize,
+						timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
+						sample: sample,
+					} ) )
+					.on( 'error', ( err ) => this.onError( err ) );
 
 				// Unsatisfiable request - most likely we've downloaded the whole thing already.
 				// TODO - send HEAD request to get content-length and compare.
 				if ( this._response.statusCode === 416 ) {
-					return this.onFinished();
+					this.onFinished();
+					return;
 				}
 
 				// Expecting the partial response status code
@@ -248,25 +223,80 @@ export class DownloadHandle
 
 				this._destStream.on( 'finish', () => this.onFinished() );
 				this._destStream.on( 'error', ( err ) => this.onError( err ) );
+
+				this._resumable.started();
+				this._emitter.emit( 'started' );
+				log( 'Resumable state: started' );
 			} )
 			.on( 'data', ( data ) =>
 			{
 				this._totalDownloaded += data.length;
-		 	} )
-			.on( 'error', ( err ) => this.onError( err ) );
+			} )
+			.on( 'error', ( err ) =>
+			{
+				if ( !this._response ) {
+					throw err;
+				}
+				else {
+					this.onError( err );
+				}
+			} );
+	}
 
-		// 	this._response.on( 'data', ( data ) =>
-		// 	{
-		// 		this._totalDownloaded += data.length;
-		// 	} );
+	start()
+	{
+		log( 'Starting resumable' );
+		this._resumable.start( { cb: this.onStarting, context: this } );
+	}
 
-		// 	this._destStream.on( 'finish', () => this.onFinished() );
+	private async onStarting()
+	{
+		log( 'Resumable state: starting' );
+		try {
+			await this.prepareFS();
+			await this.generateUrl();
+			this.download();
+		}
+		catch ( err ) {
+			log( 'I hate you babel: ' + err.message + '\n' + err.stack );
+			this.onError( err );
+		}
+	}
 
-		// 	this._response.on( 'error', ( err ) => this.onError( err ) );
-		// 	this._destStream.on( 'error', ( err ) => this.onError( err ) );
-		// } );
-		// this._request.on( 'error', ( err ) => this.onError( err ) );
-		// this._request.end();
+	onStarted( cb: Function )
+	{
+		this._emitter.once( 'started', cb );
+		return this;
+	}
+
+	stop()
+	{
+		log( 'Stopping resumable' );
+		this._resumable.stop( { cb: this.onStopping, context: this } );
+	}
+
+	private onStopping()
+	{
+		log( 'Resumable state: stopping' );
+		this._streamSpeed.stop();
+		this._streamSpeed = null;
+		this._response.removeAllListeners();
+		this._destStream.removeAllListeners();
+		this._response.unpipe( this._destStream );
+		this._destStream.close();
+		this._destStream = null;
+		this._request.abort();
+		this._request = null;
+
+		this._resumable.stopped();
+		this._emitter.emit( 'stopped' );
+		log( 'Resumable state: stopped' );
+	}
+
+	onStopped( cb: Function )
+	{
+		this._emitter.once( 'stopped', cb );
+		return this;
 	}
 
 	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => void ): DownloadHandle
@@ -286,15 +316,26 @@ export class DownloadHandle
 
 	private onError( err: NodeJS.ErrnoException )
 	{
-		this.stop();
+		this._resumable.stop( { cb: () => this.onErrorStopping( err ), context: this }, true );
+	}
+
+	private onErrorStopping( err: NodeJS.ErrnoException )
+	{
+		this.onStopping();
+		this._resumable.finished();
 		this._rejector( err );
-		this._promise = null;
 	}
 
 	private onFinished()
 	{
-		this.stop();
-		this._state = DownloadHandleState.FINISHED;
+		if ( this._resumable.state === Resumable.State.STARTING ) {
+			this._resumable.started();
+			this._emitter.emit( 'started' );
+			log( 'Resumable state: started' );
+		}
+		
+		this.onStopping();
+		this._resumable.finished();
 		this._resolver();
 	}
 }
