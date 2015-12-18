@@ -185,6 +185,7 @@ export class ExtractHandle
 			this.resume();
 
 			this._resumable.started();
+			this._emitter.emit( 'started' );
 			log( 'Resumable state: started' );
 		} );
 	}
@@ -226,8 +227,15 @@ export class ExtractHandle
 			this.resume();
 
 			this._resumable.started();
+			this._emitter.emit( 'started' );
 			log( 'Resumable state: started' );
 		}
+	}
+
+	onStarted( cb: Function )
+	{
+		this._emitter.once( 'started', cb );
+		return this;
 	}
 
 	stop( terminate?: boolean )
@@ -243,7 +251,14 @@ export class ExtractHandle
 		this.pause();
 
 		this._resumable.stopped();
+		this._emitter.emit( 'stopped' );
 		log( 'Resumable state: stopped' );
+	}
+
+	onStopped( cb: Function )
+	{
+		this._emitter.once( 'stopped', cb );
+		return this;
 	}
 
 	private async onTerminating()
@@ -264,6 +279,7 @@ export class ExtractHandle
 		}
 
 		this._resumable.stopped();
+		this._emitter.emit( 'stopped' );
 		log( 'Resumable state: stopped' );
 	}
 

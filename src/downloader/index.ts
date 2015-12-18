@@ -19,9 +19,9 @@ export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
 
 export abstract class Downloader
 {
-	static download( from: string, to: string, options?: IDownloadOptions ): DownloadHandle
+	static download( generateUrl: ( () => Promise<string> ) | string, to: string, options?: IDownloadOptions ): DownloadHandle
 	{
-		return new DownloadHandle( from, to, options );
+		return new DownloadHandle( generateUrl, to, options );
 	}
 }
 
@@ -225,6 +225,7 @@ export class DownloadHandle
 				this._destStream.on( 'error', ( err ) => this.onError( err ) );
 
 				this._resumable.started();
+				this._emitter.emit( 'started' );
 				log( 'Resumable state: started' );
 			} )
 			.on( 'data', ( data ) =>
@@ -262,6 +263,12 @@ export class DownloadHandle
 		}
 	}
 
+	onStarted( cb: Function )
+	{
+		this._emitter.once( 'started', cb );
+		return this;
+	}
+
 	stop()
 	{
 		log( 'Stopping resumable' );
@@ -282,7 +289,14 @@ export class DownloadHandle
 		this._request = null;
 
 		this._resumable.stopped();
+		this._emitter.emit( 'stopped' );
 		log( 'Resumable state: stopped' );
+	}
+
+	onStopped( cb: Function )
+	{
+		this._emitter.once( 'stopped', cb );
+		return this;
 	}
 
 	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IDownloadProgress ) => void ): DownloadHandle
@@ -305,16 +319,16 @@ export class DownloadHandle
 		this._resumable.stop( { cb: () => this.onErrorStopping( err ), context: this }, true );
 	}
 
-	private async onErrorStopping( err: NodeJS.ErrnoException )
+	private onErrorStopping( err: NodeJS.ErrnoException )
 	{
-		await this.onStopping();
+		this.onStopping();
 		this._resumable.finished();
 		this._rejector( err );
 	}
 
-	private async onFinished()
+	private onFinished()
 	{
-		await this.onStopping();
+		this.onStopping();
 		this._resumable.finished();
 		this._resolver();
 	}

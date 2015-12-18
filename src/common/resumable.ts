@@ -10,6 +10,7 @@ export enum State
 export interface ICallback
 {
 	cb: Function,
+	args?: any[],
 	context?: any,
 }
 
@@ -65,7 +66,7 @@ export class Resumable
 				let cbCount = this._startCbs.size;
 				for ( let _cb of this._startCbs.values() ) {
 					this._startCbs.delete( _cb );
-					_cb.cb.apply( _cb.context || this );
+					_cb.cb.apply( _cb.context || this, _cb.args );
 
 					cbCount -= 1;
 					if ( !cbCount ) {
@@ -119,7 +120,7 @@ export class Resumable
 				let cbCount = this._stopCbs.size;
 				for ( let _cb of this._stopCbs.values() ) {
 					this._stopCbs.delete( _cb );
-					_cb.cb.apply( _cb.context || this );
+					_cb.cb.apply( _cb.context || this, _cb.args );
 
 					cbCount -= 1;
 					if ( !cbCount ) {
@@ -149,6 +150,8 @@ export class Resumable
 
 	finished()
 	{
+		this._startCbs.clear();
+		this._stopCbs.clear();
 		this._currentState = State.FINISHED;
 	}
 
