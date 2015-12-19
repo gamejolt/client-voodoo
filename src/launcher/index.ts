@@ -10,6 +10,10 @@ import { VoodooQueue } from '../queue';
 
 let plist = require( 'plist' );
 let shellEscape = require( 'shell-escape' );
+let spawnShellEscape = function( cmd: string )
+{
+	return '"' + cmd.replace( /(["\s'$`\\])/g, '\\$1' ) + '"';
+};
 
 export interface ILaunchOptions
 {
@@ -150,7 +154,7 @@ export class LaunchHandle
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		let child = childProcess.spawn( shellEscape( [ this._file ] ), [], {
+		let child = childProcess.spawn( this._file, [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
@@ -169,7 +173,7 @@ export class LaunchHandle
 
 		await Common.chmod( this._file, '0777' );
 
-		let child = childProcess.spawn( shellEscape( [ this._file ] ), [], {
+		let child = childProcess.spawn( this._file, [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
