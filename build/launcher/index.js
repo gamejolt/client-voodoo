@@ -75,6 +75,9 @@ var pid_finder_1 = require('./pid-finder');
 var queue_1 = require('../queue');
 var plist = require('plist');
 var shellEscape = require('shell-escape');
+var spawnShellEscape = function spawnShellEscape(cmd) {
+    return '"' + cmd.replace(/(["\s'$`\\])/g, '\\$1') + '"';
+};
 
 var Launcher = (function () {
     function Launcher() {
@@ -306,7 +309,7 @@ var LaunchHandle = (function () {
                                 throw new Error('Can\'t launch because the file isn\'t valid.');
 
                             case 2:
-                                child = childProcess.spawn(shellEscape([this._file]), [], {
+                                child = childProcess.spawn(this._file, [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
                                 });
@@ -344,7 +347,7 @@ var LaunchHandle = (function () {
                                 return common_1.default.chmod(this._file, '0777');
 
                             case 4:
-                                child = childProcess.spawn(shellEscape([this._file]), [], {
+                                child = childProcess.spawn(this._file, [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
                                 });
