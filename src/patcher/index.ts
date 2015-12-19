@@ -203,6 +203,10 @@ export class PatchHandle
 		let currentFiles = ( await Common.fsReadDirRecursively( this._to ) )
 			.filter( ( file ) =>
 			{
+				console.log( file );
+				console.log( path );
+				console.log( path.basename );
+				console.log( path.basename( file ) );
 				return !path.basename( file ).startsWith( '.gj-' );
 			} )
 			.map( ( file ) =>
