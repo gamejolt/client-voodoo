@@ -497,11 +497,14 @@ var ExtractHandle = (function () {
     }, {
         key: "onError",
         value: function onError(err) {
-            var _this4 = this;
-
-            this._resumable.stop({ cb: function cb() {
-                    return _this4.onErrorStopping(err);
-                }, context: this }, true);
+            log(err.message + '\n' + err.stack);
+            if (this._resumable.state === Resumable.State.STARTING) {
+                log('Forced to stop before started. Marking as started first. ');
+                this._resumable.started();
+                this._emitter.emit('started');
+                log('Resumable state: started');
+            }
+            this._resumable.stop({ cb: this.onErrorStopping, args: [err], context: this }, true);
         }
     }, {
         key: "onErrorStopping",
@@ -513,6 +516,12 @@ var ExtractHandle = (function () {
     }, {
         key: "onFinished",
         value: function onFinished() {
+            if (this._resumable.state === Resumable.State.STARTING) {
+                log('Forced to stop before started. Marking as started first. ');
+                this._resumable.started();
+                this._emitter.emit('started');
+                log('Resumable state: started');
+            }
             this.pause();
             this._resumable.finished();
             this._resolver({

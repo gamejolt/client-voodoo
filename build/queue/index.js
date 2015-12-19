@@ -140,61 +140,21 @@ var VoodooQueue = (function () {
     }, {
         key: "applyProfile",
         value: function applyProfile(profile) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-                return _regenerator2.default.wrap(function _callee$(_context) {
-                    while (1) {
-                        switch (_context.prev = _context.next) {
-                            case 0:
-                                this._maxDownloads = this._fastProfile.downloads;
-                                this._maxExtractions = this._fastProfile.extractions;
-                                _context.next = 4;
-                                return this.tick();
-
-                            case 4:
-                            case "end":
-                                return _context.stop();
-                        }
-                    }
-                }, _callee, this);
-            }));
+            this._maxDownloads = profile.downloads;
+            this._maxExtractions = profile.extractions;
+            this.tick();
         }
     }, {
         key: "faster",
         value: function faster() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
-                return _regenerator2.default.wrap(function _callee2$(_context2) {
-                    while (1) {
-                        switch (_context2.prev = _context2.next) {
-                            case 0:
-                                this.log('Applying faster profile');
-                                this.applyProfile(this._fastProfile);
-
-                            case 2:
-                            case "end":
-                                return _context2.stop();
-                        }
-                    }
-                }, _callee2, this);
-            }));
+            this.log('Applying faster profile');
+            this.applyProfile(this._fastProfile);
         }
     }, {
         key: "slower",
         value: function slower() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
-                return _regenerator2.default.wrap(function _callee3$(_context3) {
-                    while (1) {
-                        switch (_context3.prev = _context3.next) {
-                            case 0:
-                                this.log('Applying slower profile');
-                                this.applyProfile(this._slowProfile);
-
-                            case 2:
-                            case "end":
-                                return _context3.stop();
-                        }
-                    }
-                }, _callee3, this);
-            }));
+            this.log('Applying slower profile');
+            this.applyProfile(this._slowProfile);
         }
     }, {
         key: "onProgress",
@@ -359,31 +319,31 @@ var VoodooQueue = (function () {
     }, {
         key: "setMaxDownloads",
         value: function setMaxDownloads(newMaxDownloads) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
-                return _regenerator2.default.wrap(function _callee4$(_context4) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+                return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
-                        switch (_context4.prev = _context4.next) {
+                        switch (_context.prev = _context.next) {
                             case 0:
                                 this.log('Setting max downloads to ' + newMaxDownloads);
 
                                 if (!this._settingDownloads) {
-                                    _context4.next = 4;
+                                    _context.next = 4;
                                     break;
                                 }
 
                                 this.log('Can\'t set max downloads now because theres a setting in progress');
-                                return _context4.abrupt("return", false);
+                                return _context.abrupt("return", false);
 
                             case 4:
                                 this._settingDownloads = true;
-                                _context4.prev = 5;
+                                _context.prev = 5;
 
                                 this._maxDownloads = newMaxDownloads;
                                 // Wait for next tick in case states change inside a patcher's onPause/onResume.
                                 // Example: when a patcher is pended by the queue manager it calls the patch handle's onPause event (as part of stopping it)
                                 // If in that event handler the max download count increases the task will not resume because the queue manager has yet
                                 // to tag it as pending because it's waiting for it to stop completely, which only happens after onPause is called
-                                _context4.next = 9;
+                                _context.next = 9;
                                 return new _promise2.default(function (resolve) {
                                     return process.nextTick(resolve);
                                 });
@@ -392,43 +352,43 @@ var VoodooQueue = (function () {
                                 this.tick(true);
 
                             case 10:
-                                _context4.prev = 10;
+                                _context.prev = 10;
 
                                 this._settingDownloads = false;
-                                return _context4.finish(10);
+                                return _context.finish(10);
 
                             case 13:
                             case "end":
-                                return _context4.stop();
+                                return _context.stop();
                         }
                     }
-                }, _callee4, this, [[5,, 10, 13]]);
+                }, _callee, this, [[5,, 10, 13]]);
             }));
         }
     }, {
         key: "setMaxExtractions",
         value: function setMaxExtractions(newMaxExtractions) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
-                return _regenerator2.default.wrap(function _callee5$(_context5) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+                return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
-                        switch (_context5.prev = _context5.next) {
+                        switch (_context2.prev = _context2.next) {
                             case 0:
                                 this.log('Setting max extraccions to ' + newMaxExtractions);
 
                                 if (!this._settingExtractions) {
-                                    _context5.next = 4;
+                                    _context2.next = 4;
                                     break;
                                 }
 
                                 this.log('Can\'t set max extractions now because theres a setting in progress');
-                                return _context5.abrupt("return", false);
+                                return _context2.abrupt("return", false);
 
                             case 4:
                                 this._settingExtractions = true;
-                                _context5.prev = 5;
+                                _context2.prev = 5;
 
                                 this._maxExtractions = newMaxExtractions;
-                                _context5.next = 9;
+                                _context2.next = 9;
                                 return new _promise2.default(function (resolve) {
                                     return process.nextTick(resolve);
                                 });
@@ -437,17 +397,17 @@ var VoodooQueue = (function () {
                                 this.tick(false);
 
                             case 10:
-                                _context5.prev = 10;
+                                _context2.prev = 10;
 
                                 this._settingExtractions = false;
-                                return _context5.finish(10);
+                                return _context2.finish(10);
 
                             case 13:
                             case "end":
-                                return _context5.stop();
+                                return _context2.stop();
                         }
                     }
-                }, _callee5, this, [[5,, 10, 13]]);
+                }, _callee2, this, [[5,, 10, 13]]);
             }));
         }
     }, {

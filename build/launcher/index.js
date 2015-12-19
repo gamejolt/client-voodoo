@@ -74,6 +74,7 @@ var common_1 = require('../common');
 var pid_finder_1 = require('./pid-finder');
 var queue_1 = require('../queue');
 var plist = require('plist');
+var shellEscape = require('shell-escape');
 
 var Launcher = (function () {
     function Launcher() {
@@ -107,13 +108,10 @@ var Launcher = (function () {
                                 instance.on('end', function () {
                                     return _this.detach(pid);
                                 });
-                                _context.next = 6;
-                                return queue_1.VoodooQueue.slower();
-
-                            case 6:
+                                queue_1.VoodooQueue.slower();
                                 return _context.abrupt("return", instance);
 
-                            case 7:
+                            case 6:
                             case "end":
                                 return _context.stop();
                         }
@@ -129,15 +127,11 @@ var Launcher = (function () {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
-                                if (!(this._runningInstances.delete(pid) && this._runningInstances.size === 0)) {
-                                    _context2.next = 3;
-                                    break;
+                                if (this._runningInstances.delete(pid) && this._runningInstances.size === 0) {
+                                    queue_1.VoodooQueue.faster();
                                 }
 
-                                _context2.next = 3;
-                                return queue_1.VoodooQueue.faster();
-
-                            case 3:
+                            case 1:
                             case "end":
                                 return _context2.stop();
                         }
@@ -177,14 +171,18 @@ var LaunchHandle = (function () {
                 for (var _iterator = (0, _getIterator3.default)(this._localPackage.launch_options), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var launchOption = _step.value;
 
-                    var lOs = launchOption.os.split('_');
-                    if (lOs.length === 1) {
+                    var lOs = launchOption.os ? launchOption.os.split('_') : [];
+                    if (lOs.length === 0) {
+                        lOs = [null, '32'];
+                    } else if (lOs.length === 1) {
                         lOs.push('32');
                     }
                     if (lOs[0] === this._os) {
                         if (lOs[1] === this._arch) {
                             return launchOption;
                         }
+                        result = launchOption;
+                    } else if (lOs[0] === null && !result) {
                         result = launchOption;
                     }
                 }
@@ -207,48 +205,18 @@ var LaunchHandle = (function () {
         }
     }, {
         key: "ensureExecutable",
-        value: function ensureExecutable(file, stat) {
+        value: function ensureExecutable(file) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
-                var mode, uid, gid;
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
                         switch (_context3.prev = _context3.next) {
                             case 0:
-                                if (stat) {
-                                    _context3.next = 4;
-                                    break;
-                                }
-
+                                // Ensure that the main launcher file is executable.
+                                console.log('Setting the file to be executable');
                                 _context3.next = 3;
-                                return common_1.default.fsStat(file);
-
-                            case 3:
-                                stat = _context3.sent;
-
-                            case 4:
-                                // Make sure the file is executable
-                                mode = stat.mode;
-
-                                if (mode) {
-                                    _context3.next = 7;
-                                    break;
-                                }
-
-                                throw new Error('Can\'t determine if the file is executable by the current user.');
-
-                            case 7:
-                                uid = stat.uid;
-                                gid = stat.gid;
-
-                                if (!(!(mode & parseInt('0001', 8)) && !(mode & parseInt('0010', 8)) && process.getgid && gid === process.getgid() && !(mode & parseInt('0100', 8)) && process.getuid && uid === process.getuid())) {
-                                    _context3.next = 12;
-                                    break;
-                                }
-
-                                _context3.next = 12;
                                 return common_1.default.chmod(file, '0777');
 
-                            case 12:
+                            case 3:
                             case "end":
                                 return _context3.stop();
                         }
@@ -275,44 +243,45 @@ var LaunchHandle = (function () {
                                 throw new Error('Can\'t find valid launch options for the given os/arch');
 
                             case 3:
-                                executablePath = launchOption.executable_path.replace(/\//, path.sep);
+                                executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
 
+                                executablePath = executablePath.replace(/\//, path.sep);
                                 this._file = path.join(this._localPackage.install_dir, executablePath);
                                 // If the destination already exists, make sure its valid.
-                                _context4.next = 7;
+                                _context4.next = 8;
                                 return common_1.default.fsExists(this._file);
 
-                            case 7:
+                            case 8:
                                 if (_context4.sent) {
-                                    _context4.next = 9;
+                                    _context4.next = 10;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file doesn\'t exist.');
 
-                            case 9:
-                                _context4.next = 11;
+                            case 10:
+                                _context4.next = 12;
                                 return common_1.default.fsStat(this._file);
 
-                            case 11:
+                            case 12:
                                 stat = _context4.sent;
                                 _context4.t0 = process.platform;
-                                _context4.next = _context4.t0 === 'win32' ? 15 : _context4.t0 === 'linux' ? 16 : _context4.t0 === 'darwin' ? 17 : 18;
+                                _context4.next = _context4.t0 === 'win32' ? 16 : _context4.t0 === 'linux' ? 17 : _context4.t0 === 'darwin' ? 18 : 19;
                                 break;
 
-                            case 15:
+                            case 16:
                                 return _context4.abrupt("return", this.startWindows(stat, pollInterval));
 
-                            case 16:
+                            case 17:
                                 return _context4.abrupt("return", this.startLinux(stat, pollInterval));
 
-                            case 17:
+                            case 18:
                                 return _context4.abrupt("return", this.startMac(stat, pollInterval));
 
-                            case 18:
+                            case 19:
                                 throw new Error('What potato are you running on? Detected platform: ' + process.platform);
 
-                            case 19:
+                            case 20:
                             case "end":
                                 return _context4.stop();
                         }
@@ -337,7 +306,7 @@ var LaunchHandle = (function () {
                                 throw new Error('Can\'t launch because the file isn\'t valid.');
 
                             case 2:
-                                child = childProcess.spawn(this._file, [], {
+                                child = childProcess.spawn(shellEscape([this._file]), [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
                                 });
@@ -372,10 +341,10 @@ var LaunchHandle = (function () {
 
                             case 2:
                                 _context6.next = 4;
-                                return this.ensureExecutable(this._file, stat);
+                                return common_1.default.chmod(this._file, '0777');
 
                             case 4:
-                                child = childProcess.spawn(this._file, [], {
+                                child = childProcess.spawn(shellEscape([this._file]), [], {
                                     cwd: path.dirname(this._file),
                                     detached: true
                                 });
@@ -396,7 +365,7 @@ var LaunchHandle = (function () {
         key: "startMac",
         value: function startMac(stat, pollInterval) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
-                var pid, child, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName;
+                var pid, child, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile;
                 return _regenerator2.default.wrap(function _callee7$(_context7) {
                     while (1) {
                         switch (_context7.prev = _context7.next) {
@@ -409,17 +378,16 @@ var LaunchHandle = (function () {
                                 }
 
                                 _context7.next = 4;
-                                return this.ensureExecutable(this._file, stat);
+                                return common_1.default.chmod(this._file, '0777');
 
                             case 4:
-                                child = childProcess.spawn(this._file, [], {
-                                    cwd: path.dirname(this._file),
-                                    detached: true
+                                child = childProcess.exec(shellEscape([this._file]), {
+                                    cwd: path.dirname(this._file)
                                 });
 
                                 pid = child.pid;
                                 child.unref();
-                                _context7.next = 45;
+                                _context7.next = 46;
                                 break;
 
                             case 9:
@@ -503,22 +471,33 @@ var LaunchHandle = (function () {
                             case 38:
                                 baseName = path.basename(this._file);
                                 executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
-                                _context7.next = 42;
-                                return this.ensureExecutable(path.join(macosPath, executableName));
+                                executableFile = path.join(macosPath, executableName);
+                                _context7.next = 43;
+                                return common_1.default.chmod(executableFile, '0777');
 
-                            case 42:
-                                child = childProcess.spawn('open ' + this._file, [], {
-                                    cwd: path.dirname(this._file),
-                                    detached: true
+                            case 43:
+                                // Kept commented in case we lost our mind and we want to use gatekeeper
+                                // let gatekeeper = await new Promise( ( resolve, reject ) =>
+                                // {
+                                // 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
+                                // 	{
+                                // 		if ( err || ( stderr && stderr.length ) ) {
+                                // 			return reject( err );
+                                // 		}
+                                // 		resolve();
+                                // 	} );
+                                // } );
+                                child = childProcess.exec(shellEscape([executableFile]), {
+                                    cwd: macosPath
                                 });
 
                                 pid = child.pid;
                                 child.unref();
 
-                            case 45:
+                            case 46:
                                 return _context7.abrupt("return", Launcher.attach(pid, pollInterval));
 
-                            case 46:
+                            case 47:
                             case "end":
                                 return _context7.stop();
                         }
