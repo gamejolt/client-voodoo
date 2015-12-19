@@ -7,7 +7,9 @@ import * as _ from 'lodash';
 import Common from '../common';
 import { PidFinder } from './pid-finder';
 import { VoodooQueue } from '../queue';
+
 let plist = require( 'plist' );
+let shellEscape = require( 'shell-escape' );
 
 export interface ILaunchOptions
 {
@@ -100,27 +102,11 @@ export class LaunchHandle
 		return result;
 	}
 
-	private async ensureExecutable( file: string, stat?: fs.Stats )
+	private async ensureExecutable( file: string )
 	{
-		if ( !stat ) {
-			stat = await Common.fsStat( file );
-		}
-		// Make sure the file is executable
-		let mode = stat.mode;
-		if ( !mode ) {
-			throw new Error( 'Can\'t determine if the file is executable by the current user.' );
-		}
-
-		let uid = stat.uid;
-		let gid = stat.gid;
-
-		if ( !( mode & parseInt( '0001', 8 ) ) &&
-				!( mode & parseInt( '0010', 8 ) ) && process.getgid && gid === process.getgid() &&
-				!( mode & parseInt( '0100', 8 ) ) && process.getuid && uid === process.getuid() ) {
-
-			// Ensure that the main launcher file is executable.
-			await Common.chmod( file, '0777' );
-		}
+		// Ensure that the main launcher file is executable.
+		console.log( 'Setting the file to be executable' );
+		await Common.chmod( file, '0777' );
 	}
 
 	private async start( pollInterval: number )
@@ -164,7 +150,7 @@ export class LaunchHandle
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		let child = childProcess.spawn( this._file, [], {
+		let child = childProcess.spawn( shellEscape( [ this._file ] ), [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
@@ -181,9 +167,9 @@ export class LaunchHandle
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		await this.ensureExecutable( this._file, stat );
+		await Common.chmod( this._file, '0777' );
 
-		let child = childProcess.spawn( this._file, [], {
+		let child = childProcess.spawn( shellEscape( [ this._file ] ), [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
@@ -199,9 +185,9 @@ export class LaunchHandle
 		let pid;
 		if ( stat.isFile() ) {
 
-			await this.ensureExecutable( this._file, stat );
+			await Common.chmod( this._file, '0777' )
 
-			let child = childProcess.exec( this._file, {
+			let child = childProcess.exec( shellEscape( [ this._file ] ), {
 				cwd: path.dirname( this._file ),
 			} );
 
@@ -240,13 +226,26 @@ export class LaunchHandle
 
 			let baseName = path.basename( this._file );
 			let executableName = parsedPlist.CFBundleExecutable || baseName.substr( 0, baseName.length - '.app'.length );
-			console.log( 'Launchable file is ' + path.join( macosPath, executableName ) );
 
-			await this.ensureExecutable( path.join( macosPath, executableName ) );
+			let executableFile = path.join( macosPath, executableName );
+			await Common.chmod( executableFile, '0777' );
 
-			let child = childProcess.spawn( 'open', [ this._file ], {
-				cwd: path.dirname( this._file ),
-				detached: true,
+			// Kept commented in case we lost our mind and we want to use gatekeeper
+			// let gatekeeper = await new Promise( ( resolve, reject ) =>
+			// {
+			// 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
+			// 	{
+			// 		if ( err || ( stderr && stderr.length ) ) {
+			// 			return reject( err );
+			// 		}
+
+			// 		resolve();
+			// 	} );
+			// } );
+
+
+			let child = childProcess.exec( shellEscape( [ executableFile ] ), {
+				cwd: macosPath, // TODO: maybe should be basename
 			} );
 
 			pid = child.pid;
