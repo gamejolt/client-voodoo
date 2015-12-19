@@ -414,15 +414,19 @@ var DownloadHandle = (function () {
     }, {
         key: "onError",
         value: function onError(err) {
-            var _this3 = this;
-
-            this._resumable.stop({ cb: function cb() {
-                    return _this3.onErrorStopping(err);
-                }, context: this }, true);
+            log(err.message + '\n' + err.stack);
+            if (this._resumable.state === Resumable.State.STARTING) {
+                log('Forced to stop before started. Marking as started first. ');
+                this._resumable.started();
+                this._emitter.emit('started');
+                log('Resumable state: started');
+            }
+            this._resumable.stop({ cb: this.onErrorStopping, args: [err], context: this }, true);
         }
     }, {
         key: "onErrorStopping",
         value: function onErrorStopping(err) {
+            log('Error');
             this.onStopping();
             this._resumable.finished();
             this._rejector(err);
@@ -430,7 +434,9 @@ var DownloadHandle = (function () {
     }, {
         key: "onFinished",
         value: function onFinished() {
+            log('Finished');
             if (this._resumable.state === Resumable.State.STARTING) {
+                log('Forced to stop before started. Marking as started first. ');
                 this._resumable.started();
                 this._emitter.emit('started');
                 log('Resumable state: started');

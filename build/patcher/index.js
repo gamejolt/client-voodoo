@@ -201,6 +201,10 @@ var PatchHandle = (function () {
 
                             case 4:
                                 _context.t0 = function (file) {
+                                    console.log(file);
+                                    console.log(path);
+                                    console.log(path.basename);
+                                    console.log(path.basename(file));
                                     return !path.basename(file).startsWith('.gj-');
                                 };
 
@@ -700,11 +704,14 @@ var PatchHandle = (function () {
     }, {
         key: "onError",
         value: function onError(err) {
-            var _this8 = this;
-
-            this._resumable.stop({ cb: function cb() {
-                    return _this8.onErrorStopping(err);
-                }, context: this }, true);
+            log(err.message + '\n' + err.stack);
+            if (this._resumable.state === Resumable.State.STARTING) {
+                log('Forced to stop before started. Marking as started first. ');
+                this._resumable.started();
+                this._emitter.emit('started');
+                log('Resumable state: started');
+            }
+            this._resumable.stop({ cb: this.onErrorStopping, args: [err], context: this }, true);
         }
     }, {
         key: "onErrorStopping",
@@ -715,6 +722,12 @@ var PatchHandle = (function () {
     }, {
         key: "onFinished",
         value: function onFinished() {
+            if (this._resumable.state === Resumable.State.STARTING) {
+                log('Forced to stop before started. Marking as started first. ');
+                this._resumable.started();
+                this._emitter.emit('started');
+                log('Resumable state: started');
+            }
             this._resumable.finished();
             this._resolver();
         }
