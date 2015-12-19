@@ -203,16 +203,13 @@ export class PatchHandle
 		let currentFiles = ( await Common.fsReadDirRecursively( this._to ) )
 			.filter( ( file ) =>
 			{
-				console.log( file );
-				console.log( path );
-				console.log( path.basename );
-				console.log( path.basename( file ) );
 				return !path.basename( file ).startsWith( '.gj-' );
 			} )
 			.map( ( file ) =>
 			{
 				return './' + path.relative( this._to, file );
 			} );
+		log( 'Current files: ' + JSON.stringify( currentFiles ) );
 
 		// If the patch file already exists, make sure its valid.
 		if ( await Common.fsExists( this._patchListFile ) ) {
@@ -224,6 +221,7 @@ export class PatchHandle
 			}
 
 			createdByOldBuild = ( await Common.fsReadFile( this._patchListFile, 'utf8' ) ).split( "\n" );
+			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 		}
 		else {
 
@@ -258,9 +256,11 @@ export class PatchHandle
 			else {
 				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
 			}
+			log( 'Old build files: ' + JSON.stringify( oldBuildFiles ) );
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
-			let createdByOldBuild = _.difference( currentFiles, oldBuildFiles );
+			createdByOldBuild = _.difference( currentFiles, oldBuildFiles );
+			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 
 			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
 		}
@@ -274,9 +274,11 @@ export class PatchHandle
 	private async finalizePatch( prepareResult: IPatchPrepareResult, extractResult: IExtractResult )
 	{
 		let newBuildFiles = extractResult.files;
+		log( 'New build files: ' + JSON.stringify( newBuildFiles ) );
 
 		// Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
 		let filesToRemove = _.difference( prepareResult.currentFiles, newBuildFiles, prepareResult.createdByOldBuild );
+		log( 'Files to remove: ' + JSON.stringify( filesToRemove ) );
 
 		// TODO: use del lib
 		let unlinks = await Promise.all( filesToRemove.map( ( file ) =>
@@ -290,6 +292,7 @@ export class PatchHandle
 		} ) );
 
 		await Common.fsWriteFile( this._archiveListFile, newBuildFiles.join( "\n" ) );
+		await Common.fsUnlink( this._patchListFile );
 	}
 
 	private patch()

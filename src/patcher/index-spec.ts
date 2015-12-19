@@ -1,4 +1,5 @@
 import express = require( 'express' );
+import { expect } from 'chai';
 import http = require( 'http' );
 import { Downloader } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
@@ -45,6 +46,42 @@ describe( 'Patcher', function()
 			executable_path: 'GJGas.exe',
 		} ],
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
+	}
+
+	let testPatcher: GameJolt.IGamePackage = {
+		id: 1,
+		title: 'test',
+		description: 'test',
+		release: {
+			id: 1,
+			version_number: '1.0.0',
+		},
+		build: {
+			id: 1,
+			game_id: 1,
+			folder: 'test',
+			type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+			archive_type: 'tar.xz',
+			os_windows: false,
+			os_windows_64: false,
+			os_mac: false,
+			os_mac_64: false,
+			os_linux: true,
+			os_linux_64: false,
+			os_other: false,
+			modified_on: 1,
+		},
+		file: {
+			id: 1,
+			filename: 'test',
+			filesize: 1,
+		},
+		launch_options: [ {
+			id: 1,
+			os: 'linux',
+			executable_path: 'test',
+		} ],
+		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'patcher-test' ) ),
 	}
 
 	let wait = function( millis: number )
@@ -112,6 +149,45 @@ describe( 'Patcher', function()
 
 		return patchHandle.promise;
 	} );
+
+	it( 'Should patch existing game directory', Common.test( async ( done ) =>
+	{
+		let patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/.gj-testPatcher1.tar.xz', testPatcher, {
+			overwrite: true,
+			decompressInDownload: false,
+		} );
+
+		console.log( 'Preparing first patch dir structure' );
+		patchHandle.start();
+		await patchHandle.promise;
+
+		await Common.fsWriteFile( path.join( testPatcher.install_dir, 'fDynamic' ), 'test' );
+
+		console.log( 'Patching second patch dir on top of the first' );
+		patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/.gj-testPatcher2.tar.xz', testPatcher, {
+			overwrite: true,
+			decompressInDownload: false,
+		} );
+
+		patchHandle.start();
+		await patchHandle.promise;
+
+		let files = await Common.fsReadDirRecursively( testPatcher.install_dir );
+		files = files.map( ( file ) => file.substring( testPatcher.install_dir.length + 1 ) );
+		expect( files.sort( ( a, b ) => a.localeCompare( b ) ) ).to.deep.equal( [
+			'.gj-archive-file-list',
+			'fDynamic',
+			'fToPreserve',
+			'fToUpdate',
+			'toAdd/file1',
+			'toAdd/file2',
+			'toRemove/file1',
+		] );
+
+		//expect( await Common.fsExists( path.join( testPatcher.install_dir, 'empty' ) ) ).to.eq( false, 'Old empty dir has been removed' );
+		expect( await Common.fsExists( path.join( testPatcher.install_dir, 'newEmpty' ) ) ).to.eq( true, 'New empty dir has been created' );
+		done();
+	} ) );
 
 	it( 'Should be resumable after pausing right away', async ( done ) =>
 	{
