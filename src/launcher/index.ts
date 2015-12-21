@@ -39,7 +39,7 @@ export abstract class Launcher
 		let instance = this._runningInstances.get( pid );
 		instance.on( 'end', () => this.detach( pid ) );
 
-		VoodooQueue.slower();
+		VoodooQueue.setSlower();
 
 		return instance;
 	}
@@ -47,7 +47,7 @@ export abstract class Launcher
 	static async detach( pid: number )
 	{
 		if ( this._runningInstances.delete( pid ) && this._runningInstances.size === 0 ) {
-			VoodooQueue.faster();
+			VoodooQueue.setFaster();
 		}
 	}
 }
