@@ -145,15 +145,17 @@ var VoodooQueue = (function () {
             this.tick();
         }
     }, {
-        key: "faster",
-        value: function faster() {
+        key: "setFaster",
+        value: function setFaster() {
             this.log('Applying faster profile');
+            this._isFast = true;
             this.applyProfile(this._fastProfile);
         }
     }, {
-        key: "slower",
-        value: function slower() {
+        key: "setSlower",
+        value: function setSlower() {
             this.log('Applying slower profile');
+            this._isFast = false;
             this.applyProfile(this._slowProfile);
         }
     }, {
@@ -222,7 +224,7 @@ var VoodooQueue = (function () {
             var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
             var concurrentPatches = this.fetch(true, isDownloading);
             var state = {
-                queued: concurrentPatches.length >= operationLimit,
+                queued: operationLimit >= 0 && concurrentPatches.length >= operationLimit,
                 timeLeft: Infinity,
                 managed: true,
                 events: {}
@@ -301,9 +303,10 @@ var VoodooQueue = (function () {
             var running = this.fetch(true, downloads);
             var pending = this.fetch(false, downloads);
             this.log('Running: ' + running.length + ', Pending: ' + pending.length);
-            var patchesToResume = (downloads ? this._maxDownloads : this._maxExtractions) - running.length;
-            if (patchesToResume > 0) {
-                patchesToResume = Math.min(patchesToResume, pending.length);
+            var limit = downloads ? this._maxDownloads : this._maxExtractions;
+            var patchesToResume = limit - running.length;
+            if (limit < 0 || patchesToResume > 0) {
+                patchesToResume = limit < 0 ? pending.length : Math.min(patchesToResume, pending.length);
                 this.log('Patches to resume: ' + patchesToResume);
                 for (var i = 0; i < patchesToResume; i += 1) {
                     this.resumePatch(pending[i].patch, pending[i].state);
@@ -411,6 +414,28 @@ var VoodooQueue = (function () {
             }));
         }
     }, {
+        key: "faster",
+        get: function get() {
+            return _.clone(this._fastProfile);
+        },
+        set: function set(profile) {
+            this._fastProfile = _.clone(profile);
+            if (this._isFast) {
+                this.applyProfile(this._fastProfile);
+            }
+        }
+    }, {
+        key: "slower",
+        get: function get() {
+            return _.clone(this._slowProfile);
+        },
+        set: function set(profile) {
+            this._slowProfile = _.clone(profile);
+            if (!this._isFast) {
+                this.applyProfile(this._slowProfile);
+            }
+        }
+    }, {
         key: "maxDownloads",
         get: function get() {
             return this._maxDownloads;
@@ -424,6 +449,7 @@ var VoodooQueue = (function () {
     return VoodooQueue;
 })();
 
+VoodooQueue._isFast = true;
 VoodooQueue._fastProfile = {
     downloads: 3,
     extractions: 3

@@ -111,7 +111,7 @@ var Launcher = (function () {
                                 instance.on('end', function () {
                                     return _this.detach(pid);
                                 });
-                                queue_1.VoodooQueue.slower();
+                                queue_1.VoodooQueue.setSlower();
                                 return _context.abrupt("return", instance);
 
                             case 6:
@@ -131,7 +131,7 @@ var Launcher = (function () {
                         switch (_context2.prev = _context2.next) {
                             case 0:
                                 if (this._runningInstances.delete(pid) && this._runningInstances.size === 0) {
-                                    queue_1.VoodooQueue.faster();
+                                    queue_1.VoodooQueue.setFaster();
                                 }
 
                             case 1:
