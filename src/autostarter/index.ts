@@ -6,35 +6,31 @@ let Bluebird = require( 'bluebird' );
 let applescript: ( script: string ) => Promise<any> = Bluebird.promisify( require( 'applescript' ).execString );
 let shellEscape = require( 'shell-escape' );
 
-const autostartId = 'Game Jolt Client';
+const autostartId = 'GameJoltClient';
 class WindowsAutostarter implements IAutostarter
 {
-	private static key:any;
 	private static getKey()
 	{
-		if ( this.key ) {
-			return this.key;
-		}
-		this.key = new Winreg( {
+		return new Winreg( {
 			hive: Winreg.HKCU,
 			key: '\\Software\\Microsoft\\Windows\\CurrentVersion\\Run',
 		} );
-		return this.key;
 	}
 
 	private async createRunner( program: string, runner: string, args?: string[] )
 	{
-		let runnerScript = 'if exists "' + program + '". ( cmd /C "' + shellEscape( [ program ].concat( args || [] ) ) + '" )\n';
+		let runnerScript = 'if exist "' + program + '". ( start "" ' + shellEscape( [ program ].concat( args || [] ) ).replace( /'/g, '"' ) + ' )\n';
 		await Common.fsWriteFile( runner, runnerScript );
 		await Common.chmod( runner, '0777' );
 	}
 
 	async set( program: string, runner: string, args: string[] )
 	{
+		runner += '.bat';
 		this.createRunner( program, runner, args );
 		return new Promise<void>( ( resolve ) =>
 		{
-			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + program + ( ( args && args.length ) ? ( ' ' + args.join( ' ' ) ) : '' ) + '\"', resolve );
+			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + runner + '\"', resolve );
 		} );
 	}
 
@@ -50,7 +46,7 @@ class WindowsAutostarter implements IAutostarter
 	{
 		return new Promise<boolean>( ( resolve ) =>
 		{
-			WindowsAutostarter.getKey().get( autostartId, ( error, item ) =>
+			WindowsAutostarter.getKey().get( autostartId, ( err, item ) =>
 			{
 				resolve( !!item );
 			} );
@@ -162,7 +158,7 @@ export abstract class Autostarter
 	private static _getAutostarter(): IAutostarter
 	{
 		switch ( process.platform ) {
-			case 'win':
+			case 'win32':
 				return this.winAutostarter;
 
 			case 'linux':
