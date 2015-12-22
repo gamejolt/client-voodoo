@@ -400,4 +400,71 @@ describe( 'Voodoo queue', function()
 		await Promise.all( [ patch.promise, patch2.promise ] );
 		done();
 	} ) );
+
+	it( 'Should not pend a downloading task when limit is set to a negative amount', Common.test( async ( done ) =>
+	{
+		await VoodooQueue.setMaxDownloads( -1 );
+		let patch = getPatch();
+		patch.onPaused( Common.test( () =>
+		{
+			done( new Error( 'Unexpected pause' ) );
+		}, done ) );
+		await patch.promise;
+		done();
+	} ) );
+
+	it( 'Should not pend an extraction task when limit is set to a negative amount', Common.test( async ( done ) =>
+	{
+		await VoodooQueue.setMaxExtractions( -1 );
+		let patch = getPatch();
+		patch.onPaused( Common.test( () =>
+		{
+			done( new Error( 'Unexpected pause' ) );
+		}, done ) );
+		await patch.promise;
+		done();
+	} ) );
+
+	it( 'Should pend a downloading task and resume it upon increasing the limit by setting it to negative value', Common.test( async ( done ) =>
+	{
+		await VoodooQueue.setMaxDownloads( 0 );
+
+		let patch = getPatch();
+		patch
+			.onPaused( Common.test( async () =>
+			{
+				expect( patch.state ).to.eq( PatchOperation.DOWNLOADING );
+				expect( patch.isRunning() ).to.eq( false );
+				await wait( 1000 );
+				await VoodooQueue.setMaxDownloads( -1 );
+			}, done ) )
+			.onResumed( () => done() );
+
+		await patch.promise;
+	} ) );
+
+	it( 'Should pend an extraction task and resume it upon increasing the limit by setting it to negative value', Common.test( async ( done ) =>
+	{
+		console.log( 'Preparing...' );
+		await Common.mkdirp( localPackage1.install_dir );
+		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage1.install_dir, '.gj-tempDownload' ) );
+
+		await VoodooQueue.setMaxExtractions( 0 );
+
+		let patch = getPatch( null, {
+			 overwrite: false,
+			 decompressInDownload: false,
+		} );
+		patch
+			.onPaused( Common.test( async () =>
+			{
+				expect( patch.state ).to.eq( PatchOperation.PATCHING );
+				expect( patch.isRunning() ).to.eq( false );
+				await wait( 1000 );
+				await VoodooQueue.setMaxExtractions( -1 );
+			}, done ) )
+			.onResumed( () => done() );
+
+		await patch.promise;
+	} ) );
 } );
