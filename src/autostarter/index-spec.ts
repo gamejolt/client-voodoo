@@ -14,7 +14,7 @@ describe( 'Autostarter', function()
 		}
 
 		console.log( 'Setting' );
-		await Autostarter.set( clientPath, runnerPath );
+		await Autostarter.set( clientPath, [ '--silent-start' ], runnerPath );
 		console.log( 'Waiting' );
 		await wait( 5000 );
 		console.log( 'Unsetting' );

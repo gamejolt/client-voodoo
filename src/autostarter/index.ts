@@ -17,20 +17,11 @@ class WindowsAutostarter implements IAutostarter
 		} );
 	}
 
-	private async createRunner( program: string, runner: string, args?: string[] )
+	async set( program: string, args: string[] )
 	{
-		let runnerScript = 'if exist "' + program + '". ( start "" ' + shellEscape( [ program ].concat( args || [] ) ).replace( /'/g, '"' ) + ' )\n';
-		await Common.fsWriteFile( runner, runnerScript );
-		await Common.chmod( runner, '0777' );
-	}
-
-	async set( program: string, runner: string, args: string[] )
-	{
-		runner += '.bat';
-		this.createRunner( program, runner, args );
 		return new Promise<void>( ( resolve ) =>
 		{
-			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + runner + '\"', resolve );
+			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + program + ( ( args && args.length ) ? ( ' ' + args.join( '' ) ) : '' ) + '\"', resolve );
 		} );
 	}
 
@@ -70,7 +61,7 @@ class LinuxAutostarter implements IAutostarter
 		await Common.chmod( runner, '0777' );
 	}
 
-	async set( program: string, runner: string, args?: string[] )
+	async set( program: string, args?: string[], runner?: string )
 	{
 		await this.createRunner( program, runner, args );
 		let desktopContents =
@@ -122,13 +113,13 @@ class MacAutostarter implements IAutostarter
 		await Common.chmod( runner, '0777' );
 	}
 
-	async set( program: string, runner: string, args?: string[] )
+	async set( program: string, args?: string[], runner?: string )
 	{
 		await this.createRunner( program, runner, args );
 		return applescript( 'tell application "System Events" to make login item at end with properties {path:"' + runner + '", hidden:false, name:"' + autostartId + '"}' );
 	}
 
-	unset( runner: string )
+	unset( runner?: string )
 	{
 		return applescript( 'tell application "System Events" to delete every login item whose name is "' + autostartId + '"' );
 	}
@@ -144,8 +135,8 @@ class MacAutostarter implements IAutostarter
 
 interface IAutostarter
 {
-	set: ( path: string, runner: string, args?: string[] ) => Promise<void>;
-	unset: ( runner: string ) => Promise<void>;
+	set: ( path: string, args?: string[], runner?: string ) => Promise<void>;
+	unset: ( runner?: string ) => Promise<void>;
 	isset: () => Promise<boolean>;
 }
 
@@ -169,13 +160,13 @@ export abstract class Autostarter
 		}
 	}
 
-    static set( path: string, runner: string, args?: string[] ): Promise<void>
+    static set( path: string, args?: string[], runner?: string ): Promise<void>
     {
         return this.unset( path )
-            .then( () => this._getAutostarter().set( path, runner, args ) );
+            .then( () => this._getAutostarter().set( path, args, runner ) );
     }
 
-    static unset( runner: string ): Promise<void>
+    static unset( runner?: string ): Promise<void>
     {
 		let autostarter = this._getAutostarter();
         return this.isset()
