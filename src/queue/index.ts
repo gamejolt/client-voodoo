@@ -20,7 +20,7 @@ interface IQueueState
 	}
 }
 
-interface IQueueProfile
+export interface IQueueProfile
 {
 	downloads: number;
 	extractions: number;
@@ -28,6 +28,7 @@ interface IQueueProfile
 
 export abstract class VoodooQueue
 {
+	private static _isFast: boolean = true;
 	private static _fastProfile: IQueueProfile = {
 		downloads: 3,
 		extractions: 3,
@@ -109,15 +110,43 @@ export abstract class VoodooQueue
 		this.tick();
 	}
 
-	static faster()
+	static get faster(): IQueueProfile
+	{
+		return _.clone( this._fastProfile );
+	}
+
+	static set faster( profile: IQueueProfile )
+	{
+		this._fastProfile = _.clone( profile );
+		if ( this._isFast ) {
+			this.applyProfile( this._fastProfile );
+		}
+	}
+
+	static setFaster()
 	{
 		this.log( 'Applying faster profile' );
+		this._isFast = true;
 		this.applyProfile( this._fastProfile );
 	}
 
-	static slower()
+	static get slower(): IQueueProfile
+	{
+		return _.clone( this._slowProfile );
+	}
+
+	static set slower( profile: IQueueProfile )
+	{
+		this._slowProfile = _.clone( profile );
+		if ( !this._isFast ) {
+			this.applyProfile( this._slowProfile );
+		}
+	}
+
+	static setSlower()
 	{
 		this.log( 'Applying slower profile' );
+		this._isFast = false;
 		this.applyProfile( this._slowProfile );
 	}
 
@@ -190,7 +219,7 @@ export abstract class VoodooQueue
 		let concurrentPatches = this.fetch( true, isDownloading );
 
 		let state: IQueueState = {
-			queued: concurrentPatches.length >= operationLimit,
+			queued: operationLimit >= 0 && concurrentPatches.length >= operationLimit,
 			timeLeft: Infinity,
 			managed: true,
 			events: {},
@@ -300,9 +329,10 @@ export abstract class VoodooQueue
 		let pending = this.fetch( false, downloads );
 		this.log( 'Running: ' + running.length + ', Pending: ' + pending.length );
 
-		let patchesToResume = ( downloads ? this._maxDownloads : this._maxExtractions ) - running.length;
-		if ( patchesToResume > 0 ) {
-			patchesToResume = Math.min( patchesToResume, pending.length );
+		let limit = downloads ? this._maxDownloads : this._maxExtractions;
+		let patchesToResume = limit - running.length;
+		if ( limit < 0 || patchesToResume > 0 ) {
+			patchesToResume = limit < 0 ? pending.length : Math.min( patchesToResume, pending.length );
 			this.log( 'Patches to resume: ' + patchesToResume );
 			for ( let i = 0; i < patchesToResume; i += 1 ) {
 				this.resumePatch( pending[i].patch, pending[i].state );
