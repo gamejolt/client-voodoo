@@ -4,7 +4,7 @@ import Common from '../common';
 
 abstract class Shortcut
 {
-	static create( program: string, icon: string, autostart?: boolean )
+	static create( program: string, icon: string )
 	{
 		if ( process.platform === 'linux' ) {
 			return this.createLinux( program, icon  );
