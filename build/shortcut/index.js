@@ -1,5 +1,13 @@
 "use strict";
 
+var _regenerator = require("babel-runtime/regenerator");
+
+var _regenerator2 = _interopRequireDefault(_regenerator);
+
+var _promise = require("babel-runtime/core-js/promise");
+
+var _promise2 = _interopRequireDefault(_promise);
+
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
@@ -60,8 +68,27 @@ var Shortcut = (function () {
     }, {
         key: "createLinux",
         value: function createLinux(program, icon) {
-            var desktopContents = '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=' + program + '\nTerminal=false\nIcon=' + icon + '\nCategories=Game;\nKeywords=Play;Games;GJ;GameJolt;Indie;\nHidden=false\nName[en_US]=Game Jolt Client\n';
-            return common_1.default.fsWriteFile(path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop'), desktopContents);
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+                var desktopFile, desktopContents;
+                return _regenerator2.default.wrap(function _callee$(_context) {
+                    while (1) {
+                        switch (_context.prev = _context.next) {
+                            case 0:
+                                desktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
+                                desktopContents = '[Desktop Entry]\n' + 'Version=1.0\n' + 'Type=Application\n' + 'Name=Game Jolt Client\n' + 'GenericName=Game Client\n' + 'Comment=The power of Game Jolt website in your desktop\n' + 'Exec=' + program + '\n' + 'Terminal=false\n' + 'Icon=' + icon + '\n' + 'Categories=Game;\n' + 'Keywords=Play;Games;GJ;GameJolt;Indie;\n' + 'Hidden=false\n' + 'Name[en_US]=Game Jolt Client\n';
+                                _context.next = 4;
+                                return common_1.default.fsWriteFile(desktopFile, desktopContents);
+
+                            case 4:
+                                return _context.abrupt("return", common_1.default.chmod(desktopFile, '0777'));
+
+                            case 5:
+                            case "end":
+                                return _context.stop();
+                        }
+                    }
+                }, _callee, this);
+            }));
         }
     }]);
     return Shortcut;
