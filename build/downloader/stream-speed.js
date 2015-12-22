@@ -1,27 +1,56 @@
-'use strict';
+"use strict";
 
-var _getPrototypeOf = require('babel-runtime/core-js/object/get-prototype-of');
+var _getPrototypeOf = require("babel-runtime/core-js/object/get-prototype-of");
 
 var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
 
-var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require('babel-runtime/helpers/createClass');
+var _createClass2 = require("babel-runtime/helpers/createClass");
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
-var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+var _possibleConstructorReturn2 = require("babel-runtime/helpers/possibleConstructorReturn");
 
 var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
 
-var _inherits2 = require('babel-runtime/helpers/inherits');
+var _inherits2 = require("babel-runtime/helpers/inherits");
 
 var _inherits3 = _interopRequireDefault(_inherits2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
+    return new Promise(function (resolve, reject) {
+        generator = generator.call(thisArg, _arguments);
+        function cast(value) {
+            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
+                resolve(value);
+            });
+        }
+        function onfulfill(value) {
+            try {
+                step("next", value);
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function onreject(value) {
+            try {
+                step("throw", value);
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function step(verb, value) {
+            var result = generator[verb](value);
+            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        }
+        step("next", void 0);
+    });
+};
 var stream_1 = require('stream');
 var events_1 = require('events');
 (function (SampleUnit) {
@@ -57,13 +86,13 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
     }
 
     (0, _createClass3.default)(StreamSpeed, [{
-        key: 'takeSample',
+        key: "takeSample",
         value: function takeSample(unit, precision) {
             var sample = this._takeSample(true);
             return StreamSpeed.convertSample(sample, unit, precision);
         }
     }, {
-        key: '_takeSample',
+        key: "_takeSample",
         value: function _takeSample(onDemand) {
             this.samplesTaken += 1;
             this.current *= this.samplesPerSecond;
@@ -97,12 +126,12 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
             return sampleData;
         }
     }, {
-        key: 'emitSample',
+        key: "emitSample",
         value: function emitSample(sample) {
             this.emitter.emit('sample', sample);
         }
     }, {
-        key: 'start',
+        key: "start",
         value: function start(options) {
             var _this2 = this;
 
@@ -121,19 +150,19 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
             }, 1000 / this.samplesPerSecond);
         }
     }, {
-        key: 'stop',
+        key: "stop",
         value: function stop() {
             clearInterval(this.interval);
             this.current = 0;
         }
     }, {
-        key: 'onSample',
+        key: "onSample",
         value: function onSample(cb) {
             this.emitter.on('sample', cb);
             return this;
         }
     }], [{
-        key: 'convertSample',
+        key: "convertSample",
         value: function convertSample(sample, unit, precision) {
             var div = Math.pow(1024, unit) / Math.pow(1024, sample.unit); // Use sane units ok?
             precision = Math.pow(10, precision || 2);
