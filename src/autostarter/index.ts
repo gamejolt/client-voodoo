@@ -21,7 +21,7 @@ class WindowsAutostarter implements IAutostarter
 	{
 		return new Promise<void>( ( resolve ) =>
 		{
-			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + program + ( ( args && args.length ) ? ( ' ' + args.join( '' ) ) : '' ) + '\"', resolve );
+			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + program + '\"' + ( ( args && args.length ) ? ( ' ' + args.join( '' ) ) : '' ), resolve );
 		} );
 	}
 
