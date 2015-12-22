@@ -70,7 +70,7 @@ var WindowsAutostarter = (function () {
                         switch (_context.prev = _context.next) {
                             case 0:
                                 return _context.abrupt("return", new _promise2.default(function (resolve) {
-                                    WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, '\"' + program + (args && args.length ? ' ' + args.join('') : '') + '\"', resolve);
+                                    WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, '\"' + program + '\"' + (args && args.length ? ' ' + args.join(' ') : ''), resolve);
                                 }));
 
                             case 1:
