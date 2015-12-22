@@ -94,5 +94,5 @@ var Shortcut = (function () {
     return Shortcut;
 })();
 
-exports.default = Shortcut;
+exports.Shortcut = Shortcut;
 //# sourceMappingURL=index.js.map

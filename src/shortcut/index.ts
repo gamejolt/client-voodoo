@@ -2,7 +2,7 @@ import * as path from 'path';
 import Common from '../common';
 let xdgBasedir = require( 'xdg-basedir' );
 
-abstract class Shortcut
+export abstract class Shortcut
 {
 	static create( program: string, icon: string )
 	{
@@ -37,5 +37,3 @@ abstract class Shortcut
 		return Common.chmod( desktopFile,  '0777' );
 	}
 }
-
-export default Shortcut;
