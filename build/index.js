@@ -34,6 +34,7 @@ function __export(m) {
         if (!exports.hasOwnProperty(p)) exports[p] = m[p];
     }
 }
+__export(require('./autostarter'));
 __export(require('./downloader'));
 __export(require('./downloader/stream-speed'));
 __export(require('./extractor'));
@@ -41,4 +42,5 @@ __export(require('./launcher'));
 __export(require('./patcher'));
 __export(require('./uninstaller'));
 __export(require('./queue'));
+__export(require('./shortcut'));
 //# sourceMappingURL=index.js.map
