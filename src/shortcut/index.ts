@@ -1,6 +1,6 @@
 import * as path from 'path';
-import xdgBasedir from 'xdg-basedir'
 import Common from '../common';
+let xdgBasedir = require( 'xdg-basedir' );
 
 abstract class Shortcut
 {
@@ -18,7 +18,7 @@ abstract class Shortcut
 	{
 		let desktopContents = '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=' + program + '\nTerminal=false\nIcon=' + icon + '\nCategories=Game;\nKeywords=Play;Games;GJ;GameJolt;Indie;\nHidden=false\nName[en_US]=Game Jolt Client\n';
 
-		return Common.fsWriteFile( path.join( xdgBasedir.data, 'application', 'Game Jolt Client.desktop' ), desktopContents );
+		return Common.fsWriteFile( path.join( xdgBasedir.data, 'applications', 'Game Jolt Client.desktop' ), desktopContents );
 	}
 }
 
