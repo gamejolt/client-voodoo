@@ -30,14 +30,29 @@ export abstract class Launcher
 		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
-	static async attach( pid: number, expectedCmd?: string, pollInterval?: number )
+	static async attach( pidOrLaunchInstance: number | LaunchInstanceHandle, expectedCmd?: string, pollInterval?: number )
 	{
-		if ( !this._runningInstances.has( pid ) ) {
-			this._runningInstances.set( pid, new LaunchInstanceHandle( pid, expectedCmd, pollInterval ) );
-		};
+		let pid: number;
+		let instance: LaunchInstanceHandle;
+		if ( typeof pidOrLaunchInstance === 'number' ) {
+			pid = pidOrLaunchInstance;
+			instance = new LaunchInstanceHandle( pid, expectedCmd, pollInterval );
+		}
+		else {
+			instance = pidOrLaunchInstance;
+			pid = instance.pid;
+		}
 
-		let instance = this._runningInstances.get( pid );
-		instance.on( 'end', () => this.detach( pid ) );
+		// This validates if the process actually started and gets the command its running with
+		// It'll throw if it failed into this promise chain, so it shouldn't ever attach an invalid process.
+		await instance.tick();
+
+		if ( !this._runningInstances.has( pid ) ) {
+			this._runningInstances.set( pid, instance );
+		};
+		instance = this._runningInstances.get( pid );
+
+		instance.once( 'end', () => this.detach( pid ) );
 
 		VoodooQueue.setSlower();
 
@@ -275,9 +290,14 @@ export class LaunchInstanceHandle extends EventEmitter
 		return this._pid;
 	}
 
+	get cmd()
+	{
+		return this._expectedCmd;
+	}
+
 	tick()
 	{
-		PidFinder.find( this._pid, this._expectedCmd )
+		return PidFinder.find( this._pid, this._expectedCmd )
 			.then( ( result ) =>
 			{
 				if ( !result ) {
