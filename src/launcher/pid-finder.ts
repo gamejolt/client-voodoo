@@ -16,7 +16,7 @@ export abstract class PidFinder
 	{
 		return new Promise<string>( ( resolve, reject ) =>
 		{
-			let cmd = childProcess.exec( 'tasklist.exe /FI:"PID eq ' + pid.toString() + ( expectedCmd ? '" /FI:"IMAGENAME eq ' + expectedCmd + '"' : '' ) +  '/FO:CSV', ( err, stdout, stderr ) =>
+			let cmd = childProcess.exec( 'tasklist.exe /FI:"PID eq ' + pid.toString() + '"' + ( expectedCmd ? ' /FI:"IMAGENAME eq ' + expectedCmd + '"' : '' ) +  ' /FO:CSV', ( err, stdout, stderr ) =>
 			{
 				if ( err ) {
 					return reject( err );
@@ -27,7 +27,11 @@ export abstract class PidFinder
 					return resolve( '' );
 				}
 
-				let imageName = expectedCmd ? ( /^\"(.*?)\",/.exec( data[1] ) ) : null;
+				let imageName = /^\"(.*?)\",/.exec( data[1] );
+				if ( expectedCmd && ( !imageName || imageName[1] !== expectedCmd ) ) {
+					return resolve( '' );
+				}
+				
 				resolve( ( imageName && imageName.length ) ? imageName[1] : '' );
 			} );
 		} );
