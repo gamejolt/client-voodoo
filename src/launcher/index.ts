@@ -30,10 +30,10 @@ export abstract class Launcher
 		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
-	static async attach( pid: number, pollInterval?: number )
+	static async attach( pid: number, expectedCmd?: string, pollInterval?: number )
 	{
 		if ( !this._runningInstances.has( pid ) ) {
-			this._runningInstances.set( pid, new LaunchInstanceHandle( pid, pollInterval ) );
+			this._runningInstances.set( pid, new LaunchInstanceHandle( pid, expectedCmd, pollInterval ) );
 		};
 
 		let instance = this._runningInstances.get( pid );
@@ -110,7 +110,7 @@ export class LaunchHandle
 	{
 		// Ensure that the main launcher file is executable.
 		console.log( 'Setting the file to be executable' );
-		await Common.chmod( file, '0777' );
+		await Common.chmod( file, '0755' );
 	}
 
 	private async start( pollInterval: number )
@@ -162,7 +162,7 @@ export class LaunchHandle
 		let pid = child.pid;
 		child.unref();
 
-		return Launcher.attach( pid, pollInterval );
+		return Launcher.attach( pid, null, pollInterval );
 	}
 
 	private async startLinux( stat: fs.Stats, pollInterval: number )
@@ -171,7 +171,7 @@ export class LaunchHandle
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		await Common.chmod( this._file, '0777' );
+		await Common.chmod( this._file, '0755' );
 
 		let child = childProcess.spawn( this._file, [], {
 			cwd: path.dirname( this._file ),
@@ -181,7 +181,7 @@ export class LaunchHandle
 		let pid = child.pid;
 		child.unref();
 
-		return Launcher.attach( pid, pollInterval );
+		return Launcher.attach( pid, null, pollInterval );
 	}
 
 	private async startMac( stat: fs.Stats, pollInterval: number )
@@ -189,7 +189,7 @@ export class LaunchHandle
 		let pid;
 		if ( stat.isFile() ) {
 
-			await Common.chmod( this._file, '0777' )
+			await Common.chmod( this._file, '0755' )
 
 			let child = childProcess.exec( shellEscape( [ this._file ] ), {
 				cwd: path.dirname( this._file ),
@@ -232,7 +232,7 @@ export class LaunchHandle
 			let executableName = parsedPlist.CFBundleExecutable || baseName.substr( 0, baseName.length - '.app'.length );
 
 			let executableFile = path.join( macosPath, executableName );
-			await Common.chmod( executableFile, '0777' );
+			await Common.chmod( executableFile, '0755' );
 
 			// Kept commented in case we lost our mind and we want to use gatekeeper
 			// let gatekeeper = await new Promise( ( resolve, reject ) =>
@@ -256,7 +256,7 @@ export class LaunchHandle
 			child.unref();
 		}
 
-		return Launcher.attach( pid, pollInterval );
+		return Launcher.attach( pid, null, pollInterval );
 	}
 }
 
@@ -264,7 +264,7 @@ export class LaunchInstanceHandle extends EventEmitter
 {
 	private _interval: NodeJS.Timer;
 
-	constructor( private _pid: number, pollInterval?: number )
+	constructor( private _pid: number, private _expectedCmd: string, pollInterval?: number )
 	{
 		super();
 		this._interval = setInterval( () => this.tick(), pollInterval || 1000 );
@@ -277,16 +277,18 @@ export class LaunchInstanceHandle extends EventEmitter
 
 	tick()
 	{
-		PidFinder.find( this._pid )
+		PidFinder.find( this._pid, this._expectedCmd )
 			.then( ( result ) =>
 			{
 				if ( !result ) {
 					throw new Error( 'Process doesn\'t exist anymore' );
 				}
+				this._expectedCmd = result;
 			} )
 			.catch( ( err ) =>
 			{
 				clearInterval( this._interval );
+				console.log( err );
 				this.emit( 'end', err );
 			} );
 	}

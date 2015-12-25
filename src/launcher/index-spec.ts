@@ -164,7 +164,13 @@ describe( 'Launcher', function()
 
 			let launchHandle = Launcher.launch( localPackage, os, '32' );
 			let launchInstance = await launchHandle.promise;
-			await new Promise( ( resolve ) => launchInstance.on( 'end', resolve ) );
+			await new Promise( ( resolve ) =>
+			{
+				launchInstance.on( 'end', () => {
+					console.log( 'Finished launching' );
+					resolve();
+				} );
+			} );
 			done();
 		}
 		catch ( err ) {
