@@ -1,5 +1,5 @@
-import { TransformOptions, PassThrough } from 'stream';
 import { EventEmitter } from 'events';
+import * as through2 from 'through2';
 
 export interface ISampleData
 {
@@ -19,10 +19,6 @@ export interface ISampleOptions
 	samplesForAverage?: number;
 }
 
-export interface IStreamSpeedOptions extends ISampleOptions, TransformOptions
-{
-}
-
 export enum SampleUnit
 {
 	Bps  = 0,
@@ -36,8 +32,9 @@ export enum SampleUnit
 	YBps = 8, // I like writing useless code.
 }
 
-export class StreamSpeed extends PassThrough
+export class StreamSpeed
 {
+	private _stream: NodeJS.ReadWriteStream;
 	private samplesPerSecond: number;
 	private samplesForAverage: number;
 	private samplesTaken: number;
@@ -52,19 +49,23 @@ export class StreamSpeed extends PassThrough
 
 	private emitter: EventEmitter;
 
-	constructor( options?: IStreamSpeedOptions )
+	constructor( options?: ISampleOptions )
 	{
-		super( options );
-
-		this.on( 'data', ( data ) =>
+		this._stream = through2( ( chunk, enc, cb ) =>
 		{
-			this.current += data.length;
+			this.current += chunk.length;
+			cb( null, chunk );
 		} );
-
-		this.on( 'end', () => this.stop() );
+		this._stream.on( 'end', () => this.stop() );
+		this._stream.resume();
 		this.emitter = new EventEmitter();
 
 		this.start( options );
+	}
+
+	get stream()
+	{
+		return this._stream;
 	}
 
 	takeSample( unit: SampleUnit, precision?: number ): ISampleData
@@ -157,12 +158,14 @@ export class StreamSpeed extends PassThrough
 		this.samplesPerSecond = options.samplesPerSecond || 2;
 		this.samplesForAverage = options.samplesForAverage || ( 5 * this.samplesPerSecond );
 		this.interval = setInterval( () => this._takeSample(), 1000 / this.samplesPerSecond );
+		this._stream.resume();
 	}
 
 	stop()
 	{
 		clearInterval( this.interval );
 		this.current = 0;
+		this._stream.pause();
 	}
 
 	onSample( cb: ( sample?: ISampleData ) => any )

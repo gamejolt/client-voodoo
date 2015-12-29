@@ -14,3 +14,4 @@
 /// <reference path="./typings/gamejolt/gamejolt.d.ts" />
 /// <reference path="./../typings/request/request.d.ts" />
 /// <reference path="./typings/xdg-basedir/xdg-basedir.d.ts" />
+/// <reference path="./../typings/through2/through2.d.ts" />
