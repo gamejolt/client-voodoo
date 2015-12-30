@@ -7,61 +7,77 @@ export abstract class PidFinder
 		return process.platform === 'win32';
 	}
 
-	static find( pid: number, expectedCmd?: string )
+	static find( pid: number, expectedCmd?: Set<string> )
 	{
 		return this.isWindows() ? this.findWindows( pid, expectedCmd ) : this.findNonWindows( pid, expectedCmd );
 	}
 
-	static findWindows( pid: number, expectedCmd?: string )
+	static findWindows( pid: number, expectedCmd?: Set<string> )
 	{
-		return new Promise<string>( ( resolve, reject ) =>
+		return new Promise<Set<string>>( ( resolve, reject ) =>
 		{
-			let cmd = childProcess.exec( 'tasklist.exe /FI:"PID eq ' + pid.toString() + '"' + ( expectedCmd ? ' /FI:"IMAGENAME eq ' + expectedCmd + '"' : '' ) +  ' /FO:CSV', ( err, stdout, stderr ) =>
+			let cmd = childProcess.exec( 'tasklist.exe /FI:"PID eq ' + pid.toString() + '" /FO:CSV', ( err, stdout, stderr ) =>
 			{
+				let result = new Set<string>();
 				if ( err ) {
 					return reject( err );
 				}
 
 				let data = stdout.toString().split( '\n' ).filter( ( value ) => { return !!value } );
 				if ( data.length < 2 ) {
-					return resolve( '' );
+					return resolve( result );
 				}
 
-				let imageName = /^\"(.*?)\",/.exec( data[1] );
-				if ( expectedCmd && ( !imageName || imageName[1] !== expectedCmd ) ) {
-					return resolve( '' );
+				let found = false;
+				for ( let i = 1; i < data.length; i++ ) {
+					let imageName = /^\"(.*?)\",/.exec( data[i] );
+					if ( expectedCmd && expectedCmd.has( imageName[1] ) ) {
+						found = true;
+					}
+					result.add( imageName[1] );
 				}
-				
-				resolve( ( imageName && imageName.length ) ? imageName[1] : '' );
+
+				if ( expectedCmd && !found ) {
+					result.clear();
+					resolve( result );
+				}
+
+				resolve( result );
 			} );
 		} );
 	}
 
-	static findNonWindows( pid: number, expectedCmd?: string )
+	static findNonWindows( pid: number, expectedCmd?: Set<string> )
 	{
-		return new Promise<string>( ( resolve, reject ) =>
+		return new Promise<Set<string>>( ( resolve, reject ) =>
 		{
 			let cmd = childProcess.exec( 'ps -p ' + pid.toString() + ' -o cmd', ( err, stdout, stderr ) =>
 			{
+				let result = new Set<string>();
 				if ( err ) {
 
 					// Have to resolve to '' instead of rejecting even on error cases.
 					// This is because on no processes found stupid ps also returns a failed signal code.
 					// return reject( err );
-					return resolve( '' );
+					return resolve( result );
 				}
 
-				console.log( stdout );
-				let data = stdout.toString().split( '\n' );
-				if ( data.length < 2 ) {
-					return resolve( '' );
+				let data = stdout.toString().split( '\n' ).filter( ( value ) => { return !!value } );
+
+				let found = false;
+				for ( let i = 1; i < data.length; i++ ) {
+					if ( expectedCmd && expectedCmd.has( data[i] ) ) {
+						found = true;
+					}
+					result.add( data[i] );
 				}
 
-				if ( expectedCmd && data.indexOf( expectedCmd ) === -1 ) {
-					return resolve( '' );
+				if ( expectedCmd && !found ) {
+					result.clear();
+					resolve( result );
 				}
 
-				resolve( expectedCmd ? expectedCmd : data[1] );
+				resolve( result );
 			} );
 		} );
 	}

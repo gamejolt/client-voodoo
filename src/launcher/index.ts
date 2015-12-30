@@ -20,6 +20,10 @@ export interface ILaunchOptions
 	pollInterval: number;
 }
 
+function log( message ) {
+	console.log( 'Launcher: ' + message );
+}
+
 export abstract class Launcher
 {
 	private static _runningInstances: Map<number, LaunchInstanceHandle> = new Map<number, LaunchInstanceHandle>();
@@ -30,39 +34,72 @@ export abstract class Launcher
 		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
-	static async attach( pidOrLaunchInstance: number | LaunchInstanceHandle, expectedCmd?: string, pollInterval?: number )
+	static async attach( pidOrLaunchInstance: number | LaunchInstanceHandle, expectedCmd?: string[], pollInterval?: number )
 	{
 		let pid: number;
 		let instance: LaunchInstanceHandle;
+		let _expectedCmd: Set<string> = null;
+		if ( expectedCmd && expectedCmd.length ) {
+			_expectedCmd = new Set<string>();
+			for ( let cmd of expectedCmd ) {
+				_expectedCmd.add( cmd );
+			}
+		}
 		if ( typeof pidOrLaunchInstance === 'number' ) {
 			pid = pidOrLaunchInstance;
-			instance = new LaunchInstanceHandle( pid, expectedCmd, pollInterval );
+			log( 'Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + JSON.stringify( expectedCmd || [] ) );
+			instance = new LaunchInstanceHandle( pid, _expectedCmd, pollInterval );
 		}
 		else {
 			instance = pidOrLaunchInstance;
 			pid = instance.pid;
+			log( 'Attaching existing instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expectedcmds - ' + JSON.stringify( expectedCmd || [] ) );
 		}
 
 		// This validates if the process actually started and gets the command its running with
 		// It'll throw if it failed into this promise chain, so it shouldn't ever attach an invalid process.
-		await instance.tick();
+		await instance.tick( true );
 
 		if ( !this._runningInstances.has( pid ) ) {
 			this._runningInstances.set( pid, instance );
 		};
 		instance = this._runningInstances.get( pid );
 
-		instance.once( 'end', () => this.detach( pid ) );
+		instance.once( 'end', () =>
+		{
+			let cmds: string[] = [];
+			for ( let cmd of instance.cmd.values() ) {
+				cmds.push( cmd );
+			}
+			this.detach( pid, cmds );
+		} );
 
 		VoodooQueue.setSlower();
 
 		return instance;
 	}
 
-	static async detach( pid: number )
+	static async detach( pid: number, expectedCmd?: string[] )
 	{
-		if ( this._runningInstances.delete( pid ) && this._runningInstances.size === 0 ) {
-			VoodooQueue.setFaster();
+		log( 'Detaching: pid - ' + pid + ', expected cmds - ' + JSON.stringify( expectedCmd ) );
+		let instance = this._runningInstances.get( pid );
+		let found = !(expectedCmd && expectedCmd.length);
+		if ( !found ) {
+			for ( let cmd of expectedCmd ) {
+				if ( instance.cmd.has( cmd ) ) {
+					found = true;
+					break;
+				}
+			}
+		}
+		if ( instance && found ) {
+			instance.removeAllListeners();
+			if ( this._runningInstances.delete( pid ) && this._runningInstances.size === 0 ) {
+				VoodooQueue.setFaster();
+			}
+		}
+		else {
+			log( 'No instance with this pid and cmd was found' );
 		}
 	}
 }
@@ -124,7 +161,6 @@ export class LaunchHandle
 	private async ensureExecutable( file: string )
 	{
 		// Ensure that the main launcher file is executable.
-		console.log( 'Setting the file to be executable' );
 		await Common.chmod( file, '0755' );
 	}
 
@@ -279,7 +315,7 @@ export class LaunchInstanceHandle extends EventEmitter
 {
 	private _interval: NodeJS.Timer;
 
-	constructor( private _pid: number, private _expectedCmd: string, pollInterval?: number )
+	constructor( private _pid: number, private _expectedCmd: Set<string>, pollInterval?: number )
 	{
 		super();
 		this._interval = setInterval( () => this.tick(), pollInterval || 1000 );
@@ -295,15 +331,24 @@ export class LaunchInstanceHandle extends EventEmitter
 		return this._expectedCmd;
 	}
 
-	tick()
+	tick( validate?: boolean)
 	{
-		return PidFinder.find( this._pid, this._expectedCmd )
+		return PidFinder.find( this._pid, validate ? this._expectedCmd : null )
 			.then( ( result ) =>
 			{
-				if ( !result ) {
+				if ( !result || result.size === 0 ) {
 					throw new Error( 'Process doesn\'t exist anymore' );
 				}
-				this._expectedCmd = result;
+
+				if ( !this._expectedCmd ) {
+					this._expectedCmd = new Set<string>();
+				}
+				for ( let value of result.values() ) {
+					if ( !this._expectedCmd.has( value ) ) {
+						log( 'Adding new expected cmd to launch instance handle ' + this._pid + ': ' + value );
+					}
+					this._expectedCmd.add( value );
+				}
 			} )
 			.catch( ( err ) =>
 			{

@@ -12,14 +12,17 @@ describe( 'Pid finder', function()
 
 	it( 'Should say it cant find a nonexistant pid', Common.test( async ( done ) =>
 	{
-		expect( await PidFinder.find( 99999 ) ).to.eq( '' );
+		expect( ( await PidFinder.find( 99999 ) ).size ).to.eq( 0 );
 		done();
 	} ) );
 
 
 	it( 'Should say it cant find a wrong expected cmd name', Common.test( async ( done ) =>
 	{
-		expect( await PidFinder.find( process.pid, 'wrong' ) ).to.eq( '' );
+		let testSet = new Set<string>();
+		testSet.add( 'wrong' );
+		
+		expect( ( await PidFinder.find( process.pid, testSet ) ).size ).to.eq( 0 );
 		done();
 	} ) );
 } );
