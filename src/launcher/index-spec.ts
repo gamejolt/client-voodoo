@@ -41,93 +41,50 @@ describe( 'Launcher', function()
 	it( 'Should work', async ( done ) =>
 	{
 		try {
-			let localPackage: GameJolt.IGamePackage;
-			let patchHandle: PatchHandle;
-
-			if ( process.platform === 'darwin' ) {
-				localPackage = {
+			let localPackage: GameJolt.IGamePackage = {
+				id: 1,
+				title: 'test',
+				description: 'test',
+				release: {
 					id: 1,
-					title: 'test',
-					description: 'test',
-					release: {
-						id: 1,
-						version_number: '1.0.0',
-					},
-					build: {
-						id: 1,
-						game_id: 1,
-						folder: 'test',
-						type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
-						archive_type: 'tar.xz',
-						os_windows: false,
-						os_windows_64: false,
-						os_mac: true,
-						os_mac_64: false,
-						os_linux: false,
-						os_linux_64: false,
-						os_other: false,
-						modified_on: 1,
-					},
-					file: {
-						id: 1,
-						filename: 'supercrateboxosx.zip.tar.xz',
-						filesize: 1,
-					},
-					launch_options: [ {
-						id: 1,
-						os: 'mac',
-						executable_path: 'Super Crate Box.app/',
-					} ],
-					install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
-				}
-
-				patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5674a12dc66a7/supercrateboxosx.zip.tar.xz', localPackage, {
-					overwrite: true,
-					decompressInDownload: false,
-				} );
-			}
-			else {
-				localPackage = {
+					version_number: '1.0.0',
+				},
+				build: {
 					id: 1,
-					title: 'test',
-					description: 'test',
-					release: {
-						id: 1,
-						version_number: '1.0.0',
-					},
-					build: {
-						id: 1,
-						game_id: 1,
-						folder: 'test',
-						type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
-						archive_type: 'tar.xz',
-						os_windows: false,
-						os_windows_64: false,
-						os_mac: false,
-						os_mac_64: false,
-						os_linux: true,
-						os_linux_64: false,
-						os_other: false,
-						modified_on: 1,
-					},
-					file: {
-						id: 1,
-						filename: 'GJGas.exe.tar.xz',
-						filesize: 1,
-					},
-					launch_options: [ {
-						id: 1,
-						os: 'linux',
-						executable_path: 'GJGas.exe',
-					} ],
-					install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
-				}
-
-				patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', localPackage, {
-					overwrite: true,
-					decompressInDownload: false,
-				} );
+					game_id: 1,
+					folder: 'test',
+					type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
+					archive_type: 'tar.xz',
+					os_windows: false,
+					os_windows_64: false,
+					os_mac: true,
+					os_mac_64: false,
+					os_linux: false,
+					os_linux_64: false,
+					os_other: false,
+					modified_on: 1,
+				},
+				file: {
+					id: 1,
+					filename: process.platform === 'darwin' ? 'supercrateboxosx.zip.tar.xz' : 'GJGas.exe.tar.xz',
+					filesize: 1,
+				},
+				launch_options: [ {
+					id: 1,
+					os: process.platform === 'win32' ? 'windows' : ( process.platform === 'darwin' ? 'mac' : 'linux' ),
+					executable_path: process.platform === 'darwin' ? 'Super Crate Box.app/' : 'GJGas.exe',
+				} ],
+				install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 			}
+
+			let patchHandle: PatchHandle = Patcher.patch(
+				process.platform === 'darwin' ?
+					'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5674a12dc66a7/supercrateboxosx.zip.tar.xz' :
+					'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz'
+				, localPackage, {
+				overwrite: true,
+				decompressInDownload: false,
+			} );
 
 			patchHandle
 				.onDownloading( function()
