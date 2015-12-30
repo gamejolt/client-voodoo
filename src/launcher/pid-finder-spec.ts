@@ -6,7 +6,16 @@ describe( 'Pid finder', function()
 {
 	it( 'Should work', Common.test( async ( done ) =>
 	{
-		expect( await PidFinder.find( process.pid ) ).to.not.eq( '' );
+		expect( ( await PidFinder.find( process.pid ) ).size ).to.not.eq( 0 );
+		done();
+	} ) );
+
+	it( 'Should work while explicitly giving the correct cmd name', Common.test( async ( done ) =>
+	{
+		let testSet = new Set<string>();
+		testSet.add( process.argv.join( ' ' ) );
+
+		expect( ( await PidFinder.find( process.pid, testSet ) ).size ).to.not.eq( 0 );
 		done();
 	} ) );
 
@@ -21,7 +30,7 @@ describe( 'Pid finder', function()
 	{
 		let testSet = new Set<string>();
 		testSet.add( 'wrong' );
-		
+
 		expect( ( await PidFinder.find( process.pid, testSet ) ).size ).to.eq( 0 );
 		done();
 	} ) );
