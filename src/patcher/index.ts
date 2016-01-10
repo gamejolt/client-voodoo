@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as tar from 'tar-fs';
 import * as path from 'path';
-import { Transform } from 'stream';
 import { EventEmitter } from 'events';
 
 import { IEntryHeader } from 'tar-stream';
@@ -163,7 +162,9 @@ export class PatchHandle
 
 		switch ( this._localPackage.build.archive_type ) {
 			case 'tar.xz':
-				return require( 'lzma-native' ).createDecompressor();
+				return require( 'lzma-native' ).createDecompressor( {
+					synchronous: true,
+				} );
 
 			case 'tar.gz':
 				return require( 'gunzip-maybe' )();
@@ -354,6 +355,7 @@ export class PatchHandle
 					this._resumable.started();
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
 					log( 'Resumable state: started' );
+					VoodooQueue.manage( this );
 				} ).start();
 			}
 			else if ( this._state === PatchOperation.PATCHING ) {
@@ -362,6 +364,7 @@ export class PatchHandle
 					this._resumable.started();
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
 					log( 'Resumable state: started' );
+					VoodooQueue.manage( this );
 				} ).start();
 			}
 		}

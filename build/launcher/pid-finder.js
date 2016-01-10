@@ -57,34 +57,51 @@ var PidFinder = (function () {
         }
     }, {
         key: "find",
-        value: function find(pid) {
-            return this.isWindows() ? this.findWindows(pid) : this.findNonWindows(pid);
+        value: function find(pid, expectedCmd) {
+            return this.isWindows() ? this.findWindows(pid, expectedCmd) : this.findNonWindows(pid, expectedCmd);
         }
     }, {
         key: "findWindows",
-        value: function findWindows(pid) {
+        value: function findWindows(pid, expectedCmd) {
             return new _promise2.default(function (resolve, reject) {
-                var cmd = childProcess.exec('tasklist.exe /FI:"PID eq ' + pid.toString() + '" /FO:CSV', function (err, stdout, stderr) {
+                var cmd = childProcess.exec('tasklist.exe /FI:"PID eq ' + pid.toString() + '"' + (expectedCmd ? ' /FI:"IMAGENAME eq ' + expectedCmd + '"' : '') + ' /FO:CSV', function (err, stdout, stderr) {
                     if (err) {
                         return reject(err);
                     }
                     var data = stdout.toString().split('\n').filter(function (value) {
                         return !!value;
                     });
-                    resolve(data.length >= 2);
+                    if (data.length < 2) {
+                        return resolve('');
+                    }
+                    var imageName = /^\"(.*?)\",/.exec(data[1]);
+                    if (expectedCmd && (!imageName || imageName[1] !== expectedCmd)) {
+                        return resolve('');
+                    }
+                    resolve(imageName && imageName.length ? imageName[1] : '');
                 });
             });
         }
     }, {
         key: "findNonWindows",
-        value: function findNonWindows(pid) {
+        value: function findNonWindows(pid, expectedCmd) {
             return new _promise2.default(function (resolve, reject) {
-                var cmd = childProcess.exec('ps -p ' + pid.toString(), function (err, stdout, stderr) {
+                var cmd = childProcess.exec('ps -p ' + pid.toString() + ' -o cmd', function (err, stdout, stderr) {
                     if (err) {
-                        return reject(err);
+                        // Have to resolve to '' instead of rejecting even on error cases.
+                        // This is because on no processes found stupid ps also returns a failed signal code.
+                        // return reject( err );
+                        return resolve('');
                     }
+                    console.log(stdout);
                     var data = stdout.toString().split('\n');
-                    resolve(data.length >= 2);
+                    if (data.length < 2) {
+                        return resolve('');
+                    }
+                    if (expectedCmd && data.indexOf(expectedCmd) === -1) {
+                        return resolve('');
+                    }
+                    resolve(expectedCmd ? expectedCmd : data[1]);
                 });
             });
         }

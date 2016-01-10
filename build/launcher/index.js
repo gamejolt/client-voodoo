@@ -93,7 +93,7 @@ var Launcher = (function () {
         }
     }, {
         key: "attach",
-        value: function attach(pid, pollInterval) {
+        value: function attach(pid, expectedCmd, pollInterval) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this = this;
 
@@ -103,7 +103,7 @@ var Launcher = (function () {
                         switch (_context.prev = _context.next) {
                             case 0:
                                 if (!this._runningInstances.has(pid)) {
-                                    this._runningInstances.set(pid, new LaunchInstanceHandle(pid, pollInterval));
+                                    this._runningInstances.set(pid, new LaunchInstanceHandle(pid, expectedCmd, pollInterval));
                                 }
                                 ;
                                 instance = this._runningInstances.get(pid);
@@ -217,7 +217,7 @@ var LaunchHandle = (function () {
                                 // Ensure that the main launcher file is executable.
                                 console.log('Setting the file to be executable');
                                 _context3.next = 3;
-                                return common_1.default.chmod(file, '0777');
+                                return common_1.default.chmod(file, '0755');
 
                             case 3:
                             case "end":
@@ -316,7 +316,7 @@ var LaunchHandle = (function () {
                                 pid = child.pid;
 
                                 child.unref();
-                                return _context5.abrupt("return", Launcher.attach(pid, pollInterval));
+                                return _context5.abrupt("return", Launcher.attach(pid, null, pollInterval));
 
                             case 6:
                             case "end":
@@ -344,7 +344,7 @@ var LaunchHandle = (function () {
 
                             case 2:
                                 _context6.next = 4;
-                                return common_1.default.chmod(this._file, '0777');
+                                return common_1.default.chmod(this._file, '0755');
 
                             case 4:
                                 child = childProcess.spawn(this._file, [], {
@@ -354,7 +354,7 @@ var LaunchHandle = (function () {
                                 pid = child.pid;
 
                                 child.unref();
-                                return _context6.abrupt("return", Launcher.attach(pid, pollInterval));
+                                return _context6.abrupt("return", Launcher.attach(pid, null, pollInterval));
 
                             case 8:
                             case "end":
@@ -381,7 +381,7 @@ var LaunchHandle = (function () {
                                 }
 
                                 _context7.next = 4;
-                                return common_1.default.chmod(this._file, '0777');
+                                return common_1.default.chmod(this._file, '0755');
 
                             case 4:
                                 child = childProcess.exec(shellEscape([this._file]), {
@@ -476,7 +476,7 @@ var LaunchHandle = (function () {
                                 executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
                                 executableFile = path.join(macosPath, executableName);
                                 _context7.next = 43;
-                                return common_1.default.chmod(executableFile, '0777');
+                                return common_1.default.chmod(executableFile, '0755');
 
                             case 43:
                                 // Kept commented in case we lost our mind and we want to use gatekeeper
@@ -498,7 +498,7 @@ var LaunchHandle = (function () {
                                 child.unref();
 
                             case 46:
-                                return _context7.abrupt("return", Launcher.attach(pid, pollInterval));
+                                return _context7.abrupt("return", Launcher.attach(pid, null, pollInterval));
 
                             case 47:
                             case "end":
@@ -532,12 +532,13 @@ exports.LaunchHandle = LaunchHandle;
 var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
     (0, _inherits3.default)(LaunchInstanceHandle, _events_1$EventEmitte);
 
-    function LaunchInstanceHandle(_pid, pollInterval) {
+    function LaunchInstanceHandle(_pid, _expectedCmd, pollInterval) {
         (0, _classCallCheck3.default)(this, LaunchInstanceHandle);
 
         var _this2 = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(LaunchInstanceHandle).call(this));
 
         _this2._pid = _pid;
+        _this2._expectedCmd = _expectedCmd;
         _this2._interval = setInterval(function () {
             return _this2.tick();
         }, pollInterval || 1000);
@@ -549,12 +550,14 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
         value: function tick() {
             var _this3 = this;
 
-            pid_finder_1.PidFinder.find(this._pid).then(function (result) {
+            pid_finder_1.PidFinder.find(this._pid, this._expectedCmd).then(function (result) {
                 if (!result) {
                     throw new Error('Process doesn\'t exist anymore');
                 }
+                _this3._expectedCmd = result;
             }).catch(function (err) {
                 clearInterval(_this3._interval);
+                console.log(err);
                 _this3.emit('end', err);
             });
         }
