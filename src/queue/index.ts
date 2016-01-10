@@ -166,6 +166,7 @@ export abstract class VoodooQueue
 		if ( concurrentPatches.length > this._maxExtractions ) {
 			this.pausePatch( patch, state );
 		}
+		this.tick( true );
 	}
 
 	private static onExtractProgress( patch: PatchHandle, state: IQueueState, progress: IExtractProgress )
@@ -191,12 +192,7 @@ export abstract class VoodooQueue
 	{
 		this.log( 'Received patch resumed', patch );
 		if ( state ) {
-			if ( voodooQueue ) {
-				state.queued = false;
-			}
-			else {
-				this.unmanage( patch );
-			}
+			state.queued = false;
 		}
 	}
 
@@ -206,20 +202,34 @@ export abstract class VoodooQueue
 		this.unmanage( patch );
 	}
 
+	static canResume( patch: PatchHandle )
+	{
+		this.log( 'Checking if patch can resume' );
+		let isDownloading = patch.isDownloading();
+		let operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
+		let concurrentPatches = this.fetch( true, isDownloading );
+		this.log( 'Patch to manage is currently: ' + ( isDownloading ? 'Downloading' : 'Patching' ) );
+		this.log( 'Queue manager is currently handling: ' + concurrentPatches.length + ' concurrent operations and can handle: ' + ( operationLimit === -1 ? 'Infinite' : operationLimit ) + ' operations' );
+
+		return operationLimit < 0 || operationLimit > concurrentPatches.length;
+	}
+
 	static manage( patch: PatchHandle )
 	{
+		if ( this._patches.has( patch ) ) {
+			this.log( 'Already managing this patch' );
+			return this._patches.get( patch );
+		}
+
 		this.log( 'Managing patch handle' );
 		if ( patch.isFinished() ) {
 			this.log( 'Refusing to manage a finished patch' );
 			return null;
 		}
 
-		let isDownloading = patch.isDownloading();
-		let operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
-		let concurrentPatches = this.fetch( true, isDownloading );
-
+		let queued = !this.canResume( patch );
 		let state: IQueueState = {
-			queued: operationLimit >= 0 && concurrentPatches.length >= operationLimit,
+			queued: queued,
 			timeLeft: Infinity,
 			managed: true,
 			events: {},
