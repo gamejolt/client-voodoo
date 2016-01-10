@@ -5,16 +5,15 @@ import * as util from 'util';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
-import { Transform } from 'stream';
 import * as request from 'request';
 import * as StreamSpeed from './stream-speed';
 import * as Resumable from '../common/resumable';
 import Common from '../common';
 
-export interface IDownloadOptions extends StreamSpeed.IStreamSpeedOptions
+export interface IDownloadOptions extends StreamSpeed.ISampleOptions
 {
 	overwrite?: boolean;
-	decompressStream?: Transform;
+	decompressStream?: any;
 }
 
 export abstract class Downloader
@@ -184,7 +183,7 @@ export class DownloadHandle
 						timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
 						sample: sample,
 					} ) )
-					.on( 'error', ( err ) => this.onError( err ) );
+					.stream.on( 'error', ( err ) => this.onError( err ) );
 
 				// Unsatisfiable request - most likely we've downloaded the whole thing already.
 				// TODO - send HEAD request to get content-length and compare.
@@ -211,13 +210,13 @@ export class DownloadHandle
 
 				if ( this._options.decompressStream ) {
 					this._request
-						.pipe( this._streamSpeed )
+						.pipe( this._streamSpeed.stream )
 						.pipe( this._options.decompressStream )
 						.pipe( this._destStream );
 				}
 				else {
 					this._request
-						.pipe( this._streamSpeed )
+						.pipe( this._streamSpeed.stream )
 						.pipe( this._destStream );
 				}
 
