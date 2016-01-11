@@ -54,6 +54,7 @@ var events_1 = require('events');
 var StreamSpeed = require('../downloader/stream-speed');
 var Resumable = require('../common/resumable');
 var common_1 = require('../common');
+var through2 = require('through2');
 
 var Extractor = (function () {
     function Extractor() {
@@ -216,6 +217,9 @@ var ExtractHandle = (function () {
                                 log('Unpacking from ' + this._from + ' to ' + this._to);
                                 return _context2.abrupt("return", new _promise2.default(function (resolve, reject) {
                                     _this2._readStream = fs.createReadStream(_this2._from);
+                                    _this2._readStream.on('error', function (err) {
+                                        return _this2._rejector(err);
+                                    });
                                     var optionsMap = _this2._options.map;
                                     _this2._extractStream = tarFS.extract(_this2._to, _.assign(_this2._options, {
                                         map: function map(header) {
@@ -246,9 +250,9 @@ var ExtractHandle = (function () {
                                         });
                                     });
                                     if (_this2._options.decompressStream) {
-                                        _this2._streamSpeed.pipe(_this2._options.decompressStream).pipe(_this2._extractStream);
+                                        _this2._streamSpeed.stream.pipe(_this2._options.decompressStream).pipe(_this2._extractStream);
                                     } else {
-                                        _this2._streamSpeed.pipe(_this2._extractStream);
+                                        _this2._streamSpeed.stream.pipe(_this2._extractStream);
                                     }
                                     _this2.resume();
                                     _this2._resumable.started();
@@ -473,22 +477,17 @@ var ExtractHandle = (function () {
         value: function resume() {
             var _this3 = this;
 
-            this._readStream.on('data', function (data) {
-                _this3._totalProcessed += data.length;
-            }).on('error', function (err) {
-                return _this3._rejector(err);
-            });
-            this._readStream.pipe(this._streamSpeed);
-            this._readStream.resume();
+            this._readStream.pipe(through2(function (chunk, enc, cb) {
+                _this3._totalProcessed += chunk.length;
+                cb(null, chunk);
+            })).pipe(this._streamSpeed.stream);
             this._streamSpeed.start();
         }
     }, {
         key: "pause",
         value: function pause() {
             if (this._readStream) {
-                this._readStream.pause();
                 this._readStream.unpipe();
-                this._readStream.removeAllListeners();
             }
             if (this._streamSpeed) {
                 this._streamSpeed.stop();

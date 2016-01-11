@@ -1,9 +1,5 @@
 "use strict";
 
-var _getPrototypeOf = require("babel-runtime/core-js/object/get-prototype-of");
-
-var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
-
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
@@ -11,14 +7,6 @@ var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 var _createClass2 = require("babel-runtime/helpers/createClass");
 
 var _createClass3 = _interopRequireDefault(_createClass2);
-
-var _possibleConstructorReturn2 = require("babel-runtime/helpers/possibleConstructorReturn");
-
-var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
-
-var _inherits2 = require("babel-runtime/helpers/inherits");
-
-var _inherits3 = _interopRequireDefault(_inherits2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -51,8 +39,8 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
         step("next", void 0);
     });
 };
-var stream_1 = require('stream');
 var events_1 = require('events');
+var through2 = require('through2');
 (function (SampleUnit) {
     SampleUnit[SampleUnit["Bps"] = 0] = "Bps";
     SampleUnit[SampleUnit["KBps"] = 1] = "KBps";
@@ -66,23 +54,22 @@ var events_1 = require('events');
 })(exports.SampleUnit || (exports.SampleUnit = {}));
 var SampleUnit = exports.SampleUnit;
 
-var StreamSpeed = (function (_stream_1$PassThrough) {
-    (0, _inherits3.default)(StreamSpeed, _stream_1$PassThrough);
-
+var StreamSpeed = (function () {
     function StreamSpeed(options) {
+        var _this = this;
+
         (0, _classCallCheck3.default)(this, StreamSpeed);
 
-        var _this = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(StreamSpeed).call(this, options));
-
-        _this.on('data', function (data) {
-            _this.current += data.length;
+        this._stream = through2(function (chunk, enc, cb) {
+            _this.current += chunk.length;
+            cb(null, chunk);
         });
-        _this.on('end', function () {
+        this._stream.on('end', function () {
             return _this.stop();
         });
-        _this.emitter = new events_1.EventEmitter();
-        _this.start(options);
-        return _this;
+        this._stream.resume();
+        this.emitter = new events_1.EventEmitter();
+        this.start(options);
     }
 
     (0, _createClass3.default)(StreamSpeed, [{
@@ -148,18 +135,25 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
             this.interval = setInterval(function () {
                 return _this2._takeSample();
             }, 1000 / this.samplesPerSecond);
+            this._stream.resume();
         }
     }, {
         key: "stop",
         value: function stop() {
             clearInterval(this.interval);
             this.current = 0;
+            this._stream.pause();
         }
     }, {
         key: "onSample",
         value: function onSample(cb) {
             this.emitter.on('sample', cb);
             return this;
+        }
+    }, {
+        key: "stream",
+        get: function get() {
+            return this._stream;
         }
     }], [{
         key: "convertSample",
@@ -179,7 +173,7 @@ var StreamSpeed = (function (_stream_1$PassThrough) {
         }
     }]);
     return StreamSpeed;
-})(stream_1.PassThrough);
+})();
 
 exports.StreamSpeed = StreamSpeed;
 exports.default = StreamSpeed;

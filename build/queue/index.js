@@ -173,6 +173,7 @@ var VoodooQueue = (function () {
             if (concurrentPatches.length > this._maxExtractions) {
                 this.pausePatch(patch, state);
             }
+            this.tick(true);
         }
     }, {
         key: "onExtractProgress",
@@ -197,11 +198,7 @@ var VoodooQueue = (function () {
         value: function onResumed(patch, state, voodooQueue) {
             this.log('Received patch resumed', patch);
             if (state) {
-                if (voodooQueue) {
-                    state.queued = false;
-                } else {
-                    this.unmanage(patch);
-                }
+                state.queued = false;
             }
         }
     }, {
@@ -211,20 +208,33 @@ var VoodooQueue = (function () {
             this.unmanage(patch);
         }
     }, {
+        key: "canResume",
+        value: function canResume(patch) {
+            this.log('Checking if patch can resume');
+            var isDownloading = patch.isDownloading();
+            var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
+            var concurrentPatches = this.fetch(true, isDownloading);
+            this.log('Patch to manage is currently: ' + (isDownloading ? 'Downloading' : 'Patching'));
+            this.log('Queue manager is currently handling: ' + concurrentPatches.length + ' concurrent operations and can handle: ' + (operationLimit === -1 ? 'Infinite' : operationLimit) + ' operations');
+            return operationLimit < 0 || operationLimit > concurrentPatches.length;
+        }
+    }, {
         key: "manage",
         value: function manage(patch) {
             var _this = this;
 
+            if (this._patches.has(patch)) {
+                this.log('Already managing this patch');
+                return this._patches.get(patch);
+            }
             this.log('Managing patch handle');
             if (patch.isFinished()) {
                 this.log('Refusing to manage a finished patch');
                 return null;
             }
-            var isDownloading = patch.isDownloading();
-            var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
-            var concurrentPatches = this.fetch(true, isDownloading);
+            var queued = !this.canResume(patch);
             var state = {
-                queued: operationLimit >= 0 && concurrentPatches.length >= operationLimit,
+                queued: queued,
                 timeLeft: Infinity,
                 managed: true,
                 events: {}

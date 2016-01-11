@@ -274,7 +274,7 @@ var DownloadHandle = (function () {
                         timeLeft: Math.round((_this2._totalSize - _this2._totalDownloaded) / sample.currentAverage),
                         sample: sample
                     });
-                }).on('error', function (err) {
+                }).stream.on('error', function (err) {
                     return _this2.onError(err);
                 });
                 // Unsatisfiable request - most likely we've downloaded the whole thing already.
@@ -296,9 +296,9 @@ var DownloadHandle = (function () {
                     return _this2.onError(new Error('Invalid content-range header: ' + _this2._response.headers['content-range']));
                 }
                 if (_this2._options.decompressStream) {
-                    _this2._request.pipe(_this2._streamSpeed).pipe(_this2._options.decompressStream).pipe(_this2._destStream);
+                    _this2._request.pipe(_this2._streamSpeed.stream).pipe(_this2._options.decompressStream).pipe(_this2._destStream);
                 } else {
-                    _this2._request.pipe(_this2._streamSpeed).pipe(_this2._destStream);
+                    _this2._request.pipe(_this2._streamSpeed.stream).pipe(_this2._destStream);
                 }
                 _this2._destStream.on('finish', function () {
                     return _this2.onFinished();
