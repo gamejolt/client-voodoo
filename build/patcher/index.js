@@ -157,7 +157,9 @@ var PatchHandle = (function () {
             }
             switch (this._localPackage.build.archive_type) {
                 case 'tar.xz':
-                    return require('lzma-native').createDecompressor();
+                    return require('lzma-native').createDecompressor({
+                        synchronous: true
+                    });
                 case 'tar.gz':
                     return require('gunzip-maybe')();
                 case 'brotli':
@@ -208,7 +210,7 @@ var PatchHandle = (function () {
                                 };
 
                                 _context.t1 = function (file) {
-                                    return './' + path.relative(_this3._to, file);
+                                    return './' + path.relative(_this3._to, file).replace(/\\/g, '/');
                                 };
 
                                 currentFiles = _context.sent.filter(_context.t0).map(_context.t1);
@@ -507,12 +509,14 @@ var PatchHandle = (function () {
                                         _this6._resumable.started();
                                         _this6._emitter.emit('resumed', options && options.voodooQueue);
                                         log('Resumable state: started');
+                                        queue_1.VoodooQueue.manage(_this6);
                                     }).start();
                                 } else if (this._state === PatchOperation.PATCHING) {
                                     this._extractHandle.onStarted(function () {
                                         _this6._resumable.started();
                                         _this6._emitter.emit('resumed', options && options.voodooQueue);
                                         log('Resumable state: started');
+                                        queue_1.VoodooQueue.manage(_this6);
                                     }).start();
                                 }
 
@@ -580,6 +584,11 @@ var PatchHandle = (function () {
             var stopOptions = _.assign(options || { voodooQueue: false }, {
                 terminate: true
             });
+            if (this._state === PatchOperation.STOPPED || this._state === PatchOperation.FINISHED || this._state === PatchOperation.DOWNLOADING && this._downloadHandle.state === Resumable.State.STOPPED || this._state === PatchOperation.PATCHING && this._extractHandle.state === Resumable.State.STOPPED) {
+                this._emitter.emit('canceled', options && options.voodooQueue);
+                log('Resumable state: stopped');
+                return;
+            }
             return this._stop(stopOptions);
         }
     }, {
