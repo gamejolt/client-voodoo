@@ -108,7 +108,7 @@ var Launcher = (function () {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this = this;
 
-                var pid, instance, _expectedCmd, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, cmd;
+                var pid, instance, _expectedCmd, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, cmd, parsedPid, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2;
 
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -167,21 +167,91 @@ var Launcher = (function () {
                                 return _context.finish(16);
 
                             case 24:
-                                if (typeof pidOrLaunchInstance === 'number') {
-                                    pid = pidOrLaunchInstance;
-                                    log('Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd || []));
-                                    instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
-                                } else {
-                                    instance = pidOrLaunchInstance;
-                                    pid = instance.pid;
-                                    log('Attaching existing instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expectedcmds - ' + (0, _stringify2.default)(expectedCmd || []));
+                                if (!(typeof pidOrLaunchInstance === 'number')) {
+                                    _context.next = 30;
+                                    break;
                                 }
-                                // This validates if the process actually started and gets the command its running with
-                                // It'll throw if it failed into this promise chain, so it shouldn't ever attach an invalid process.
-                                _context.next = 27;
+
+                                pid = pidOrLaunchInstance;
+                                log('Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd || []));
+                                instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
+                                _context.next = 61;
+                                break;
+
+                            case 30:
+                                if (!(typeof pidOrLaunchInstance === 'string')) {
+                                    _context.next = 58;
+                                    break;
+                                }
+
+                                parsedPid = JSON.parse(pidOrLaunchInstance);
+
+                                pid = parsedPid.pid;
+
+                                if (_expectedCmd) {
+                                    _context.next = 54;
+                                    break;
+                                }
+
+                                _expectedCmd = new _set2.default();
+                                _iteratorNormalCompletion2 = true;
+                                _didIteratorError2 = false;
+                                _iteratorError2 = undefined;
+                                _context.prev = 38;
+                                for (_iterator2 = (0, _getIterator3.default)(parsedPid.expectedCmds); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                                    cmd = _step2.value;
+
+                                    _expectedCmd.add(cmd);
+                                }
+                                _context.next = 46;
+                                break;
+
+                            case 42:
+                                _context.prev = 42;
+                                _context.t1 = _context["catch"](38);
+                                _didIteratorError2 = true;
+                                _iteratorError2 = _context.t1;
+
+                            case 46:
+                                _context.prev = 46;
+                                _context.prev = 47;
+
+                                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                                    _iterator2.return();
+                                }
+
+                            case 49:
+                                _context.prev = 49;
+
+                                if (!_didIteratorError2) {
+                                    _context.next = 52;
+                                    break;
+                                }
+
+                                throw _iteratorError2;
+
+                            case 52:
+                                return _context.finish(49);
+
+                            case 53:
+                                return _context.finish(46);
+
+                            case 54:
+                                log('Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd || []));
+                                instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
+                                _context.next = 61;
+                                break;
+
+                            case 58:
+                                instance = pidOrLaunchInstance;
+                                pid = instance.pid;
+                                log('Attaching existing instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expectedcmds - ' + (0, _stringify2.default)(expectedCmd || []));
+
+                            case 61:
+                                _context.next = 63;
                                 return instance.tick(true);
 
-                            case 27:
+                            case 63:
                                 if (!this._runningInstances.has(pid)) {
                                     this._runningInstances.set(pid, instance);
                                 }
@@ -189,27 +259,27 @@ var Launcher = (function () {
                                 instance = this._runningInstances.get(pid);
                                 instance.once('end', function () {
                                     var cmds = [];
-                                    var _iteratorNormalCompletion2 = true;
-                                    var _didIteratorError2 = false;
-                                    var _iteratorError2 = undefined;
+                                    var _iteratorNormalCompletion3 = true;
+                                    var _didIteratorError3 = false;
+                                    var _iteratorError3 = undefined;
 
                                     try {
-                                        for (var _iterator2 = (0, _getIterator3.default)(instance.cmd.values()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                                            var cmd = _step2.value;
+                                        for (var _iterator3 = (0, _getIterator3.default)(instance.cmd.values()), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                                            var cmd = _step3.value;
 
                                             cmds.push(cmd);
                                         }
                                     } catch (err) {
-                                        _didIteratorError2 = true;
-                                        _iteratorError2 = err;
+                                        _didIteratorError3 = true;
+                                        _iteratorError3 = err;
                                     } finally {
                                         try {
-                                            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                                                _iterator2.return();
+                                            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                                                _iterator3.return();
                                             }
                                         } finally {
-                                            if (_didIteratorError2) {
-                                                throw _iteratorError2;
+                                            if (_didIteratorError3) {
+                                                throw _iteratorError3;
                                             }
                                         }
                                     }
@@ -219,19 +289,19 @@ var Launcher = (function () {
                                 queue_1.VoodooQueue.setSlower();
                                 return _context.abrupt("return", instance);
 
-                            case 33:
+                            case 69:
                             case "end":
                                 return _context.stop();
                         }
                     }
-                }, _callee, this, [[8, 12, 16, 24], [17,, 19, 23]]);
+                }, _callee, this, [[8, 12, 16, 24], [17,, 19, 23], [38, 42, 46, 54], [47,, 49, 53]]);
             }));
         }
     }, {
         key: "detach",
         value: function detach(pid, expectedCmd) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
-                var instance, found, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, _cmd;
+                var instance, found, _iteratorNormalCompletion4, _didIteratorError4, _iteratorError4, _iterator4, _step4, _cmd;
 
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
@@ -246,19 +316,19 @@ var Launcher = (function () {
                                     break;
                                 }
 
-                                _iteratorNormalCompletion3 = true;
-                                _didIteratorError3 = false;
-                                _iteratorError3 = undefined;
+                                _iteratorNormalCompletion4 = true;
+                                _didIteratorError4 = false;
+                                _iteratorError4 = undefined;
                                 _context2.prev = 7;
-                                _iterator3 = (0, _getIterator3.default)(expectedCmd);
+                                _iterator4 = (0, _getIterator3.default)(expectedCmd);
 
                             case 9:
-                                if (_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done) {
+                                if (_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done) {
                                     _context2.next = 17;
                                     break;
                                 }
 
-                                _cmd = _step3.value;
+                                _cmd = _step4.value;
 
                                 if (!instance.cmd.has(_cmd)) {
                                     _context2.next = 14;
@@ -269,7 +339,7 @@ var Launcher = (function () {
                                 return _context2.abrupt("break", 17);
 
                             case 14:
-                                _iteratorNormalCompletion3 = true;
+                                _iteratorNormalCompletion4 = true;
                                 _context2.next = 9;
                                 break;
 
@@ -280,26 +350,26 @@ var Launcher = (function () {
                             case 19:
                                 _context2.prev = 19;
                                 _context2.t0 = _context2["catch"](7);
-                                _didIteratorError3 = true;
-                                _iteratorError3 = _context2.t0;
+                                _didIteratorError4 = true;
+                                _iteratorError4 = _context2.t0;
 
                             case 23:
                                 _context2.prev = 23;
                                 _context2.prev = 24;
 
-                                if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                                    _iterator3.return();
+                                if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                                    _iterator4.return();
                                 }
 
                             case 26:
                                 _context2.prev = 26;
 
-                                if (!_didIteratorError3) {
+                                if (!_didIteratorError4) {
                                     _context2.next = 29;
                                     break;
                                 }
 
-                                throw _iteratorError3;
+                                throw _iteratorError4;
 
                             case 29:
                                 return _context2.finish(26);
@@ -349,13 +419,13 @@ var LaunchHandle = (function () {
         key: "findLaunchOption",
         value: function findLaunchOption() {
             var result = null;
-            var _iteratorNormalCompletion4 = true;
-            var _didIteratorError4 = false;
-            var _iteratorError4 = undefined;
+            var _iteratorNormalCompletion5 = true;
+            var _didIteratorError5 = false;
+            var _iteratorError5 = undefined;
 
             try {
-                for (var _iterator4 = (0, _getIterator3.default)(this._localPackage.launch_options), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var launchOption = _step4.value;
+                for (var _iterator5 = (0, _getIterator3.default)(this._localPackage.launch_options), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                    var launchOption = _step5.value;
 
                     var lOs = launchOption.os ? launchOption.os.split('_') : [];
                     if (lOs.length === 0) {
@@ -373,16 +443,16 @@ var LaunchHandle = (function () {
                     }
                 }
             } catch (err) {
-                _didIteratorError4 = true;
-                _iteratorError4 = err;
+                _didIteratorError5 = true;
+                _iteratorError5 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                        _iterator4.return();
+                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                        _iterator5.return();
                     }
                 } finally {
-                    if (_didIteratorError4) {
-                        throw _iteratorError4;
+                    if (_didIteratorError5) {
+                        throw _iteratorError5;
                     }
                 }
             }
@@ -767,30 +837,61 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
                 if (!_this3._expectedCmd) {
                     _this3._expectedCmd = new _set2.default();
                 }
-                var _iteratorNormalCompletion5 = true;
-                var _didIteratorError5 = false;
-                var _iteratorError5 = undefined;
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
 
                 try {
-                    for (var _iterator5 = (0, _getIterator3.default)(result.values()), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                        var value = _step5.value;
+                    for (var _iterator6 = (0, _getIterator3.default)(result.values()), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                        var value = _step6.value;
 
                         if (!_this3._expectedCmd.has(value)) {
                             log('Adding new expected cmd to launch instance handle ' + _this3._pid + ': ' + value);
                         }
                         _this3._expectedCmd.add(value);
+                        var expectedCmdValues = [];
+                        var _iteratorNormalCompletion7 = true;
+                        var _didIteratorError7 = false;
+                        var _iteratorError7 = undefined;
+
+                        try {
+                            for (var _iterator7 = (0, _getIterator3.default)(_this3._expectedCmd.values()), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                                var expectedCmdValue = _step7.value;
+
+                                expectedCmdValues.push(expectedCmdValue);
+                            }
+                        } catch (err) {
+                            _didIteratorError7 = true;
+                            _iteratorError7 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                                    _iterator7.return();
+                                }
+                            } finally {
+                                if (_didIteratorError7) {
+                                    throw _iteratorError7;
+                                }
+                            }
+                        }
+
+                        var emittedPid = {
+                            pid: _this3._pid,
+                            expectedCmds: expectedCmdValues
+                        };
+                        _this3.emit('pid', (0, _stringify2.default)(emittedPid));
                     }
                 } catch (err) {
-                    _didIteratorError5 = true;
-                    _iteratorError5 = err;
+                    _didIteratorError6 = true;
+                    _iteratorError6 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                            _iterator5.return();
+                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                            _iterator6.return();
                         }
                     } finally {
-                        if (_didIteratorError5) {
-                            throw _iteratorError5;
+                        if (_didIteratorError6) {
+                            throw _iteratorError6;
                         }
                     }
                 }
