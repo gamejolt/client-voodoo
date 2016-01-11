@@ -355,6 +355,7 @@ export class PatchHandle
 					this._resumable.started();
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
 					log( 'Resumable state: started' );
+					VoodooQueue.manage( this );
 				} ).start();
 			}
 			else if ( this._state === PatchOperation.PATCHING ) {
@@ -363,6 +364,7 @@ export class PatchHandle
 					this._resumable.started();
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
 					log( 'Resumable state: started' );
+					VoodooQueue.manage( this );
 				} ).start();
 			}
 		}
