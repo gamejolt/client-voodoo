@@ -183,29 +183,40 @@ export class LaunchHandle
 		// Make sure the destination is a file
 		// On mac it can be a folder as long as its a bundle..
 		let stat = await Common.fsStat( this._file );
+		let isJava = path.extname( this._file ) === 'jar';
 
 		switch ( process.platform ) {
 			case 'win32':
-				return this.startWindows( stat, pollInterval );
+				return this.startWindows( stat, pollInterval, isJava );
 
 			case 'linux':
-				return this.startLinux( stat, pollInterval );
+				return this.startLinux( stat, pollInterval, isJava );
 
 			case 'darwin':
-				return this.startMac( stat, pollInterval );
+				return this.startMac( stat, pollInterval, isJava );
 
 			default:
 				throw new Error( 'What potato are you running on? Detected platform: ' + process.platform );
 		}
 	}
 
-	private async startWindows( stat: fs.Stats, pollInterval: number )
+	private async startWindows( stat: fs.Stats, pollInterval: number, isJava: boolean )
 	{
 		if ( !stat.isFile() ) {
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		let child = childProcess.spawn( this._file, [], {
+		let cmd, args;
+		if ( isJava ) {
+			cmd = 'java';
+			args = [ '-jar', this._file ];
+		}
+		else {
+			cmd = this._file;
+			args = [];
+		}
+
+		let child = childProcess.spawn( cmd, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
 		} );
@@ -216,7 +227,7 @@ export class LaunchHandle
 		return Launcher.attach( pid, null, pollInterval );
 	}
 
-	private async startLinux( stat: fs.Stats, pollInterval: number )
+	private async startLinux( stat: fs.Stats, pollInterval: number, isJava: boolean )
 	{
 		if ( !stat.isFile() ) {
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
@@ -224,6 +235,16 @@ export class LaunchHandle
 
 		await Common.chmod( this._file, '0755' );
 
+		let cmd, args;
+		if ( isJava ) {
+			cmd = 'java';
+			args = [ '-jar', this._file ];
+		}
+		else {
+			cmd = this._file;
+			args = [];
+		}
+
 		let child = childProcess.spawn( this._file, [], {
 			cwd: path.dirname( this._file ),
 			detached: true,
@@ -235,12 +256,22 @@ export class LaunchHandle
 		return Launcher.attach( pid, null, pollInterval );
 	}
 
-	private async startMac( stat: fs.Stats, pollInterval: number )
+	private async startMac( stat: fs.Stats, pollInterval: number, isJava: boolean )
 	{
 		let pid;
 		if ( stat.isFile() ) {
 
 			await Common.chmod( this._file, '0755' )
+
+			let cmd, args;
+			if ( isJava ) {
+				cmd = 'java';
+				args = [ '-jar', this._file ];
+			}
+			else {
+				cmd = this._file;
+				args = [];
+			}
 
 			let child = childProcess.exec( shellEscape( [ this._file ] ), {
 				cwd: path.dirname( this._file ),
