@@ -415,6 +415,14 @@ export class PatchHandle
 			terminate: true,
 		} );
 
+		if ( this._state === PatchOperation.STOPPED || this._state === PatchOperation.FINISHED ||
+			 ( this._state === PatchOperation.DOWNLOADING && this._downloadHandle.state === Resumable.State.STOPPED ) ||
+			 ( this._state === PatchOperation.PATCHING && this._extractHandle.state === Resumable.State.STOPPED ) ) {
+			this._emitter.emit( 'canceled', options && options.voodooQueue );
+			log( 'Resumable state: stopped' );
+			return;
+		}
+
 		return this._stop( stopOptions );
 	}
 
