@@ -179,9 +179,9 @@ describe( 'Patcher', function()
 			'fDynamic',
 			'fToPreserve',
 			'fToUpdate',
-			'toAdd/file1',
-			'toAdd/file2',
-			'toRemove/file1',
+			path.join( 'toAdd', 'file1' ),
+			path.join( 'toAdd', 'file2' ),
+			path.join( 'toRemove', 'file1' ),
 		] );
 
 		//expect( await Common.fsExists( path.join( testPatcher.install_dir, 'empty' ) ) ).to.eq( false, 'Old empty dir has been removed' );

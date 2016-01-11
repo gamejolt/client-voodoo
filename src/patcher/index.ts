@@ -208,7 +208,7 @@ export class PatchHandle
 			} )
 			.map( ( file ) =>
 			{
-				return './' + path.relative( this._to, file );
+				return './' + path.relative( this._to, file ).replace( /\\/g, '/' );
 			} );
 		log( 'Current files: ' + JSON.stringify( currentFiles ) );
 
