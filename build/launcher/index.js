@@ -16,6 +16,10 @@ var _map = require("babel-runtime/core-js/map");
 
 var _map2 = _interopRequireDefault(_map);
 
+var _typeof2 = require("babel-runtime/helpers/typeof");
+
+var _typeof3 = _interopRequireDefault(_typeof2);
+
 var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -105,277 +109,319 @@ var Launcher = (function () {
     }, {
         key: "attach",
         value: function attach(pidOrLaunchInstance, expectedCmd, pollInterval) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
                 var _this = this;
 
-                var pid, instance, _expectedCmd, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, cmd, parsedPid, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2;
+                var _ret;
 
-                return _regenerator2.default.wrap(function _callee$(_context) {
+                return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
-                        switch (_context.prev = _context.next) {
+                        switch (_context2.prev = _context2.next) {
                             case 0:
-                                pid = undefined;
-                                instance = undefined;
-                                _expectedCmd = null;
+                                _context2.prev = 0;
+                                return _context2.delegateYield(_regenerator2.default.mark(function _callee() {
+                                    var pid, instance, _expectedCmd, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, cmd, parsedPid, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2;
 
-                                if (!(expectedCmd && expectedCmd.length)) {
-                                    _context.next = 24;
-                                    break;
-                                }
+                                    return _regenerator2.default.wrap(function _callee$(_context) {
+                                        while (1) {
+                                            switch (_context.prev = _context.next) {
+                                                case 0:
+                                                    pid = undefined;
+                                                    instance = undefined;
+                                                    _expectedCmd = null;
 
-                                _expectedCmd = new _set2.default();
-                                _iteratorNormalCompletion = true;
-                                _didIteratorError = false;
-                                _iteratorError = undefined;
-                                _context.prev = 8;
-                                for (_iterator = (0, _getIterator3.default)(expectedCmd); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                                    cmd = _step.value;
+                                                    if (!(expectedCmd && expectedCmd.length)) {
+                                                        _context.next = 24;
+                                                        break;
+                                                    }
 
-                                    _expectedCmd.add(cmd);
-                                }
-                                _context.next = 16;
-                                break;
+                                                    _expectedCmd = new _set2.default();
+                                                    _iteratorNormalCompletion = true;
+                                                    _didIteratorError = false;
+                                                    _iteratorError = undefined;
+                                                    _context.prev = 8;
+                                                    for (_iterator = (0, _getIterator3.default)(expectedCmd); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                                                        cmd = _step.value;
 
-                            case 12:
-                                _context.prev = 12;
-                                _context.t0 = _context["catch"](8);
-                                _didIteratorError = true;
-                                _iteratorError = _context.t0;
+                                                        _expectedCmd.add(cmd);
+                                                    }
+                                                    _context.next = 16;
+                                                    break;
 
-                            case 16:
-                                _context.prev = 16;
-                                _context.prev = 17;
+                                                case 12:
+                                                    _context.prev = 12;
+                                                    _context.t0 = _context["catch"](8);
+                                                    _didIteratorError = true;
+                                                    _iteratorError = _context.t0;
 
-                                if (!_iteratorNormalCompletion && _iterator.return) {
-                                    _iterator.return();
-                                }
+                                                case 16:
+                                                    _context.prev = 16;
+                                                    _context.prev = 17;
 
-                            case 19:
-                                _context.prev = 19;
+                                                    if (!_iteratorNormalCompletion && _iterator.return) {
+                                                        _iterator.return();
+                                                    }
 
-                                if (!_didIteratorError) {
-                                    _context.next = 22;
-                                    break;
-                                }
+                                                case 19:
+                                                    _context.prev = 19;
 
-                                throw _iteratorError;
+                                                    if (!_didIteratorError) {
+                                                        _context.next = 22;
+                                                        break;
+                                                    }
 
-                            case 22:
-                                return _context.finish(19);
+                                                    throw _iteratorError;
 
-                            case 23:
-                                return _context.finish(16);
+                                                case 22:
+                                                    return _context.finish(19);
 
-                            case 24:
-                                if (!(typeof pidOrLaunchInstance === 'number')) {
-                                    _context.next = 30;
-                                    break;
-                                }
+                                                case 23:
+                                                    return _context.finish(16);
 
-                                pid = pidOrLaunchInstance;
-                                log('Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd || []));
-                                instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
-                                _context.next = 61;
-                                break;
+                                                case 24:
+                                                    if (!(typeof pidOrLaunchInstance === 'number')) {
+                                                        _context.next = 30;
+                                                        break;
+                                                    }
 
-                            case 30:
-                                if (!(typeof pidOrLaunchInstance === 'string')) {
-                                    _context.next = 58;
-                                    break;
-                                }
+                                                    pid = pidOrLaunchInstance;
+                                                    log('Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd || []));
+                                                    instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
+                                                    _context.next = 62;
+                                                    break;
 
-                                parsedPid = JSON.parse(pidOrLaunchInstance);
+                                                case 30:
+                                                    if (!(typeof pidOrLaunchInstance === 'string')) {
+                                                        _context.next = 59;
+                                                        break;
+                                                    }
 
-                                pid = parsedPid.pid;
+                                                    log('Attaching new instance with stringified pid: ' + pidOrLaunchInstance);
+                                                    parsedPid = JSON.parse(pidOrLaunchInstance);
 
-                                if (_expectedCmd) {
-                                    _context.next = 54;
-                                    break;
-                                }
+                                                    pid = parsedPid.pid;
 
-                                _expectedCmd = new _set2.default();
-                                _iteratorNormalCompletion2 = true;
-                                _didIteratorError2 = false;
-                                _iteratorError2 = undefined;
-                                _context.prev = 38;
-                                for (_iterator2 = (0, _getIterator3.default)(parsedPid.expectedCmds); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                                    cmd = _step2.value;
+                                                    if (!(!_expectedCmd && parsedPid.expectedCmds && parsedPid.expectedCmds.length)) {
+                                                        _context.next = 55;
+                                                        break;
+                                                    }
 
-                                    _expectedCmd.add(cmd);
-                                }
-                                _context.next = 46;
-                                break;
+                                                    _expectedCmd = new _set2.default();
+                                                    _iteratorNormalCompletion2 = true;
+                                                    _didIteratorError2 = false;
+                                                    _iteratorError2 = undefined;
+                                                    _context.prev = 39;
+                                                    for (_iterator2 = (0, _getIterator3.default)(parsedPid.expectedCmds); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                                                        cmd = _step2.value;
 
-                            case 42:
-                                _context.prev = 42;
-                                _context.t1 = _context["catch"](38);
-                                _didIteratorError2 = true;
-                                _iteratorError2 = _context.t1;
+                                                        _expectedCmd.add(cmd);
+                                                    }
+                                                    _context.next = 47;
+                                                    break;
 
-                            case 46:
-                                _context.prev = 46;
-                                _context.prev = 47;
+                                                case 43:
+                                                    _context.prev = 43;
+                                                    _context.t1 = _context["catch"](39);
+                                                    _didIteratorError2 = true;
+                                                    _iteratorError2 = _context.t1;
 
-                                if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                                    _iterator2.return();
-                                }
+                                                case 47:
+                                                    _context.prev = 47;
+                                                    _context.prev = 48;
 
-                            case 49:
-                                _context.prev = 49;
+                                                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                                                        _iterator2.return();
+                                                    }
 
-                                if (!_didIteratorError2) {
-                                    _context.next = 52;
-                                    break;
-                                }
+                                                case 50:
+                                                    _context.prev = 50;
 
-                                throw _iteratorError2;
+                                                    if (!_didIteratorError2) {
+                                                        _context.next = 53;
+                                                        break;
+                                                    }
 
-                            case 52:
-                                return _context.finish(49);
+                                                    throw _iteratorError2;
 
-                            case 53:
-                                return _context.finish(46);
+                                                case 53:
+                                                    return _context.finish(50);
 
-                            case 54:
-                                log('Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd || []));
-                                instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
-                                _context.next = 61;
-                                break;
+                                                case 54:
+                                                    return _context.finish(47);
 
-                            case 58:
-                                instance = pidOrLaunchInstance;
-                                pid = instance.pid;
-                                log('Attaching existing instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expectedcmds - ' + (0, _stringify2.default)(expectedCmd || []));
+                                                case 55:
+                                                    log('Attaching new instance with parsed pid: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + (0, _stringify2.default)(parsedPid.expectedCmds || []));
+                                                    instance = new LaunchInstanceHandle(pid, _expectedCmd, pollInterval);
+                                                    _context.next = 62;
+                                                    break;
 
-                            case 61:
-                                _context.next = 63;
-                                return instance.tick(true);
+                                                case 59:
+                                                    instance = pidOrLaunchInstance;
+                                                    pid = instance.pid;
+                                                    log('Attaching existing instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expectedcmds - ' + (0, _stringify2.default)(expectedCmd || []));
 
-                            case 63:
-                                if (!this._runningInstances.has(pid)) {
-                                    this._runningInstances.set(pid, instance);
-                                }
-                                ;
-                                instance = this._runningInstances.get(pid);
-                                instance.once('end', function () {
-                                    var cmds = [];
-                                    var _iteratorNormalCompletion3 = true;
-                                    var _didIteratorError3 = false;
-                                    var _iteratorError3 = undefined;
+                                                case 62:
+                                                    _context.next = 64;
+                                                    return instance.tick(true);
 
-                                    try {
-                                        for (var _iterator3 = (0, _getIterator3.default)(instance.cmd.values()), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                                            var cmd = _step3.value;
+                                                case 64:
+                                                    log('after ticked');
+                                                    if (!_this._runningInstances.has(pid)) {
+                                                        _this._runningInstances.set(pid, instance);
+                                                    }
+                                                    ;
+                                                    instance = _this._runningInstances.get(pid);
+                                                    instance.once('end', function () {
+                                                        log('ended');
+                                                        var cmds = [];
+                                                        var _iteratorNormalCompletion3 = true;
+                                                        var _didIteratorError3 = false;
+                                                        var _iteratorError3 = undefined;
 
-                                            cmds.push(cmd);
-                                        }
-                                    } catch (err) {
-                                        _didIteratorError3 = true;
-                                        _iteratorError3 = err;
-                                    } finally {
-                                        try {
-                                            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                                                _iterator3.return();
+                                                        try {
+                                                            for (var _iterator3 = (0, _getIterator3.default)(instance.cmd.values()), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                                                                var cmd = _step3.value;
+
+                                                                cmds.push(cmd);
+                                                            }
+                                                        } catch (err) {
+                                                            _didIteratorError3 = true;
+                                                            _iteratorError3 = err;
+                                                        } finally {
+                                                            try {
+                                                                if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                                                                    _iterator3.return();
+                                                                }
+                                                            } finally {
+                                                                if (_didIteratorError3) {
+                                                                    throw _iteratorError3;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        _this.detach(pid, cmds);
+                                                    });
+                                                    queue_1.VoodooQueue.setSlower();
+                                                    return _context.abrupt("return", {
+                                                        v: instance
+                                                    });
+
+                                                case 71:
+                                                case "end":
+                                                    return _context.stop();
                                             }
-                                        } finally {
-                                            if (_didIteratorError3) {
-                                                throw _iteratorError3;
-                                            }
                                         }
-                                    }
+                                    }, _callee, _this, [[8, 12, 16, 24], [17,, 19, 23], [39, 43, 47, 55], [48,, 50, 54]]);
+                                })(), "t0", 2);
 
-                                    _this.detach(pid, cmds);
-                                });
-                                queue_1.VoodooQueue.setSlower();
-                                return _context.abrupt("return", instance);
+                            case 2:
+                                _ret = _context2.t0;
 
-                            case 69:
+                                if (!((typeof _ret === "undefined" ? "undefined" : (0, _typeof3.default)(_ret)) === "object")) {
+                                    _context2.next = 5;
+                                    break;
+                                }
+
+                                return _context2.abrupt("return", _ret.v);
+
+                            case 5:
+                                _context2.next = 11;
+                                break;
+
+                            case 7:
+                                _context2.prev = 7;
+                                _context2.t1 = _context2["catch"](0);
+
+                                log('Got error: ' + _context2.t1.message + "\n" + _context2.t1.stack);
+                                throw _context2.t1;
+
+                            case 11:
                             case "end":
-                                return _context.stop();
+                                return _context2.stop();
                         }
                     }
-                }, _callee, this, [[8, 12, 16, 24], [17,, 19, 23], [38, 42, 46, 54], [47,, 49, 53]]);
+                }, _callee2, this, [[0, 7]]);
             }));
         }
     }, {
         key: "detach",
         value: function detach(pid, expectedCmd) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
                 var instance, found, _iteratorNormalCompletion4, _didIteratorError4, _iteratorError4, _iterator4, _step4, _cmd;
 
-                return _regenerator2.default.wrap(function _callee2$(_context2) {
+                return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
-                        switch (_context2.prev = _context2.next) {
+                        switch (_context3.prev = _context3.next) {
                             case 0:
                                 log('Detaching: pid - ' + pid + ', expected cmds - ' + (0, _stringify2.default)(expectedCmd));
                                 instance = this._runningInstances.get(pid);
                                 found = !(expectedCmd && expectedCmd.length);
 
                                 if (found) {
-                                    _context2.next = 31;
+                                    _context3.next = 31;
                                     break;
                                 }
 
                                 _iteratorNormalCompletion4 = true;
                                 _didIteratorError4 = false;
                                 _iteratorError4 = undefined;
-                                _context2.prev = 7;
+                                _context3.prev = 7;
                                 _iterator4 = (0, _getIterator3.default)(expectedCmd);
 
                             case 9:
                                 if (_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done) {
-                                    _context2.next = 17;
+                                    _context3.next = 17;
                                     break;
                                 }
 
                                 _cmd = _step4.value;
 
                                 if (!instance.cmd.has(_cmd)) {
-                                    _context2.next = 14;
+                                    _context3.next = 14;
                                     break;
                                 }
 
                                 found = true;
-                                return _context2.abrupt("break", 17);
+                                return _context3.abrupt("break", 17);
 
                             case 14:
                                 _iteratorNormalCompletion4 = true;
-                                _context2.next = 9;
+                                _context3.next = 9;
                                 break;
 
                             case 17:
-                                _context2.next = 23;
+                                _context3.next = 23;
                                 break;
 
                             case 19:
-                                _context2.prev = 19;
-                                _context2.t0 = _context2["catch"](7);
+                                _context3.prev = 19;
+                                _context3.t0 = _context3["catch"](7);
                                 _didIteratorError4 = true;
-                                _iteratorError4 = _context2.t0;
+                                _iteratorError4 = _context3.t0;
 
                             case 23:
-                                _context2.prev = 23;
-                                _context2.prev = 24;
+                                _context3.prev = 23;
+                                _context3.prev = 24;
 
                                 if (!_iteratorNormalCompletion4 && _iterator4.return) {
                                     _iterator4.return();
                                 }
 
                             case 26:
-                                _context2.prev = 26;
+                                _context3.prev = 26;
 
                                 if (!_didIteratorError4) {
-                                    _context2.next = 29;
+                                    _context3.next = 29;
                                     break;
                                 }
 
                                 throw _iteratorError4;
 
                             case 29:
-                                return _context2.finish(26);
+                                return _context3.finish(26);
 
                             case 30:
-                                return _context2.finish(23);
+                                return _context3.finish(23);
 
                             case 31:
                                 if (instance && found) {
@@ -389,10 +435,10 @@ var Launcher = (function () {
 
                             case 32:
                             case "end":
-                                return _context2.stop();
+                                return _context3.stop();
                         }
                     }
-                }, _callee2, this, [[7, 19, 23, 31], [24,, 26, 30]]);
+                }, _callee3, this, [[7, 19, 23, 31], [24,, 26, 30]]);
             }));
         }
     }]);
@@ -462,35 +508,35 @@ var LaunchHandle = (function () {
     }, {
         key: "ensureExecutable",
         value: function ensureExecutable(file) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
-                return _regenerator2.default.wrap(function _callee3$(_context3) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+                return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
-                        switch (_context3.prev = _context3.next) {
+                        switch (_context4.prev = _context4.next) {
                             case 0:
-                                _context3.next = 2;
+                                _context4.next = 2;
                                 return common_1.default.chmod(file, '0755');
 
                             case 2:
                             case "end":
-                                return _context3.stop();
+                                return _context4.stop();
                         }
                     }
-                }, _callee3, this);
+                }, _callee4, this);
             }));
         }
     }, {
         key: "start",
         value: function start(pollInterval) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
                 var launchOption, executablePath, stat, isJava;
-                return _regenerator2.default.wrap(function _callee4$(_context4) {
+                return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
-                        switch (_context4.prev = _context4.next) {
+                        switch (_context5.prev = _context5.next) {
                             case 0:
                                 launchOption = this.findLaunchOption();
 
                                 if (launchOption) {
-                                    _context4.next = 3;
+                                    _context5.next = 3;
                                     break;
                                 }
 
@@ -502,59 +548,59 @@ var LaunchHandle = (function () {
                                 executablePath = executablePath.replace(/\//, path.sep);
                                 this._file = path.join(this._localPackage.install_dir, executablePath);
                                 // If the destination already exists, make sure its valid.
-                                _context4.next = 8;
+                                _context5.next = 8;
                                 return common_1.default.fsExists(this._file);
 
                             case 8:
-                                if (_context4.sent) {
-                                    _context4.next = 10;
+                                if (_context5.sent) {
+                                    _context5.next = 10;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file doesn\'t exist.');
 
                             case 10:
-                                _context4.next = 12;
+                                _context5.next = 12;
                                 return common_1.default.fsStat(this._file);
 
                             case 12:
-                                stat = _context4.sent;
+                                stat = _context5.sent;
                                 isJava = path.extname(this._file) === 'jar';
-                                _context4.t0 = process.platform;
-                                _context4.next = _context4.t0 === 'win32' ? 17 : _context4.t0 === 'linux' ? 18 : _context4.t0 === 'darwin' ? 19 : 20;
+                                _context5.t0 = process.platform;
+                                _context5.next = _context5.t0 === 'win32' ? 17 : _context5.t0 === 'linux' ? 18 : _context5.t0 === 'darwin' ? 19 : 20;
                                 break;
 
                             case 17:
-                                return _context4.abrupt("return", this.startWindows(stat, pollInterval, isJava));
+                                return _context5.abrupt("return", this.startWindows(stat, pollInterval, isJava));
 
                             case 18:
-                                return _context4.abrupt("return", this.startLinux(stat, pollInterval, isJava));
+                                return _context5.abrupt("return", this.startLinux(stat, pollInterval, isJava));
 
                             case 19:
-                                return _context4.abrupt("return", this.startMac(stat, pollInterval, isJava));
+                                return _context5.abrupt("return", this.startMac(stat, pollInterval, isJava));
 
                             case 20:
                                 throw new Error('What potato are you running on? Detected platform: ' + process.platform);
 
                             case 21:
                             case "end":
-                                return _context4.stop();
+                                return _context5.stop();
                         }
                     }
-                }, _callee4, this);
+                }, _callee5, this);
             }));
         }
     }, {
         key: "startWindows",
         value: function startWindows(stat, pollInterval, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
                 var cmd, args, child, pid;
-                return _regenerator2.default.wrap(function _callee5$(_context5) {
+                return _regenerator2.default.wrap(function _callee6$(_context6) {
                     while (1) {
-                        switch (_context5.prev = _context5.next) {
+                        switch (_context6.prev = _context6.next) {
                             case 0:
                                 if (stat.isFile()) {
-                                    _context5.next = 2;
+                                    _context6.next = 2;
                                     break;
                                 }
 
@@ -577,34 +623,34 @@ var LaunchHandle = (function () {
                                 pid = child.pid;
 
                                 child.unref();
-                                return _context5.abrupt("return", Launcher.attach(pid, null, pollInterval));
+                                return _context6.abrupt("return", Launcher.attach(pid, null, pollInterval));
 
                             case 8:
                             case "end":
-                                return _context5.stop();
+                                return _context6.stop();
                         }
                     }
-                }, _callee5, this);
+                }, _callee6, this);
             }));
         }
     }, {
         key: "startLinux",
         value: function startLinux(stat, pollInterval, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
                 var cmd, args, child, pid;
-                return _regenerator2.default.wrap(function _callee6$(_context6) {
+                return _regenerator2.default.wrap(function _callee7$(_context7) {
                     while (1) {
-                        switch (_context6.prev = _context6.next) {
+                        switch (_context7.prev = _context7.next) {
                             case 0:
                                 if (stat.isFile()) {
-                                    _context6.next = 2;
+                                    _context7.next = 2;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file isn\'t valid.');
 
                             case 2:
-                                _context6.next = 4;
+                                _context7.next = 4;
                                 return common_1.default.chmod(this._file, '0755');
 
                             case 4:
@@ -624,34 +670,34 @@ var LaunchHandle = (function () {
                                 pid = child.pid;
 
                                 child.unref();
-                                return _context6.abrupt("return", Launcher.attach(pid, null, pollInterval));
+                                return _context7.abrupt("return", Launcher.attach(pid, null, pollInterval));
 
                             case 10:
                             case "end":
-                                return _context6.stop();
+                                return _context7.stop();
                         }
                     }
-                }, _callee6, this);
+                }, _callee7, this);
             }));
         }
     }, {
         key: "startMac",
         value: function startMac(stat, pollInterval, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee8() {
                 var pid, _cmd2, args, child, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile;
 
-                return _regenerator2.default.wrap(function _callee7$(_context7) {
+                return _regenerator2.default.wrap(function _callee8$(_context8) {
                     while (1) {
-                        switch (_context7.prev = _context7.next) {
+                        switch (_context8.prev = _context8.next) {
                             case 0:
                                 pid = undefined;
 
                                 if (!stat.isFile()) {
-                                    _context7.next = 11;
+                                    _context8.next = 11;
                                     break;
                                 }
 
-                                _context7.next = 4;
+                                _context8.next = 4;
                                 return common_1.default.chmod(this._file, '0755');
 
                             case 4:
@@ -670,12 +716,12 @@ var LaunchHandle = (function () {
 
                                 pid = child.pid;
                                 child.unref();
-                                _context7.next = 48;
+                                _context8.next = 48;
                                 break;
 
                             case 11:
                                 if (!(!this._file.toLowerCase().endsWith('.app') && !this._file.toLowerCase().endsWith('.app/'))) {
-                                    _context7.next = 13;
+                                    _context8.next = 13;
                                     break;
                                 }
 
@@ -683,42 +729,42 @@ var LaunchHandle = (function () {
 
                             case 13:
                                 plistPath = path.join(this._file, 'Contents', 'Info.plist');
-                                _context7.next = 16;
+                                _context8.next = 16;
                                 return common_1.default.fsExists(plistPath);
 
                             case 16:
-                                if (_context7.sent) {
-                                    _context7.next = 18;
+                                if (_context8.sent) {
+                                    _context8.next = 18;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.');
 
                             case 18:
-                                _context7.next = 20;
+                                _context8.next = 20;
                                 return common_1.default.fsStat(plistPath);
 
                             case 20:
-                                plistStat = _context7.sent;
+                                plistStat = _context8.sent;
 
                                 if (plistStat.isFile()) {
-                                    _context7.next = 23;
+                                    _context8.next = 23;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.');
 
                             case 23:
-                                _context7.t0 = plist;
-                                _context7.next = 26;
+                                _context8.t0 = plist;
+                                _context8.next = 26;
                                 return common_1.default.fsReadFile(plistPath, 'utf8');
 
                             case 26:
-                                _context7.t1 = _context7.sent;
-                                parsedPlist = _context7.t0.parse.call(_context7.t0, _context7.t1);
+                                _context8.t1 = _context8.sent;
+                                parsedPlist = _context8.t0.parse.call(_context8.t0, _context8.t1);
 
                                 if (parsedPlist) {
-                                    _context7.next = 30;
+                                    _context8.next = 30;
                                     break;
                                 }
 
@@ -726,26 +772,26 @@ var LaunchHandle = (function () {
 
                             case 30:
                                 macosPath = path.join(this._file, 'Contents', 'MacOS');
-                                _context7.next = 33;
+                                _context8.next = 33;
                                 return common_1.default.fsExists(macosPath);
 
                             case 33:
-                                if (_context7.sent) {
-                                    _context7.next = 35;
+                                if (_context8.sent) {
+                                    _context8.next = 35;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.');
 
                             case 35:
-                                _context7.next = 37;
+                                _context8.next = 37;
                                 return common_1.default.fsStat(macosPath);
 
                             case 37:
-                                macosStat = _context7.sent;
+                                macosStat = _context8.sent;
 
                                 if (macosStat.isDirectory()) {
-                                    _context7.next = 40;
+                                    _context8.next = 40;
                                     break;
                                 }
 
@@ -755,7 +801,7 @@ var LaunchHandle = (function () {
                                 baseName = path.basename(this._file);
                                 executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
                                 executableFile = path.join(macosPath, executableName);
-                                _context7.next = 45;
+                                _context8.next = 45;
                                 return common_1.default.chmod(executableFile, '0755');
 
                             case 45:
@@ -778,14 +824,14 @@ var LaunchHandle = (function () {
                                 child.unref();
 
                             case 48:
-                                return _context7.abrupt("return", Launcher.attach(pid, null, pollInterval));
+                                return _context8.abrupt("return", Launcher.attach(pid, null, pollInterval));
 
                             case 49:
                             case "end":
-                                return _context7.stop();
+                                return _context8.stop();
                         }
                     }
-                }, _callee7, this);
+                }, _callee8, this);
             }));
         }
     }, {
@@ -830,7 +876,9 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
         value: function tick(validate) {
             var _this3 = this;
 
+            log('Ticking');
             return pid_finder_1.PidFinder.find(this._pid, validate ? this._expectedCmd : null).then(function (result) {
+                log('Got ticking result');
                 if (!result || result.size === 0) {
                     throw new Error('Process doesn\'t exist anymore');
                 }
@@ -899,6 +947,7 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
                 clearInterval(_this3._interval);
                 console.log(err);
                 _this3.emit('end', err);
+                throw err;
             });
         }
     }, {
