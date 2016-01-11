@@ -3,16 +3,16 @@ import * as _ from 'lodash';
 import * as tar from 'tar-stream';
 import * as tarFS from 'tar-fs';
 import { EventEmitter } from 'events';
-import { Readable, Transform } from 'stream';
 import * as StreamSpeed from '../downloader/stream-speed';
 import * as Resumable from '../common/resumable';
 import Common from '../common';
+import * as through2 from 'through2';
 
 export interface IExtractOptions extends tarFS.IExtractOptions
 {
 	deleteSource?: boolean;
 	overwrite?: boolean;
-	decompressStream?: Transform;
+	decompressStream?: any;
 }
 
 export interface IExtractProgress
@@ -48,7 +48,7 @@ export class ExtractHandle
 	private _firstRun: boolean;
 
 	private _streamSpeed: StreamSpeed.StreamSpeed;
-	private _readStream: Readable;
+	private _readStream: any;
 	private _extractStream: tar.Extract;
 	private _extractedFiles: string[];
 	private _totalProcessed: number;
@@ -143,6 +143,7 @@ export class ExtractHandle
 		return new Promise<void>( ( resolve, reject ) =>
 		{
 			this._readStream = fs.createReadStream( this._from );
+			this._readStream.on( 'error', ( err ) => this._rejector( err ) );
 
 			let optionsMap = this._options.map;
 			this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
@@ -174,12 +175,12 @@ export class ExtractHandle
 			} ) );
 
 			if ( this._options.decompressStream ) {
-				this._streamSpeed
+				this._streamSpeed.stream
 					.pipe( this._options.decompressStream )
 					.pipe( this._extractStream );
 			}
 			else {
-				this._streamSpeed.pipe( this._extractStream );
+				this._streamSpeed.stream.pipe( this._extractStream );
 			}
 
 			this.resume();
@@ -312,11 +313,12 @@ export class ExtractHandle
 	private resume()
 	{
 		this._readStream
-			.on( 'data', ( data: string | Buffer ) => { this._totalProcessed += data.length } )
-			.on( 'error', ( err ) => this._rejector( err ) );
-
-		this._readStream.pipe( this._streamSpeed );
-		this._readStream.resume();
+			.pipe( through2( ( chunk, enc, cb ) =>
+			{
+				this._totalProcessed += chunk.length;
+				cb( null, chunk );
+			} ) )
+			.pipe( this._streamSpeed.stream );
 
 		this._streamSpeed.start();
 	}
@@ -324,9 +326,7 @@ export class ExtractHandle
 	private pause()
 	{
 		if ( this._readStream ) {
-			this._readStream.pause();
 			this._readStream.unpipe();
-			this._readStream.removeAllListeners();
 		}
 
 		if ( this._streamSpeed ) {
