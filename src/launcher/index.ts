@@ -20,6 +20,12 @@ export interface ILaunchOptions
 	pollInterval: number;
 }
 
+export interface IParsedPid
+{
+	pid: number,
+	expectedCmds: string[],
+}
+
 function log( message ) {
 	console.log( 'Launcher: ' + message );
 }
@@ -34,7 +40,7 @@ export abstract class Launcher
 		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
-	static async attach( pidOrLaunchInstance: number | LaunchInstanceHandle, expectedCmd?: string[], pollInterval?: number )
+	static async attach( pidOrLaunchInstance: number | string | LaunchInstanceHandle, expectedCmd?: string[], pollInterval?: number )
 	{
 		let pid: number;
 		let instance: LaunchInstanceHandle;
@@ -45,8 +51,21 @@ export abstract class Launcher
 				_expectedCmd.add( cmd );
 			}
 		}
+
 		if ( typeof pidOrLaunchInstance === 'number' ) {
 			pid = pidOrLaunchInstance;
+			log( 'Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + JSON.stringify( expectedCmd || [] ) );
+			instance = new LaunchInstanceHandle( pid, _expectedCmd, pollInterval );
+		}
+		else if ( typeof pidOrLaunchInstance === 'string' ) {
+			let parsedPid: IParsedPid = JSON.parse( pidOrLaunchInstance );
+			pid = parsedPid.pid;
+			if ( !_expectedCmd ) {
+				_expectedCmd = new Set<string>();
+				for ( let cmd of parsedPid.expectedCmds ) {
+					_expectedCmd.add( cmd );
+				}
+			}
 			log( 'Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + JSON.stringify( expectedCmd || [] ) );
 			instance = new LaunchInstanceHandle( pid, _expectedCmd, pollInterval );
 		}
@@ -379,6 +398,18 @@ export class LaunchInstanceHandle extends EventEmitter
 						log( 'Adding new expected cmd to launch instance handle ' + this._pid + ': ' + value );
 					}
 					this._expectedCmd.add( value );
+
+					let expectedCmdValues: string[] = [];
+					for ( let expectedCmdValue of this._expectedCmd.values() ) {
+						expectedCmdValues.push( expectedCmdValue );
+					}
+
+					let emittedPid: IParsedPid = {
+						pid: this._pid,
+						expectedCmds:  expectedCmdValues,
+					};
+
+					this.emit( 'pid', JSON.stringify( emittedPid ) );
 				}
 			} )
 			.catch( ( err ) =>
