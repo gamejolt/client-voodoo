@@ -1,6 +1,7 @@
 import * as path from 'path';
 import Common from '../common';
 let xdgBasedir = require( 'xdg-basedir' );
+let shellEscape = require( 'shell-escape' );
 
 export abstract class Shortcut
 {
@@ -8,6 +9,16 @@ export abstract class Shortcut
 	{
 		if ( process.platform === 'linux' ) {
 			return this.createLinux( program, icon  );
+		}
+		else {
+			throw new Error( 'Not supported' );
+		}
+	}
+
+	static remove()
+	{
+		if ( process.platform === 'linux' ) {
+			return this.removeLinux();
 		}
 		else {
 			throw new Error( 'Not supported' );
@@ -25,7 +36,7 @@ export abstract class Shortcut
 		  + 'Name=Game Jolt Client\n'
 		  + 'GenericName=Game Client\n'
 		  + 'Comment=The power of Game Jolt website in your desktop\n'
-		  + 'Exec=' + program + '\n'
+		  + 'Exec=' + shellEscape( [ program ] ) + '\n'
 		  + 'Terminal=false\n'
 		  + 'Icon=' + icon + '\n'
 		  + 'Categories=Game;\n'
@@ -34,6 +45,12 @@ export abstract class Shortcut
 		  + 'Name[en_US]=Game Jolt Client\n';
 
 		await Common.fsWriteFile( desktopFile, desktopContents );
-		return Common.chmod( desktopFile,  '0777' );
+		return Common.chmod( desktopFile,  '0755' );
+	}
+
+	private static removeLinux()
+	{
+		let desktopFile = path.join( xdgBasedir.data, 'applications', 'Game Jolt Client.desktop' );
+		return Common.fsUnlink( desktopFile );
 	}
 }
