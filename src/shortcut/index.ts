@@ -27,7 +27,7 @@ export abstract class Shortcut
 
 	private static async createLinux( program: string, icon: string)
 	{
-		let desktopFile = path.join( xdgBasedir.data, 'applications', 'Game Jolt Client.desktop' );
+		let desktopFile = path.join( xdgBasedir.data, 'applications', 'game-jolt-client.desktop' );
 
 		let desktopContents =
 			'[Desktop Entry]\n'
@@ -50,7 +50,7 @@ export abstract class Shortcut
 
 	private static removeLinux()
 	{
-		let desktopFile = path.join( xdgBasedir.data, 'applications', 'Game Jolt Client.desktop' );
+		let desktopFile = path.join( xdgBasedir.data, 'applications', 'game-jolt-client.desktop' );
 		return Common.fsUnlink( desktopFile );
 	}
 }
