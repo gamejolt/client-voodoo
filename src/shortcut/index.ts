@@ -51,6 +51,11 @@ export abstract class Shortcut
 	private static removeLinux()
 	{
 		let desktopFile = path.join( xdgBasedir.data, 'applications', 'game-jolt-client.desktop' );
-		return Common.fsUnlink( desktopFile );
+		let oldDesktopFile = path.join( xdgBasedir.data, 'applications', 'Game Jolt Client.desktop' );
+		return Promise.all( [
+			Common.fsUnlink( desktopFile ),
+			Common.fsUnlink( oldDesktopFile ),
+		] );
 	}
+
 }
