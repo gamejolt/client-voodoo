@@ -38,7 +38,7 @@
     "del": "2.1.0",
     "gunzip-maybe": "1.2.1",
     "lodash": "3.10.1",
-    "lzma-native": "1.0.3",
+    "lzma-native": "1.0.4",
     "mkdirp": "0.5.1",
     "plist": "1.2.0",
     "ps-node": "0.0.5",
