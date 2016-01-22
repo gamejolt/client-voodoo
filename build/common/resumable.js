@@ -60,7 +60,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 })(exports.State || (exports.State = {}));
 var State = exports.State;
 
-var Resumable = (function () {
+var Resumable = function () {
     function Resumable() {
         (0, _classCallCheck3.default)(this, Resumable);
 
@@ -234,7 +234,7 @@ var Resumable = (function () {
         }
     }]);
     return Resumable;
-})();
+}();
 
 exports.Resumable = Resumable;
 //# sourceMappingURL=resumable.js.map

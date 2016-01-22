@@ -62,7 +62,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 var stream_speed_1 = require('../downloader/stream-speed');
 var _ = require('lodash');
 
-var VoodooQueue = (function () {
+var VoodooQueue = function () {
     function VoodooQueue() {
         (0, _classCallCheck3.default)(this, VoodooQueue);
     }
@@ -71,12 +71,16 @@ var VoodooQueue = (function () {
         key: "log",
         value: function log(message, patch) {
             var state = patch ? this._patches.get(patch) : null;
-            console.log('Voodoo Queue: ' + message + (state ? ' ( ' + (0, _stringify2.default)(state) + ' )' : ''));
+            console.log('Voodoo Queue: ' + message + (state ? ' ( ' + (0, _stringify2.default)({
+                queued: state.queued,
+                timeLeft: state.timeLeft,
+                managed: state.managed
+            }) + ' )' : ''));
         }
     }, {
         key: "reset",
         value: function reset(cancel) {
-            this.log('Resetting');
+            this.log('Restting ' + this._patches.size + ' patches');
             var patchesToReset = [];
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
@@ -86,7 +90,7 @@ var VoodooQueue = (function () {
                 for (var _iterator = (0, _getIterator3.default)(this._patches.keys()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var patch = _step.value;
 
-                    this.unmanage(patch);
+                    this.unmanage(patch, true);
                     patchesToReset.push(patch);
                 }
             } catch (err) {
@@ -104,7 +108,6 @@ var VoodooQueue = (function () {
                 }
             }
 
-            this.log('Restting ' + patchesToReset.length + ' patches');
             this._maxDownloads = this._fastProfile.downloads;
             this._maxExtractions = this._fastProfile.extractions;
             this._settingDownloads = false;
@@ -161,12 +164,17 @@ var VoodooQueue = (function () {
     }, {
         key: "onProgress",
         value: function onProgress(patch, state, progress) {
+            if (!state.managed) {
+                return;
+            }
             state.timeLeft = progress.timeLeft;
-            this.log('Updated download time left', patch);
         }
     }, {
         key: "onPatching",
         value: function onPatching(patch, state, progress) {
+            if (!state.managed) {
+                return;
+            }
             this.log('Received patch unpacking', patch);
             var concurrentPatches = this.fetch(true, false);
             // Use > and not >= because also counting self
@@ -178,43 +186,49 @@ var VoodooQueue = (function () {
     }, {
         key: "onExtractProgress",
         value: function onExtractProgress(patch, state, progress) {
+            if (!state.managed) {
+                return;
+            }
             state.timeLeft = progress.timeLeft;
-            this.log('Updated unpack time left', patch);
         }
     }, {
         key: "onPaused",
         value: function onPaused(patch, state, voodooQueue) {
+            if (!state.managed) {
+                return;
+            }
             this.log('Received patch paused', patch);
-            if (state) {
-                if (voodooQueue) {
-                    state.queued = true;
-                } else {
-                    this.unmanage(patch);
-                }
+            if (voodooQueue) {
+                state.queued = true;
+            } else {
+                this.unmanage(patch);
             }
         }
     }, {
         key: "onResumed",
         value: function onResumed(patch, state, voodooQueue) {
-            this.log('Received patch resumed', patch);
-            if (state) {
-                state.queued = false;
+            if (!state.managed) {
+                return;
             }
+            this.log('Received patch resumed', patch);
+            state.queued = false;
         }
     }, {
         key: "onCanceled",
         value: function onCanceled(patch, state) {
+            if (!state.managed) {
+                return;
+            }
             this.log('Received patch cancel', patch);
             this.unmanage(patch);
         }
     }, {
         key: "canResume",
         value: function canResume(patch) {
-            this.log('Checking if patch can resume');
             var isDownloading = patch.isDownloading();
             var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
             var concurrentPatches = this.fetch(true, isDownloading);
-            this.log('Patch to manage is currently: ' + (isDownloading ? 'Downloading' : 'Patching'));
+            this.log('Checking if patch can resume a ' + (isDownloading ? 'download' : 'patch') + ' operation');
             this.log('Queue manager is currently handling: ' + concurrentPatches.length + ' concurrent operations and can handle: ' + (operationLimit === -1 ? 'Infinite' : operationLimit) + ' operations');
             return operationLimit < 0 || operationLimit > concurrentPatches.length;
         }
@@ -266,7 +280,7 @@ var VoodooQueue = (function () {
         }
     }, {
         key: "unmanage",
-        value: function unmanage(patch) {
+        value: function unmanage(patch, noTick) {
             this.log('Unmanaging', patch);
             var state = this._patches.get(patch);
             if (!state) {
@@ -275,7 +289,9 @@ var VoodooQueue = (function () {
             patch.deregisterOnProgress(state.events.onProgress).deregisterOnPatching(state.events.onPatching).deregisterOnExtractProgress(state.events.onExtractProgress).deregisterOnPaused(state.events.onPaused).deregisterOnResumed(state.events.onResumed).deregisterOnCanceled(state.events.onCanceled);
             state.managed = false;
             this._patches.delete(patch);
-            this.tick();
+            if (!noTick) {
+                this.tick();
+            }
         }
     }, {
         key: "resumePatch",
@@ -309,21 +325,20 @@ var VoodooQueue = (function () {
                 this.tick(true);
                 return;
             }
-            this.log('Ticking ' + (downloads ? 'downloads' : 'extractions'));
             var running = this.fetch(true, downloads);
             var pending = this.fetch(false, downloads);
-            this.log('Running: ' + running.length + ', Pending: ' + pending.length);
+            this.log('Ticking ' + (downloads ? 'downloads' : 'extractions') + '. Running: ' + running.length + ', Pending: ' + pending.length);
             var limit = downloads ? this._maxDownloads : this._maxExtractions;
             var patchesToResume = limit - running.length;
             if (limit < 0 || patchesToResume > 0) {
                 patchesToResume = limit < 0 ? pending.length : Math.min(patchesToResume, pending.length);
-                this.log('Patches to resume: ' + patchesToResume);
+                this.log('Resuming ' + patchesToResume + ' patches');
                 for (var i = 0; i < patchesToResume; i += 1) {
                     this.resumePatch(pending[i].patch, pending[i].state);
                 }
             } else if (patchesToResume < 0) {
                 var patchesToPause = -patchesToResume;
-                this.log('Patches to pause: ' + patchesToPause);
+                this.log('Pausing ' + patchesToPause + ' patches');
                 for (var i = 0; i < patchesToPause; i += 1) {
                     this.pausePatch(running[i].patch, running[i].state);
                 }
@@ -457,7 +472,7 @@ var VoodooQueue = (function () {
         }
     }]);
     return VoodooQueue;
-})();
+}();
 
 VoodooQueue._isFast = true;
 VoodooQueue._fastProfile = {

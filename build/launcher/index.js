@@ -94,7 +94,7 @@ function log(message) {
     console.log('Launcher: ' + message);
 }
 
-var Launcher = (function () {
+var Launcher = function () {
     function Launcher() {
         (0, _classCallCheck3.default)(this, Launcher);
     }
@@ -265,14 +265,13 @@ var Launcher = (function () {
                                                     return instance.tick(true);
 
                                                 case 64:
-                                                    log('after ticked');
                                                     if (!_this._runningInstances.has(pid)) {
                                                         _this._runningInstances.set(pid, instance);
                                                     }
                                                     ;
                                                     instance = _this._runningInstances.get(pid);
                                                     instance.once('end', function () {
-                                                        log('ended');
+                                                        log('Ended');
                                                         var cmds = [];
                                                         var _iteratorNormalCompletion3 = true;
                                                         var _didIteratorError3 = false;
@@ -306,7 +305,7 @@ var Launcher = (function () {
                                                         v: instance
                                                     });
 
-                                                case 71:
+                                                case 70:
                                                 case "end":
                                                     return _context.stop();
                                             }
@@ -443,12 +442,12 @@ var Launcher = (function () {
         }
     }]);
     return Launcher;
-})();
+}();
 
 Launcher._runningInstances = new _map2.default();
 exports.Launcher = Launcher;
 
-var LaunchHandle = (function () {
+var LaunchHandle = function () {
     function LaunchHandle(_localPackage, _os, _arch, options) {
         (0, _classCallCheck3.default)(this, LaunchHandle);
 
@@ -851,11 +850,11 @@ var LaunchHandle = (function () {
         }
     }]);
     return LaunchHandle;
-})();
+}();
 
 exports.LaunchHandle = LaunchHandle;
 
-var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
+var LaunchInstanceHandle = function (_events_1$EventEmitte) {
     (0, _inherits3.default)(LaunchInstanceHandle, _events_1$EventEmitte);
 
     function LaunchInstanceHandle(_pid, _expectedCmd, pollInterval) {
@@ -876,9 +875,7 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
         value: function tick(validate) {
             var _this3 = this;
 
-            log('Ticking');
             return pid_finder_1.PidFinder.find(this._pid, validate ? this._expectedCmd : null).then(function (result) {
-                log('Got ticking result');
                 if (!result || result.size === 0) {
                     throw new Error('Process doesn\'t exist anymore');
                 }
@@ -962,7 +959,7 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
         }
     }]);
     return LaunchInstanceHandle;
-})(events_1.EventEmitter);
+}(events_1.EventEmitter);
 
 exports.LaunchInstanceHandle = LaunchInstanceHandle;
 //# sourceMappingURL=index.js.map

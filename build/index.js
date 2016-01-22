@@ -34,6 +34,9 @@ function __export(m) {
         if (!exports.hasOwnProperty(p)) exports[p] = m[p];
     }
 }
+var logger_1 = require('./common/logger');
+__export(require('./common/logger'));
+logger_1.Logger.hijack();
 __export(require('./autostarter'));
 __export(require('./downloader'));
 __export(require('./downloader/stream-speed'));

@@ -56,7 +56,7 @@ var applescript = Bluebird.promisify(require('applescript').execString);
 var shellEscape = require('shell-escape');
 var autostartId = 'GameJoltClient';
 
-var WindowsAutostarter = (function () {
+var WindowsAutostarter = function () {
     function WindowsAutostarter() {
         (0, _classCallCheck3.default)(this, WindowsAutostarter);
     }
@@ -107,9 +107,9 @@ var WindowsAutostarter = (function () {
         }
     }]);
     return WindowsAutostarter;
-})();
+}();
 
-var LinuxAutostarter = (function () {
+var LinuxAutostarter = function () {
     function LinuxAutostarter() {
         (0, _classCallCheck3.default)(this, LinuxAutostarter);
     }
@@ -184,11 +184,11 @@ var LinuxAutostarter = (function () {
         }
     }]);
     return LinuxAutostarter;
-})();
+}();
 
 LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config, 'autostart', autostartId + '.desktop');
 
-var MacAutostarter = (function () {
+var MacAutostarter = function () {
     function MacAutostarter() {
         (0, _classCallCheck3.default)(this, MacAutostarter);
     }
@@ -254,9 +254,9 @@ var MacAutostarter = (function () {
         }
     }]);
     return MacAutostarter;
-})();
+}();
 
-var Autostarter = (function () {
+var Autostarter = function () {
     function Autostarter() {
         (0, _classCallCheck3.default)(this, Autostarter);
     }
@@ -301,7 +301,7 @@ var Autostarter = (function () {
         }
     }]);
     return Autostarter;
-})();
+}();
 
 Autostarter.winAutostarter = new WindowsAutostarter();
 Autostarter.linuxAutostarter = new LinuxAutostarter();

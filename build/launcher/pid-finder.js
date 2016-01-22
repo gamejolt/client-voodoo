@@ -59,8 +59,13 @@ var childProcess = require('child_process');
 function log(message) {
     console.log('Pid Finder: ' + message);
 }
+function debug(message) {
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Pid Finder: ' + message);
+    }
+}
 
-var PidFinder = (function () {
+var PidFinder = function () {
     function PidFinder() {
         (0, _classCallCheck3.default)(this, PidFinder);
     }
@@ -106,11 +111,11 @@ var PidFinder = (function () {
                         }
                     }
 
-                    log('Finding pid on windows. pid: ' + pid + ', expected cmds: ' + (0, _stringify2.default)(expectedCmdArray));
+                    debug('Finding pid on windows. pid: ' + pid + ', expected cmds: ' + (0, _stringify2.default)(expectedCmdArray));
                 } else {
-                    log('Finding pid on windows. pid: ' + pid + ', no expected cmd');
+                    debug('Finding pid on windows. pid: ' + pid + ', no expected cmd');
                 }
-                log('Running cmd: "tasklist.exe /FI"pid eq ' + pid + '" /FO:CSV"');
+                debug('Running cmd: "tasklist.exe /FI"pid eq ' + pid + '" /FO:CSV"');
                 var cmd = childProcess.exec('tasklist.exe /FI:"PID eq ' + pid.toString() + '" /FO:CSV', function (err, stdout, stderr) {
                     var result = new _set2.default();
                     if (err) {
@@ -118,7 +123,7 @@ var PidFinder = (function () {
                         return reject(err);
                     }
                     var dataStr = stdout.toString();
-                    log('Result: ' + dataStr);
+                    debug('Result: ' + dataStr);
                     var data = dataStr.split('\n').filter(function (value) {
                         return !!value;
                     });
@@ -129,10 +134,10 @@ var PidFinder = (function () {
                     for (var i = 1; i < data.length; i++) {
                         var imageName = /^\"(.*?)\",/.exec(data[i]);
                         if (expectedCmd && expectedCmd.has(imageName[1])) {
-                            log('Bingo, we\'re still running');
+                            debug('Bingo, we\'re still running');
                             found = true;
                         }
-                        log('Found matching process: ' + imageName[1]);
+                        debug('Found matching process: ' + imageName[1]);
                         result.add(imageName[1]);
                     }
                     if (expectedCmd && expectedCmd.size && !found) {
@@ -141,7 +146,7 @@ var PidFinder = (function () {
                         result.clear();
                         resolve(result);
                     }
-                    log('Returning');
+                    debug('Returning');
                     resolve(result);
                 });
             });
@@ -177,33 +182,33 @@ var PidFinder = (function () {
                         }
                     }
 
-                    log('Finding pid on non windows. pid: ' + pid + ', expected cmds: ' + (0, _stringify2.default)(expectedCmdArray));
+                    debug('Finding pid on non windows. pid: ' + pid + ', expected cmds: ' + (0, _stringify2.default)(expectedCmdArray));
                 } else {
-                    log('Finding pid on non windows. pid: ' + pid + ', no expected cmd');
+                    debug('Finding pid on non windows. pid: ' + pid + ', no expected cmd');
                 }
-                log('Running cmd: "ps -p ' + pid + ' -o cmd"');
+                debug('Running cmd: "ps -p ' + pid + ' -o cmd"');
                 var cmd = childProcess.exec('ps -p ' + pid.toString() + ' -o cmd', function (err, stdout, stderr) {
                     var result = new _set2.default();
                     if (err) {
-                        log('Error: ' + err.message);
-                        log('Suppressing, returning empty set');
+                        debug('Error: ' + err.message);
+                        debug('Suppressing, returning empty set');
                         // Have to resolve to '' instead of rejecting even on error cases.
                         // This is because on no processes found stupid ps also returns a failed signal code.
                         // return reject( err );
                         return resolve(result);
                     }
                     var dataStr = stdout.toString();
-                    log('Result: ' + dataStr);
+                    debug('Result: ' + dataStr);
                     var data = dataStr.split(/[\r\n]/).filter(function (value) {
                         return !!value;
                     });
                     var found = false;
                     for (var i = 1; i < data.length; i++) {
                         if (expectedCmd && expectedCmd.has(data[i])) {
-                            log('Bingo, we\'re still running');
+                            debug('Bingo, we\'re still running');
                             found = true;
                         }
-                        log('Found matching process: ' + data[i]);
+                        debug('Found matching process: ' + data[i]);
                         result.add(data[i]);
                     }
                     if (expectedCmd && expectedCmd.size && !found) {
@@ -212,14 +217,14 @@ var PidFinder = (function () {
                         result.clear();
                         resolve(result);
                     }
-                    log('Returning');
+                    debug('Returning');
                     resolve(result);
                 });
             });
         }
     }]);
     return PidFinder;
-})();
+}();
 
 exports.PidFinder = PidFinder;
 //# sourceMappingURL=pid-finder.js.map

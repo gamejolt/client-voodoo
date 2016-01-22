@@ -41,7 +41,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 };
 var del = require('del');
 
-var Uninstaller = (function () {
+var Uninstaller = function () {
     function Uninstaller() {
         (0, _classCallCheck3.default)(this, Uninstaller);
     }
@@ -53,11 +53,11 @@ var Uninstaller = (function () {
         }
     }]);
     return Uninstaller;
-})();
+}();
 
 exports.Uninstaller = Uninstaller;
 
-var UninstallHandle = (function () {
+var UninstallHandle = function () {
     function UninstallHandle(_localPackage) {
         (0, _classCallCheck3.default)(this, UninstallHandle);
 
@@ -80,7 +80,7 @@ var UninstallHandle = (function () {
         }
     }]);
     return UninstallHandle;
-})();
+}();
 
 exports.UninstallHandle = UninstallHandle;
 //# sourceMappingURL=index.js.map

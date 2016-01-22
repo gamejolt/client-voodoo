@@ -51,7 +51,7 @@ var path = require('path');
 var common_1 = require('../common');
 var xdgBasedir = require('xdg-basedir');
 
-var Shortcut = (function () {
+var Shortcut = function () {
     function Shortcut() {
         (0, _classCallCheck3.default)(this, Shortcut);
     }
@@ -92,7 +92,7 @@ var Shortcut = (function () {
         }
     }]);
     return Shortcut;
-})();
+}();
 
 exports.Shortcut = Shortcut;
 //# sourceMappingURL=index.js.map
