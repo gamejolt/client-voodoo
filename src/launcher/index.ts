@@ -80,7 +80,6 @@ export abstract class Launcher
 			// This validates if the process actually started and gets the command its running with
 			// It'll throw if it failed into this promise chain, so it shouldn't ever attach an invalid process.
 			await instance.tick( true );
-			log( 'after ticked' );
 
 			if ( !this._runningInstances.has( pid ) ) {
 				this._runningInstances.set( pid, instance );
@@ -89,7 +88,7 @@ export abstract class Launcher
 
 			instance.once( 'end', () =>
 			{
-				log( 'ended' );
+				log( 'Ended' );
 				let cmds: string[] = [];
 				for ( let cmd of instance.cmd.values() ) {
 					cmds.push( cmd );
@@ -392,11 +391,9 @@ export class LaunchInstanceHandle extends EventEmitter
 
 	tick( validate?: boolean)
 	{
-		log( 'Ticking' );
 		return PidFinder.find( this._pid, validate ? this._expectedCmd : null )
 			.then( ( result ) =>
 			{
-				log( 'Got ticking result' );
 				if ( !result || result.size === 0 ) {
 					throw new Error( 'Process doesn\'t exist anymore' );
 				}
