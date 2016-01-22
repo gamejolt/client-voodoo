@@ -50,18 +50,21 @@ export abstract class VoodooQueue
 	private static log( message: string, patch?: PatchHandle )
 	{
 		let state = patch ? this._patches.get( patch ) : null;
-		console.log( 'Voodoo Queue: ' + message + ( state ? ( ' ( ' + JSON.stringify( state ) + ' )' ) : '' ) );
+		console.log( 'Voodoo Queue: ' + message + ( state ? ( ' ( ' + JSON.stringify( {
+			queued: state.queued,
+			timeLeft: state.timeLeft,
+			managed: state.managed,
+		} ) + ' )' ) : '' ) );
 	}
 
 	static reset( cancel?: boolean)
 	{
-		this.log( 'Resetting' );
+		this.log( 'Restting ' + this._patches.size + ' patches' );
 		let patchesToReset: PatchHandle[] = [];
 		for ( let patch of this._patches.keys() ) {
-			this.unmanage( patch );
+			this.unmanage( patch, true );
 			patchesToReset.push( patch );
 		}
-		this.log( 'Restting ' + patchesToReset.length + ' patches' );
 
 		this._maxDownloads = this._fastProfile.downloads;
 		this._maxExtractions = this._fastProfile.extractions;
@@ -152,12 +155,19 @@ export abstract class VoodooQueue
 
 	private static onProgress( patch: PatchHandle, state: IQueueState, progress: IDownloadProgress )
 	{
+		if ( !state.managed ) {
+			return;
+		}
+
 		state.timeLeft = progress.timeLeft;
-		this.log( 'Updated download time left', patch );
 	}
 
 	private static onPatching( patch: PatchHandle, state: IQueueState, progress )
 	{
+		if ( !state.managed ) {
+			return;
+		}
+
 		this.log( 'Received patch unpacking', patch );
 
 		let concurrentPatches = this.fetch( true, false );
@@ -171,44 +181,54 @@ export abstract class VoodooQueue
 
 	private static onExtractProgress( patch: PatchHandle, state: IQueueState, progress: IExtractProgress )
 	{
+		if ( !state.managed ) {
+			return;
+		}
+
 		state.timeLeft = progress.timeLeft;
-		this.log( 'Updated unpack time left', patch );
 	}
 
 	private static onPaused( patch: PatchHandle, state: IQueueState, voodooQueue: boolean )
 	{
+		if ( !state.managed ) {
+			return;
+		}
+
 		this.log( 'Received patch paused', patch );
-		if ( state ) {
-			if ( voodooQueue ) {
-				state.queued = true;
-			}
-			else {
-				this.unmanage( patch );
-			}
+		if ( voodooQueue ) {
+			state.queued = true;
+		}
+		else {
+			this.unmanage( patch );
 		}
 	}
 
 	private static onResumed( patch: PatchHandle, state: IQueueState, voodooQueue: boolean )
 	{
-		this.log( 'Received patch resumed', patch );
-		if ( state ) {
-			state.queued = false;
+		if ( !state.managed ) {
+			return;
 		}
+		this.log( 'Received patch resumed', patch );
+		state.queued = false;
 	}
 
 	private static onCanceled( patch: PatchHandle, state: IQueueState )
 	{
+		if ( !state.managed ) {
+			return;
+		}
+
 		this.log( 'Received patch cancel', patch );
 		this.unmanage( patch );
 	}
 
 	static canResume( patch: PatchHandle )
 	{
-		this.log( 'Checking if patch can resume' );
 		let isDownloading = patch.isDownloading();
 		let operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
 		let concurrentPatches = this.fetch( true, isDownloading );
-		this.log( 'Patch to manage is currently: ' + ( isDownloading ? 'Downloading' : 'Patching' ) );
+
+		this.log( 'Checking if patch can resume a ' + ( isDownloading ? 'download' : 'patch' ) + ' operation' );
 		this.log( 'Queue manager is currently handling: ' + concurrentPatches.length + ' concurrent operations and can handle: ' + ( operationLimit === -1 ? 'Infinite' : operationLimit ) + ' operations' );
 
 		return operationLimit < 0 || operationLimit > concurrentPatches.length;
@@ -277,7 +297,7 @@ export abstract class VoodooQueue
 		return state;
 	}
 
-	static unmanage( patch: PatchHandle )
+	static unmanage( patch: PatchHandle, noTick?: boolean )
 	{
 		this.log( 'Unmanaging', patch );
 		let state = this._patches.get( patch );
@@ -296,7 +316,9 @@ export abstract class VoodooQueue
 		state.managed = false;
 		this._patches.delete( patch );
 
-		this.tick();
+		if ( !noTick ) {
+			this.tick();
+		}
 	}
 
 	private static resumePatch( patch: PatchHandle, state: IQueueState )
@@ -333,24 +355,22 @@ export abstract class VoodooQueue
 			return;
 		}
 
-		this.log( 'Ticking ' + ( downloads ? 'downloads' : 'extractions' ) );
-
 		let running = this.fetch( true, downloads );
 		let pending = this.fetch( false, downloads );
-		this.log( 'Running: ' + running.length + ', Pending: ' + pending.length );
+		this.log( 'Ticking ' + ( downloads ? 'downloads' : 'extractions' ) + '. Running: ' + running.length + ', Pending: ' + pending.length );
 
 		let limit = downloads ? this._maxDownloads : this._maxExtractions;
 		let patchesToResume = limit - running.length;
 		if ( limit < 0 || patchesToResume > 0 ) {
 			patchesToResume = limit < 0 ? pending.length : Math.min( patchesToResume, pending.length );
-			this.log( 'Patches to resume: ' + patchesToResume );
+			this.log( 'Resuming ' + patchesToResume + ' patches' );
 			for ( let i = 0; i < patchesToResume; i += 1 ) {
 				this.resumePatch( pending[i].patch, pending[i].state );
 			}
 		}
 		else if ( patchesToResume < 0 ) {
 			let patchesToPause = -patchesToResume;
-			this.log( 'Patches to pause: ' + patchesToPause );
+			this.log( 'Pausing ' + patchesToPause + ' patches' );
 			for ( let i = 0; i < patchesToPause; i += 1 ) {
 				this.pausePatch( running[i].patch, running[i].state );
 			}

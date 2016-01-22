@@ -1,3 +1,7 @@
+import { Logger } from './common/logger';
+export * from './common/logger';
+Logger.hijack();
+
 export * from './autostarter';
 export * from './downloader';
 export * from './downloader/stream-speed';
