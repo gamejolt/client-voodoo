@@ -55,7 +55,9 @@ export abstract class Shortcut
 		return Promise.all( [
 			Common.fsUnlink( desktopFile ),
 			Common.fsUnlink( oldDesktopFile ),
-		] );
+		] )
+			.then( () => true )
+			.catch( ( err ) => false );
 	}
 
 }
