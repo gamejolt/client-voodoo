@@ -1,3 +1,6 @@
+import { Application } from './application';
+Application.start();
+
 import { Logger } from './common/logger';
 export * from './common/logger';
 Logger.hijack();
