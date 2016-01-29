@@ -54,7 +54,7 @@ var through2 = require('through2');
 })(exports.SampleUnit || (exports.SampleUnit = {}));
 var SampleUnit = exports.SampleUnit;
 
-var StreamSpeed = function () {
+var StreamSpeed = (function () {
     function StreamSpeed(options) {
         var _this = this;
 
@@ -173,7 +173,7 @@ var StreamSpeed = function () {
         }
     }]);
     return StreamSpeed;
-}();
+})();
 
 exports.StreamSpeed = StreamSpeed;
 exports.default = StreamSpeed;

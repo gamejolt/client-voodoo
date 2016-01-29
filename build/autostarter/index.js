@@ -56,7 +56,7 @@ var applescript = Bluebird.promisify(require('applescript').execString);
 var shellEscape = require('shell-escape');
 var autostartId = 'GameJoltClient';
 
-var WindowsAutostarter = function () {
+var WindowsAutostarter = (function () {
     function WindowsAutostarter() {
         (0, _classCallCheck3.default)(this, WindowsAutostarter);
     }
@@ -107,9 +107,9 @@ var WindowsAutostarter = function () {
         }
     }]);
     return WindowsAutostarter;
-}();
+})();
 
-var LinuxAutostarter = function () {
+var LinuxAutostarter = (function () {
     function LinuxAutostarter() {
         (0, _classCallCheck3.default)(this, LinuxAutostarter);
     }
@@ -129,7 +129,7 @@ var LinuxAutostarter = function () {
 
                             case 3:
                                 _context2.next = 5;
-                                return common_1.default.chmod(runner, '0777');
+                                return common_1.default.chmod(runner, '0755');
 
                             case 5:
                             case "end":
@@ -152,13 +152,13 @@ var LinuxAutostarter = function () {
                                 return this.createRunner(program, runner, args);
 
                             case 2:
-                                desktopContents = '[Desktop Entry]\n' + 'Version=1.0\n' + 'Type=Application\n' + 'Name=Game Jolt Client\n' + 'GenericName=Game Client\n' + 'Comment=The power of Game Jolt website in your desktop\n' + 'Exec=' + runner + '\n' + 'Terminal=false\n' + 'Categories=Game;\n' + 'Keywords=Play;GJ;GameJolt;\n' + 'Hidden=false\n' + 'Name[en_US]=Game Jolt Client\n' + 'TX-GNOME-Autostart-enabled=true\n';
+                                desktopContents = '[Desktop Entry]\n' + 'Version=1.0\n' + 'Type=Application\n' + 'Name=Game Jolt Client\n' + 'GenericName=Game Client\n' + 'Comment=The power of Game Jolt website in your desktop\n' + 'Exec=' + shellEscape([runner]) + '\n' + 'Terminal=false\n' + 'Categories=Game;\n' + 'Keywords=Play;GJ;GameJolt;\n' + 'Hidden=false\n' + 'Name[en_US]=Game Jolt Client\n' + 'TX-GNOME-Autostart-enabled=true\n';
                                 _context3.next = 5;
                                 return common_1.default.fsWriteFile(LinuxAutostarter.desktopFilePath, desktopContents);
 
                             case 5:
                                 _context3.next = 7;
-                                return common_1.default.chmod(LinuxAutostarter.desktopFilePath, '0777');
+                                return common_1.default.chmod(LinuxAutostarter.desktopFilePath, '0755');
 
                             case 7:
                             case "end":
@@ -184,11 +184,11 @@ var LinuxAutostarter = function () {
         }
     }]);
     return LinuxAutostarter;
-}();
+})();
 
 LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config, 'autostart', autostartId + '.desktop');
 
-var MacAutostarter = function () {
+var MacAutostarter = (function () {
     function MacAutostarter() {
         (0, _classCallCheck3.default)(this, MacAutostarter);
     }
@@ -208,7 +208,7 @@ var MacAutostarter = function () {
 
                             case 3:
                                 _context4.next = 5;
-                                return common_1.default.chmod(runner, '0777');
+                                return common_1.default.chmod(runner, '0755');
 
                             case 5:
                             case "end":
@@ -254,9 +254,9 @@ var MacAutostarter = function () {
         }
     }]);
     return MacAutostarter;
-}();
+})();
 
-var Autostarter = function () {
+var Autostarter = (function () {
     function Autostarter() {
         (0, _classCallCheck3.default)(this, Autostarter);
     }
@@ -301,7 +301,7 @@ var Autostarter = function () {
         }
     }]);
     return Autostarter;
-}();
+})();
 
 Autostarter.winAutostarter = new WindowsAutostarter();
 Autostarter.linuxAutostarter = new LinuxAutostarter();

@@ -64,7 +64,7 @@ var LOG_LINES = 300;
 var CONSOLE_LOG = console.log;
 var CONSOLE_ERR = console.error;
 
-var Logger = function () {
+var Logger = (function () {
     function Logger() {
         (0, _classCallCheck3.default)(this, Logger);
     }
@@ -323,7 +323,7 @@ var Logger = function () {
         }
     }]);
     return Logger;
-}();
+})();
 
 Logger._logLines = [];
 Logger._hijacked = false;

@@ -57,7 +57,7 @@ var StreamSpeed = require('./stream-speed');
 var Resumable = require('../common/resumable');
 var common_1 = require('../common');
 
-var Downloader = function () {
+var Downloader = (function () {
     function Downloader() {
         (0, _classCallCheck3.default)(this, Downloader);
     }
@@ -69,14 +69,14 @@ var Downloader = function () {
         }
     }]);
     return Downloader;
-}();
+})();
 
 exports.Downloader = Downloader;
 function log(message) {
     console.log('Downloader: ' + message);
 }
 
-var DownloadHandle = function () {
+var DownloadHandle = (function () {
     function DownloadHandle(_generateUrl, _to, _options) {
         var _this = this;
 
@@ -477,7 +477,7 @@ var DownloadHandle = function () {
         }
     }]);
     return DownloadHandle;
-}();
+})();
 
 exports.DownloadHandle = DownloadHandle;
 //# sourceMappingURL=index.js.map

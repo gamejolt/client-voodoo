@@ -94,7 +94,7 @@ function log(message) {
     console.log('Launcher: ' + message);
 }
 
-var Launcher = function () {
+var Launcher = (function () {
     function Launcher() {
         (0, _classCallCheck3.default)(this, Launcher);
     }
@@ -442,12 +442,12 @@ var Launcher = function () {
         }
     }]);
     return Launcher;
-}();
+})();
 
 Launcher._runningInstances = new _map2.default();
 exports.Launcher = Launcher;
 
-var LaunchHandle = function () {
+var LaunchHandle = (function () {
     function LaunchHandle(_localPackage, _os, _arch, options) {
         (0, _classCallCheck3.default)(this, LaunchHandle);
 
@@ -850,11 +850,11 @@ var LaunchHandle = function () {
         }
     }]);
     return LaunchHandle;
-}();
+})();
 
 exports.LaunchHandle = LaunchHandle;
 
-var LaunchInstanceHandle = function (_events_1$EventEmitte) {
+var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
     (0, _inherits3.default)(LaunchInstanceHandle, _events_1$EventEmitte);
 
     function LaunchInstanceHandle(_pid, _expectedCmd, pollInterval) {
@@ -959,7 +959,7 @@ var LaunchInstanceHandle = function (_events_1$EventEmitte) {
         }
     }]);
     return LaunchInstanceHandle;
-}(events_1.EventEmitter);
+})(events_1.EventEmitter);
 
 exports.LaunchInstanceHandle = LaunchInstanceHandle;
 //# sourceMappingURL=index.js.map

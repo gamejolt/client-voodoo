@@ -56,7 +56,7 @@ var Resumable = require('../common/resumable');
 var common_1 = require('../common');
 var through2 = require('through2');
 
-var Extractor = function () {
+var Extractor = (function () {
     function Extractor() {
         (0, _classCallCheck3.default)(this, Extractor);
     }
@@ -68,14 +68,14 @@ var Extractor = function () {
         }
     }]);
     return Extractor;
-}();
+})();
 
 exports.Extractor = Extractor;
 function log(message) {
     console.log('Extractor: ' + message);
 }
 
-var ExtractHandle = function () {
+var ExtractHandle = (function () {
     function ExtractHandle(_from, _to, _options) {
         var _this = this;
 
@@ -549,7 +549,7 @@ var ExtractHandle = function () {
         }
     }]);
     return ExtractHandle;
-}();
+})();
 
 exports.ExtractHandle = ExtractHandle;
 //# sourceMappingURL=index.js.map

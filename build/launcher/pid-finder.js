@@ -65,7 +65,7 @@ function debug(message) {
     }
 }
 
-var PidFinder = function () {
+var PidFinder = (function () {
     function PidFinder() {
         (0, _classCallCheck3.default)(this, PidFinder);
     }
@@ -224,7 +224,7 @@ var PidFinder = function () {
         }
     }]);
     return PidFinder;
-}();
+})();
 
 exports.PidFinder = PidFinder;
 //# sourceMappingURL=pid-finder.js.map

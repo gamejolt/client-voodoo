@@ -72,7 +72,7 @@ var common_1 = require('../common');
 })(exports.PatchOperation || (exports.PatchOperation = {}));
 var PatchOperation = exports.PatchOperation;
 
-var Patcher = function () {
+var Patcher = (function () {
     function Patcher() {
         (0, _classCallCheck3.default)(this, Patcher);
     }
@@ -84,14 +84,14 @@ var Patcher = function () {
         }
     }]);
     return Patcher;
-}();
+})();
 
 exports.Patcher = Patcher;
 function log(message) {
     console.log('Patcher: ' + message);
 }
 
-var PatchHandle = function () {
+var PatchHandle = (function () {
     function PatchHandle(_generateUrl, _localPackage, _options) {
         var _this = this;
 
@@ -764,7 +764,7 @@ var PatchHandle = function () {
         }
     }]);
     return PatchHandle;
-}();
+})();
 
 exports.PatchHandle = PatchHandle;
 //# sourceMappingURL=index.js.map

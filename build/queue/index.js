@@ -62,7 +62,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 var stream_speed_1 = require('../downloader/stream-speed');
 var _ = require('lodash');
 
-var VoodooQueue = function () {
+var VoodooQueue = (function () {
     function VoodooQueue() {
         (0, _classCallCheck3.default)(this, VoodooQueue);
     }
@@ -472,7 +472,7 @@ var VoodooQueue = function () {
         }
     }]);
     return VoodooQueue;
-}();
+})();
 
 VoodooQueue._isFast = true;
 VoodooQueue._fastProfile = {
