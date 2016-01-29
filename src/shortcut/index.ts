@@ -8,7 +8,8 @@ export abstract class Shortcut
 	static create( program: string, icon: string )
 	{
 		if ( process.platform === 'linux' ) {
-			return this.createLinux( program, icon  );
+			return this.removeLinux()
+				.then( () => this.createLinux( program, icon ) );
 		}
 		else {
 			throw new Error( 'Not supported' );
