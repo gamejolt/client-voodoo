@@ -35,7 +35,7 @@ function __export(m) {
     }
 }
 if (process.platform === 'win32') {
-    var Application = require('./application');
+    var Application = require('./application').Application;
     Application.start();
 }
 var logger_1 = require('./common/logger');
