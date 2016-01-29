@@ -34,8 +34,10 @@ function __export(m) {
         if (!exports.hasOwnProperty(p)) exports[p] = m[p];
     }
 }
-var application_1 = require('./application');
-application_1.Application.start();
+if (process.platform === 'win32') {
+    var Application = require('./application');
+    Application.start();
+}
 var logger_1 = require('./common/logger');
 __export(require('./common/logger'));
 logger_1.Logger.hijack();
