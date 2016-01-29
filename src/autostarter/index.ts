@@ -58,7 +58,7 @@ class LinuxAutostarter implements IAutostarter
 		+ 'fi';
 
 		await Common.fsWriteFile( runner, runnerScript );
-		await Common.chmod( runner, '0777' );
+		await Common.chmod( runner, '0755' );
 	}
 
 	async set( program: string, args?: string[], runner?: string )
@@ -71,7 +71,7 @@ class LinuxAutostarter implements IAutostarter
 		  + 'Name=Game Jolt Client\n'
 		  + 'GenericName=Game Client\n'
 		  + 'Comment=The power of Game Jolt website in your desktop\n'
-		  + 'Exec=' + runner + '\n'
+		  + 'Exec=' + shellEscape( [ runner ] ) + '\n'
 		  + 'Terminal=false\n'
 		  + 'Categories=Game;\n'
 		  + 'Keywords=Play;GJ;GameJolt;\n'
@@ -80,7 +80,7 @@ class LinuxAutostarter implements IAutostarter
 		  + 'TX-GNOME-Autostart-enabled=true\n';
 
 		await Common.fsWriteFile( LinuxAutostarter.desktopFilePath, desktopContents );
-		await Common.chmod( LinuxAutostarter.desktopFilePath, '0777' );
+		await Common.chmod( LinuxAutostarter.desktopFilePath, '0755' );
 	}
 
 	unset()
@@ -110,7 +110,7 @@ class MacAutostarter implements IAutostarter
 		+ 'fi';
 
 		await Common.fsWriteFile( runner, runnerScript );
-		await Common.chmod( runner, '0777' );
+		await Common.chmod( runner, '0755' );
 	}
 
 	async set( program: string, args?: string[], runner?: string )
