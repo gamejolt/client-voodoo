@@ -1,5 +1,7 @@
-import { Application } from './application';
-Application.start();
+if ( process.platform === 'win32' ) {
+	let Application = require( './application' );
+	Application.start();
+}
 
 import { Logger } from './common/logger';
 export * from './common/logger';
