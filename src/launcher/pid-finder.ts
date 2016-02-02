@@ -94,8 +94,9 @@ export abstract class PidFinder
 				debug( 'Finding pid on non windows. pid: ' + pid + ', no expected cmd' );
 			}
 
-			debug( 'Running cmd: "ps -p ' + pid + ' -o cmd"' );
-			let cmd = childProcess.exec( 'ps -p ' + pid.toString() + ' -o cmd', ( err, stdout, stderr ) =>
+			let cmdFormat = process.platform === 'linux' ? 'cmd' : 'command';
+			debug( 'Running cmd: "ps -p ' + pid + ' -o ' + cmdFormat + '"' );
+			let cmd = childProcess.exec( 'ps -p ' + pid.toString() + ' -o ' + cmdFormat, ( err, stdout, stderr ) =>
 			{
 				let result = new Set<string>();
 				if ( err ) {
