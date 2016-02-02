@@ -186,8 +186,9 @@ var PidFinder = (function () {
                 } else {
                     debug('Finding pid on non windows. pid: ' + pid + ', no expected cmd');
                 }
-                debug('Running cmd: "ps -p ' + pid + ' -o cmd"');
-                var cmd = childProcess.exec('ps -p ' + pid.toString() + ' -o cmd', function (err, stdout, stderr) {
+                var cmdFormat = process.platform === 'linux' ? 'cmd' : 'command';
+                debug('Running cmd: "ps -p ' + pid + ' -o ' + cmdFormat + '"');
+                var cmd = childProcess.exec('ps -p ' + pid.toString() + ' -o ' + cmdFormat, function (err, stdout, stderr) {
                     var result = new _set2.default();
                     if (err) {
                         debug('Error: ' + err.message);
