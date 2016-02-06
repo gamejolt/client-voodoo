@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as tar from 'tar-stream';
 import * as tarFS from 'tar-fs';
+import * as path from  'path';
 import { EventEmitter } from 'events';
 import * as StreamSpeed from '../downloader/stream-speed';
 import * as Resumable from '../common/resumable';
@@ -147,10 +148,17 @@ export class ExtractHandle
 
 			let optionsMap = this._options.map;
 			this._extractStream = tarFS.extract( this._to, _.assign( this._options, {
+				strict: true,
 				map: ( header: tar.IEntryHeader ) =>
 				{
 					if ( optionsMap ) {
 						header = optionsMap( header );
+					}
+
+					if ( path.relative( this._to, path.resolve( this._to, header.name ) ).startsWith( '..' + path.sep ) ) {
+						// Makes tar fs die with 'unsupported type
+						header.name = this._to;
+						header.type = 'kill me now';
 					}
 
 					// TODO: fuggin symlinks and the likes.
@@ -164,7 +172,14 @@ export class ExtractHandle
 			} ) );
 
 			this._extractStream.on( 'finish', () => resolve() );
-			this._extractStream.on( 'error', ( err ) => reject( err ) );
+			this._extractStream.on( 'error', ( err: NodeJS.ErrnoException ) =>
+			{
+				let match = err.message.match( /^unsupported type for (.*) \(kill me now\)$/ );
+				if ( match ) {
+					err = new Error( 'Sneaky sneaky tar file attempted to break from its directory: ' + match[1] );
+				}
+				reject( err );
+			} );
 
 			this._streamSpeed = new StreamSpeed.StreamSpeed( this._options );
 			this._streamSpeed.stop(); //  Dont auto start. resume() will take care of that
