@@ -41,6 +41,7 @@ if (process.platform === 'win32') {
 var logger_1 = require('./common/logger');
 __export(require('./common/logger'));
 logger_1.Logger.hijack();
+__export(require('./application'));
 __export(require('./autostarter'));
 __export(require('./downloader'));
 __export(require('./downloader/stream-speed'));

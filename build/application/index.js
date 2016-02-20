@@ -39,7 +39,6 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
         step("next", void 0);
     });
 };
-var windows_mutex_1 = require('windows-mutex');
 var MUTEX_NAME = 'game-jolt-client';
 
 var Application = (function () {
@@ -52,10 +51,11 @@ var Application = (function () {
         value: function start() {
             var _this = this;
 
+            var Mutex = require('windows-mutex');
             console.log('Acquiring le mutex');
             this.mutex = null;
             try {
-                this.mutex = new windows_mutex_1.Mutex(MUTEX_NAME);
+                this.mutex = new Mutex(MUTEX_NAME);
             } catch (e) {}
             process.on('exit', function () {
                 return _this.stop();
