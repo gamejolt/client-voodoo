@@ -51,6 +51,7 @@ export abstract class VoodooQueue
 	{
 		let state = patch ? this._patches.get( patch ) : null;
 		console.log( 'Voodoo Queue: ' + message + ( state ? ( ' ( ' + JSON.stringify( {
+			patchId: patch.id,
 			queued: state.queued,
 			timeLeft: state.timeLeft,
 			managed: state.managed,
@@ -228,8 +229,8 @@ export abstract class VoodooQueue
 		let operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
 		let concurrentPatches = this.fetch( true, isDownloading );
 
-		this.log( 'Checking if patch can resume a ' + ( isDownloading ? 'download' : 'patch' ) + ' operation' );
-		this.log( 'Queue manager is currently handling: ' + concurrentPatches.length + ' concurrent operations and can handle: ' + ( operationLimit === -1 ? 'Infinite' : operationLimit ) + ' operations' );
+		this.log( 'Checking if patch can resume a ' + ( isDownloading ? 'download' : 'patch' ) + ' operation', patch );
+		this.log( 'Queue manager is currently handling: ' + concurrentPatches.length + ' concurrent operations and can handle: ' + ( operationLimit === -1 ? 'Infinite' : operationLimit ) + ' operations', patch );
 
 		return operationLimit < 0 || operationLimit > concurrentPatches.length;
 	}
@@ -237,13 +238,13 @@ export abstract class VoodooQueue
 	static manage( patch: PatchHandle )
 	{
 		if ( this._patches.has( patch ) ) {
-			this.log( 'Already managing this patch' );
+			this.log( 'Already managing this patch', patch );
 			return this._patches.get( patch );
 		}
 
-		this.log( 'Managing patch handle' );
+		this.log( 'Managing patch handle', patch );
 		if ( patch.isFinished() ) {
-			this.log( 'Refusing to manage a finished patch' );
+			this.log( 'Refusing to manage a finished patch', patch );
 			return null;
 		}
 
@@ -363,7 +364,9 @@ export abstract class VoodooQueue
 		let patchesToResume = limit - running.length;
 		if ( limit < 0 || patchesToResume > 0 ) {
 			patchesToResume = limit < 0 ? pending.length : Math.min( patchesToResume, pending.length );
-			this.log( 'Resuming ' + patchesToResume + ' patches' );
+			if ( patchesToResume !== 0 ) {
+				this.log( 'Resuming ' + patchesToResume + ' patches' );
+			}
 			for ( let i = 0; i < patchesToResume; i += 1 ) {
 				this.resumePatch( pending[i].patch, pending[i].state );
 			}

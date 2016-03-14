@@ -35,12 +35,9 @@ export abstract class Extractor
 	}
 }
 
-function log( message ) {
-	console.log( 'Extractor: ' + message );
-}
-
 export class ExtractHandle
 {
+	private _id: number;
 	private _promise: Promise<IExtractResult>;
 	private _resolver: ( result: IExtractResult ) => void;
 	private _rejector: ( err: NodeJS.ErrnoException ) => void;
@@ -58,6 +55,8 @@ export class ExtractHandle
 	private _running: boolean;
 	private _terminated: boolean;
 
+	private static _nextId: number = 0;
+
 	constructor( private _from: string, private _to: string, private _options?: IExtractOptions )
 	{
 		this._options = _.defaults( this._options || {}, {
@@ -65,6 +64,7 @@ export class ExtractHandle
 			overwrite: false,
 		} );
 
+		this._id = ExtractHandle._nextId++;
 		this._firstRun = true;
 		this._promise = new Promise<IExtractResult>( ( resolve, reject ) =>
 		{
@@ -77,6 +77,16 @@ export class ExtractHandle
 		this._extractedFiles = [];
 		this._totalSize = 0;
 		this._totalProcessed = 0;
+	}
+
+	private log( message )
+	{
+		console.log( `Extractor(id => ${this.id}): ${message}` );
+	}
+
+	get id()
+	{
+		return this._id;
 	}
 
 	get from(): string
@@ -101,7 +111,7 @@ export class ExtractHandle
 
 	private async prepareFS()
 	{
-		log( 'Preparing fs' );
+		this.log( 'Preparing fs' );
 		if ( !( await Common.fsExists( this._from ) ) ) {
 			throw new Error( 'Can\'t unpack to destination because the source does not exist' );
 		}
@@ -139,7 +149,7 @@ export class ExtractHandle
 
 	private async unpack()
 	{
-		log( 'Unpacking from ' + this._from + ' to ' + this._to );
+		this.log( 'Unpacking from ' + this._from + ' to ' + this._to );
 		return new Promise<void>( ( resolve, reject ) =>
 		{
 			this._readStream = fs.createReadStream( this._from );
@@ -187,19 +197,19 @@ export class ExtractHandle
 
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		} );
 	}
 
 	start()
 	{
-		log( 'Starting resumable' );
+		this.log( 'Starting resumable' );
 		this._resumable.start( { cb: this.onStarting, context: this } );
 	}
 
 	private async onStarting()
 	{
-		log( 'Resumable state: starting' );
+		this.log( 'Resumable state: starting' );
 		if ( this._firstRun ) {
 			this._firstRun = false;
 			try {
@@ -220,7 +230,7 @@ export class ExtractHandle
 				this.onFinished();
 			}
 			catch ( err ) {
-				log( 'I really hate you babel: ' + err.message + '\n' + err.stack );
+				this.log( 'I really hate you babel: ' + err.message + '\n' + err.stack );
 				this.onError( err );
 			}
 		}
@@ -229,7 +239,7 @@ export class ExtractHandle
 
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 	}
 
@@ -241,19 +251,19 @@ export class ExtractHandle
 
 	stop( terminate?: boolean )
 	{
-		log( 'Stopping resumable' );
+		this.log( 'Stopping resumable' );
 		this._resumable.stop( { cb: terminate ? this.onTerminating : this.onStopping, context: this } );
 	}
 
 	private onStopping()
 	{
-		log( 'Resumable state: stopping' );
+		this.log( 'Resumable state: stopping' );
 
 		this.pause();
 
 		this._resumable.stopped();
 		this._emitter.emit( 'stopped' );
-		log( 'Resumable state: stopped' );
+		this.log( 'Resumable state: stopped' );
 	}
 
 	onStopped( cb: Function )
@@ -264,7 +274,7 @@ export class ExtractHandle
 
 	private async onTerminating()
 	{
-		log( 'Resumable state: stopping' );
+		this.log( 'Resumable state: stopping' );
 
 		let readStreamHack: any = this._readStream;
 		readStreamHack.destroy(); // Hack to get ts to stop bugging me. Its an undocumented function on readable streams
@@ -281,7 +291,7 @@ export class ExtractHandle
 
 		this._resumable.stopped();
 		this._emitter.emit( 'stopped' );
-		log( 'Resumable state: stopped' );
+		this.log( 'Resumable state: stopped' );
 	}
 
 	onProgress( unit: StreamSpeed.SampleUnit, fn: ( progress: IExtractProgress ) => void )
@@ -336,12 +346,12 @@ export class ExtractHandle
 
 	private onError( err: NodeJS.ErrnoException )
 	{
-		log( err.message + '\n' + err.stack );
+		this.log( err.message + '\n' + err.stack );
 		if ( this._resumable.state === Resumable.State.STARTING ) {
-			log( 'Forced to stop before started. Marking as started first. ' );
+			this.log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 		this._resumable.stop( { cb: this.onErrorStopping, args: [ err ], context: this }, true );
 	}
@@ -356,10 +366,10 @@ export class ExtractHandle
 	private onFinished()
 	{
 		if ( this._resumable.state === Resumable.State.STARTING ) {
-			log( 'Forced to stop before started. Marking as started first. ' );
+			this.log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 		this.pause();
 		this._resumable.finished();

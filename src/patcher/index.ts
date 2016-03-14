@@ -55,12 +55,9 @@ export abstract class Patcher
 	}
 }
 
-function log( message ) {
-	console.log( 'Patcher: ' + message );
-}
-
 export class PatchHandle
 {
+	private _id: number;
 	private _state: PatchOperation;
 	private _url: string;
 	private _wasStopped: boolean;
@@ -86,6 +83,8 @@ export class PatchHandle
 	private _waitForStartResolver: () => void;
 	private _waitForStartRejector: ( err: NodeJS.ErrnoException ) => void;
 
+	private static _nextId: number = 0;
+
 	constructor( private _generateUrl: ( () => Promise<string> ) | string, private _localPackage: GameJolt.IGamePackage, private _options?: IPatcherOptions )
 	{
 		this._options = _.defaults<IPatcherOptions>( this._options || {}, {
@@ -93,6 +92,7 @@ export class PatchHandle
 			decompressInDownload: false,
 		} );
 
+		this._id = PatchHandle._nextId++;
 		this._state = PatchOperation.STOPPED;
 		this._firstRun = true;
 		this._downloadHandle = null;
@@ -112,6 +112,16 @@ export class PatchHandle
 			this._resolver = resolve;
 			this._rejector = reject;
 		} );
+	}
+
+	private log( message )
+	{
+		console.log( `Patcher(id => ${this.id}): ${message}` );
+	}
+
+	get id()
+	{
+		return this._id;
 	}
 
 	get promise()
@@ -186,6 +196,7 @@ export class PatchHandle
 				overwrite: this._options.overwrite,
 				decompressStream: this._options.decompressInDownload ? this._getDecompressStream() : null,
 			} );
+			this.log( `Download handler created with id: ${this._downloadHandle.id}` );
 
 			this._downloadHandle
 				.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitProgress( progress ) )
@@ -210,7 +221,7 @@ export class PatchHandle
 			{
 				return './' + path.relative( this._to, file ).replace( /\\/g, '/' );
 			} );
-		log( 'Current files: ' + JSON.stringify( currentFiles ) );
+		this.log( 'Current files: ' + JSON.stringify( currentFiles ) );
 
 		// If the patch file already exists, make sure its valid.
 		if ( await Common.fsExists( this._patchListFile ) ) {
@@ -222,7 +233,7 @@ export class PatchHandle
 			}
 
 			createdByOldBuild = ( await Common.fsReadFile( this._patchListFile, 'utf8' ) ).split( "\n" );
-			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
+			this.log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 		}
 		else {
 
@@ -257,11 +268,11 @@ export class PatchHandle
 			else {
 				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
 			}
-			log( 'Old build files: ' + JSON.stringify( oldBuildFiles ) );
+			this.log( 'Old build files: ' + JSON.stringify( oldBuildFiles ) );
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
 			createdByOldBuild = _.difference( currentFiles, oldBuildFiles );
-			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
+			this.log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 
 			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
 		}
@@ -275,11 +286,11 @@ export class PatchHandle
 	private async finalizePatch( prepareResult: IPatchPrepareResult, extractResult: IExtractResult )
 	{
 		let newBuildFiles = extractResult.files;
-		log( 'New build files: ' + JSON.stringify( newBuildFiles ) );
+		this.log( 'New build files: ' + JSON.stringify( newBuildFiles ) );
 
 		// Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
 		let filesToRemove = _.difference( prepareResult.currentFiles, newBuildFiles, prepareResult.createdByOldBuild );
-		log( 'Files to remove: ' + JSON.stringify( filesToRemove ) );
+		this.log( 'Files to remove: ' + JSON.stringify( filesToRemove ) );
 
 		// TODO: use del lib
 		let unlinks = await Promise.all( filesToRemove.map( ( file ) =>
@@ -307,6 +318,7 @@ export class PatchHandle
 				deleteSource: true,
 				decompressStream: this._options.decompressInDownload ? null : this._getDecompressStream(),
 			} );
+			this.log( `Extraction handler created with id: ${this._extractHandle.id}` );
 
 			this._extractHandle
 				.onProgress( StreamSpeed.SampleUnit.Bps, ( progress ) => this.emitExtractProgress( progress ) )
@@ -318,13 +330,13 @@ export class PatchHandle
 
 	start( options?: IPatcherStartOptions )
 	{
-		log( 'Starting resumable' );
+		this.log( 'Starting resumable' );
 		this._resumable.start( { cb: this.onStarting, args: [ options ], context: this } );
 	}
 
 	private async onStarting( options?: IPatcherStartOptions )
 	{
-		log( 'Resumable state: starting' );
+		this.log( 'Resumable state: starting' );
 		if ( this._firstRun ) {
 			this._firstRun = false;
 			try {
@@ -344,7 +356,7 @@ export class PatchHandle
 				this.onFinished();
 			}
 			catch ( err ) {
-				log( 'I really really hate you babel: ' + err.message + '\n' + err.stack );
+				this.log( 'I really really hate you babel: ' + err.message + '\n' + err.stack );
 				this.onError( err );
 			}
 		}
@@ -354,7 +366,7 @@ export class PatchHandle
 				{
 					this._resumable.started();
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
-					log( 'Resumable state: started' );
+					this.log( 'Resumable state: started' );
 					VoodooQueue.manage( this );
 				} ).start();
 			}
@@ -363,7 +375,7 @@ export class PatchHandle
 				{
 					this._resumable.started();
 					this._emitter.emit( 'resumed', options && options.voodooQueue );
-					log( 'Resumable state: started' );
+					this.log( 'Resumable state: started' );
 					VoodooQueue.manage( this );
 				} ).start();
 			}
@@ -372,7 +384,7 @@ export class PatchHandle
 
 	private _stop( options: IPatcherInternalStopOptions )
 	{
-		log( 'Stopping resumable' );
+		this.log( 'Stopping resumable' );
 		this._resumable.stop( {
 			cb: this.onStopping,
 			args: [ options ],
@@ -387,7 +399,7 @@ export class PatchHandle
 			{
 				this._resumable.stopped();
 				this._emitter.emit( options.terminate ? 'canceled' : 'stopped', options && options.voodooQueue );
-				log( 'Resumable state: stopped' );
+				this.log( 'Resumable state: stopped' );
 			} ).stop();
 		}
 		else if ( this._state === PatchOperation.PATCHING ) {
@@ -395,7 +407,7 @@ export class PatchHandle
 			{
 				this._resumable.stopped();
 				this._emitter.emit( options.terminate ? 'canceled' : 'stopped', options && options.voodooQueue );
-				log( 'Resumable state: stopped' );
+				this.log( 'Resumable state: stopped' );
 			} ).stop( options.terminate );
 		}
 	}
@@ -419,7 +431,7 @@ export class PatchHandle
 			 ( this._state === PatchOperation.DOWNLOADING && this._downloadHandle.state === Resumable.State.STOPPED ) ||
 			 ( this._state === PatchOperation.PATCHING && this._extractHandle.state === Resumable.State.STOPPED ) ) {
 			this._emitter.emit( 'canceled', options && options.voodooQueue );
-			log( 'Resumable state: stopped' );
+			this.log( 'Resumable state: stopped' );
 			return;
 		}
 
@@ -563,12 +575,12 @@ export class PatchHandle
 
 	private onError( err: NodeJS.ErrnoException )
 	{
-		log( err.message + '\n' + err.stack );
+		this.log( err.message + '\n' + err.stack );
 		if ( this._resumable.state === Resumable.State.STARTING ) {
-			log( 'Forced to stop before started. Marking as started first. ' );
+			this.log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 		this._resumable.stop( { cb: this.onErrorStopping, args: [ err ], context: this }, true );
 	}
@@ -582,10 +594,10 @@ export class PatchHandle
 	private onFinished()
 	{
 		if ( this._resumable.state === Resumable.State.STARTING ) {
-			log( 'Forced to stop before started. Marking as started first. ' );
+			this.log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 		this._resumable.finished();
 		this._resolver();

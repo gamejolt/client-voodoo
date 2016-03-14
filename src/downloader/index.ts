@@ -31,12 +31,9 @@ export interface IDownloadProgress
 	sample: StreamSpeed.ISampleData;
 }
 
-function log( message ) {
-	console.log( 'Downloader: ' + message );
-}
-
 export class DownloadHandle
 {
+	private _id: number;
 	private _promise: Promise<void>;
 	private _resolver: () => void;
 	private _rejector: ( err: NodeJS.ErrnoException ) => void;
@@ -55,12 +52,15 @@ export class DownloadHandle
 	private _request: request.Request;
 	private _response: http.IncomingMessage;
 
+	private static _nextId: number = 0;
+
 	constructor( private _generateUrl: ( () => Promise<string> ) | string, private _to: string, private _options: IDownloadOptions )
 	{
 		this._options = _.defaults( this._options || {}, {
 			overwrite: false,
 		} );
 
+		this._id = DownloadHandle._nextId++;
 		this._promise = new Promise<void>( ( resolve, reject ) =>
 		{
 			this._resolver = resolve;
@@ -71,6 +71,16 @@ export class DownloadHandle
 		this._resumable = new Resumable.Resumable();
 		this._totalSize = 0;
 		this._totalDownloaded = 0;
+	}
+
+	private log( message )
+	{
+		console.log( `Downloader(id => ${this.id}): ${message}` );
+	}
+
+	get id()
+	{
+		return this._id;
 	}
 
 	get url()
@@ -105,7 +115,7 @@ export class DownloadHandle
 
 	private async prepareFS()
 	{
-		log( 'Preparing fs' );
+		this.log( 'Preparing fs' );
 		// If the actual file already exists, we resume download.
 		if ( await Common.fsExists( this._to ) ) {
 
@@ -142,7 +152,7 @@ export class DownloadHandle
 
 	private async generateUrl()
 	{
-		log( 'Generating url' );
+		this.log( 'Generating url' );
 		let _generateUrl:any = this._generateUrl;
 		if ( typeof _generateUrl === 'string' ) {
 			this._url = _generateUrl;
@@ -154,7 +164,7 @@ export class DownloadHandle
 
 	private download()
 	{
-		log( 'Downloading from ' + this._url );
+		this.log( 'Downloading from ' + this._url );
 		let hostUrl = url.parse( this._url );
 		let httpOptions: request.CoreOptions = {
 			headers: {
@@ -225,7 +235,7 @@ export class DownloadHandle
 
 				this._resumable.started();
 				this._emitter.emit( 'started' );
-				log( 'Resumable state: started' );
+				this.log( 'Resumable state: started' );
 			} )
 			.on( 'data', ( data ) =>
 			{
@@ -244,20 +254,20 @@ export class DownloadHandle
 
 	start()
 	{
-		log( 'Starting resumable' );
+		this.log( 'Starting resumable' );
 		this._resumable.start( { cb: this.onStarting, context: this } );
 	}
 
 	private async onStarting()
 	{
-		log( 'Resumable state: starting' );
+		this.log( 'Resumable state: starting' );
 		try {
 			await this.prepareFS();
 			await this.generateUrl();
 			this.download();
 		}
 		catch ( err ) {
-			log( 'I hate you babel: ' + err.message + '\n' + err.stack );
+			this.log( 'I hate you babel: ' + err.message + '\n' + err.stack );
 			this.onError( err );
 		}
 	}
@@ -270,13 +280,13 @@ export class DownloadHandle
 
 	stop()
 	{
-		log( 'Stopping resumable' );
+		this.log( 'Stopping resumable' );
 		this._resumable.stop( { cb: this.onStopping, context: this } );
 	}
 
 	private onStopping()
 	{
-		log( 'Resumable state: stopping' );
+		this.log( 'Resumable state: stopping' );
 		this._streamSpeed.stop();
 		this._streamSpeed = null;
 		this._response.removeAllListeners();
@@ -289,7 +299,7 @@ export class DownloadHandle
 
 		this._resumable.stopped();
 		this._emitter.emit( 'stopped' );
-		log( 'Resumable state: stopped' );
+		this.log( 'Resumable state: stopped' );
 	}
 
 	onStopped( cb: Function )
@@ -315,19 +325,19 @@ export class DownloadHandle
 
 	private onError( err: NodeJS.ErrnoException )
 	{
-		log( err.message + '\n' + err.stack );
+		this.log( err.message + '\n' + err.stack );
 		if ( this._resumable.state === Resumable.State.STARTING ) {
-			log( 'Forced to stop before started. Marking as started first. ' );
+			this.log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 		this._resumable.stop( { cb: this.onErrorStopping, args: [ err ], context: this }, true );
 	}
 
 	private onErrorStopping( err: NodeJS.ErrnoException )
 	{
-		log( 'Error' );
+		this.log( 'Error' );
 		this.onStopping();
 		this._resumable.finished();
 		this._rejector( err );
@@ -335,12 +345,12 @@ export class DownloadHandle
 
 	private onFinished()
 	{
-		log( 'Finished' );
+		this.log( 'Finished' );
 		if ( this._resumable.state === Resumable.State.STARTING ) {
-			log( 'Forced to stop before started. Marking as started first. ' );
+			this.log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
-			log( 'Resumable state: started' );
+			this.log( 'Resumable state: started' );
 		}
 		this.onStopping();
 		this._resumable.finished();

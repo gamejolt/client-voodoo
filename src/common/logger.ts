@@ -40,29 +40,42 @@ export abstract class Logger
 				this._file.close();
 			}
 			this._file = null;
+		}
+		catch ( err ) {}
+
+		try {
 			await Common.fsUnlink( this._filePath );
+		}
+		catch ( err ) {}
+
+		try {
 			let str = this._logLines.join( '\n' ) + '\n';
 			await Common.fsWriteFile( this._filePath, str );
-			CONSOLE_LOG.apply( console, [ 'Flushing log file of length ' + this._logLines.join( '\n' ).length + ' with ' + this._logLines.length + ' rows' ] );
+			CONSOLE_LOG.apply( console, [ `Flushing log file of length ${this._logLines.join( '\n' ).length} with ${this._logLines.length} rows` ] );
 			this._file = fs.createWriteStream( this._filePath, {
 				flags: 'a',
 				encoding: 'utf8',
 			} );
 		}
 		catch ( err ) {
-			CONSOLE_LOG.apply( console, [ 'Babel sucks: ' + err.message + '\n' + err.stack ] );
+			CONSOLE_LOG.apply( console, [ err.message + '\n' + err.stack ] );
 		}
 	}
 
 	private static _log( ...args: any[] )
 	{
 		CONSOLE_LOG.apply( console, args );
-		let str = util.format.apply( console, args ).split( '\n' );
+		let now = new Date().toISOString();
+		let str: string[] = util.format.apply( console, args ).split( '\n' ).map( ( str:string ) =>
+		{
+			return `[INFO][${now}] ${str}\n`
+		} );
+
 		for ( let strVal of str ) {
 			this._logLines.push( strVal );
 		}
 		if ( this._file ) {
-			this._file.write( str + '\n' );
+			this._file.write( `${str}\n` );
 		}
 		if ( this._logLines.length > LOG_LINES ) {
 			this._logLines = _.clone( this._logLines.slice( this._logLines.length - LOG_LINES ) );
@@ -72,12 +85,17 @@ export abstract class Logger
 	private static _logErr( ...args: any[] )
 	{
 		CONSOLE_ERR.apply( console, args );
-		let str = util.format.apply( console, args ).split( '\n' );
+		let now = new Date().toISOString();
+		let str: string[] = util.format.apply( console, args ).split( '\n' ).map( ( str:string ) =>
+		{
+			return `[ERROR][${now}] ${str}\n`
+		} );
+
 		for ( let strVal of str ) {
 			this._logLines.push( strVal );
 		}
 		if ( this._file ) {
-			this._file.write( str + '\n' );
+			this._file.write( `${str}\n` );
 		}
 		if ( this._logLines.length > LOG_LINES ) {
 			this._logLines = this._logLines.slice( this._logLines.length - LOG_LINES );
@@ -101,7 +119,7 @@ export abstract class Logger
 				}
 			}
 			catch ( err ) {
-				console.log( 'Seroiusly babel gtfo: ' + err.message + '\n' + err.stack );
+				console.log( `Seroiusly babel gtfo: ${err.message}\n${err.stack}` );
 			}
 		}
 		this._file = fs.createWriteStream( this._filePath, {
@@ -126,10 +144,14 @@ export abstract class Logger
 		}
 
 		clearInterval( this._flushInterval );
-		if ( this._file ) {
-			this._file.close();
+
+		try {
+			if ( this._file ) {
+				this._file.close();
+			}
+			await Common.fsWriteFile( this._filePath, this._logLines.join( '\n' ) );
 		}
-		await Common.fsWriteFile( this._filePath, this._logLines.join( '\n' ) );
+		catch ( err ) {}
 
 		console.log = CONSOLE_LOG;
 		console.info = CONSOLE_LOG;
