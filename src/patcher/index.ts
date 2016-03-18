@@ -225,6 +225,7 @@ export class PatchHandle
 
 		// If the patch file already exists, make sure its valid.
 		if ( await Common.fsExists( this._patchListFile ) ) {
+			this.log( 'Patch list file exists' );
 
 			// Make sure the destination is a file.
 			let stat = await Common.fsStat( this._patchListFile );
@@ -236,18 +237,25 @@ export class PatchHandle
 			this.log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 		}
 		else {
+			this.log( 'Patch list file doesn\'t exist' );
 
+			let oldBuildFiles;
 			// If the destination already exists, make sure its valid.
 			if ( await Common.fsExists( this._archiveListFile ) ) {
+				this.log( 'Archive list file exists' );
 
 				// Make sure the destination is a file.
 				let stat = await Common.fsStat( this._archiveListFile );
 				if ( !stat.isFile() ) {
 					throw new Error( 'Can\'t patch because the archive file list isn\'t a file.' );
 				}
+
+				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
 			}
 			// Otherwise, we validate the folder path.
 			else {
+				this.log( 'Archive list file doesn\'t exist' );
+
 				let archiveListFileDir = path.dirname( this._archiveListFile );
 				if ( await Common.fsExists( archiveListFileDir ) ) {
 					let dirStat = await Common.fsStat( archiveListFileDir );
@@ -259,15 +267,10 @@ export class PatchHandle
 				else if ( !( await Common.mkdirp( archiveListFileDir ) ) ) {
 					throw new Error( 'Couldn\'t create the patch archive file list folder path' );
 				}
-			}
 
-			let oldBuildFiles;
-			if ( !( await Common.fsExists( this._archiveListFile ) ) ) {
 				oldBuildFiles = currentFiles;
 			}
-			else {
-				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
-			}
+
 			this.log( 'Old build files: ' + JSON.stringify( oldBuildFiles ) );
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
@@ -338,6 +341,7 @@ export class PatchHandle
 	{
 		this.log( 'Resumable state: starting' );
 		if ( this._firstRun ) {
+			this.log( 'This is the first run' );
 			this._firstRun = false;
 			try {
 				VoodooQueue.manage( this );
@@ -361,6 +365,7 @@ export class PatchHandle
 			}
 		}
 		else {
+			this.log( 'This is a resuming of a previous run' );
 			if ( this._state === PatchOperation.DOWNLOADING ) {
 				this._downloadHandle.onStarted( () =>
 				{

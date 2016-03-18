@@ -7,7 +7,12 @@ let fsExists = function( path: string ): Promise<boolean>
 {
 	return new Promise<boolean>( function( resolve )
 	{
-		fs.exists( path, resolve );
+		try {
+			fs.exists( path, resolve );
+		}
+		catch ( err ) {
+			resolve( false );
+		}
 	} );
 };
 let fsReadFile: ( path: string, encoding?: string ) => Promise<string> = Bluebird.promisify( fs.readFile );

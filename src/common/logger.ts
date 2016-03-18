@@ -68,7 +68,7 @@ export abstract class Logger
 		let now = new Date().toISOString();
 		let str: string[] = util.format.apply( console, args ).split( '\n' ).map( ( str:string ) =>
 		{
-			return `[INFO][${now}] ${str}\n`
+			return `[INFO][${now}] ${str}`
 		} );
 
 		for ( let strVal of str ) {
@@ -88,7 +88,7 @@ export abstract class Logger
 		let now = new Date().toISOString();
 		let str: string[] = util.format.apply( console, args ).split( '\n' ).map( ( str:string ) =>
 		{
-			return `[ERROR][${now}] ${str}\n`
+			return `[ERROR][${now}] ${str}`
 		} );
 
 		for ( let strVal of str ) {
