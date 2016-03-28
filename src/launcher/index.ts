@@ -1,11 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
 import * as childProcess from 'child_process';
 import * as os from 'os';
 import * as _ from 'lodash';
 import Common from '../common';
-import { PidFinder } from './pid-finder';
+import { WrapperFinder } from './pid-finder';
 import { VoodooQueue } from '../queue';
 
 let plist = require( 'plist' );
@@ -15,15 +16,27 @@ let spawnShellEscape = function( cmd: string )
 	return '"' + cmd.replace( /(["\s'$`\\])/g, '\\$1' ) + '"';
 };
 
+let GameWrapper = require( 'client-game-wrapper' );
+
 export interface ILaunchOptions
 {
-	pollInterval: number;
+	pollInterval?: number;
+	env?: { [ key: string ]: string };
 }
 
-export interface IParsedPid
+export interface IAttachOptions
 {
-	pid: number,
-	expectedCmds: string[],
+	instance?: LaunchInstanceHandle;
+	stringifiedWrapper?: string;
+	wrapperId?: string;
+	wrapperPort?: number;
+	pollInterval?: number;
+}
+
+export interface IParsedWrapper
+{
+	wrapperId: string;
+	wrapperPort: number;
 }
 
 function log( message ) {
@@ -32,7 +45,7 @@ function log( message ) {
 
 export abstract class Launcher
 {
-	private static _runningInstances: Map<number, LaunchInstanceHandle> = new Map<number, LaunchInstanceHandle>();
+	private static _runningInstances: Map<string, LaunchInstanceHandle> = new Map<string, LaunchInstanceHandle>();
 
 	// Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
 	static launch( localPackage: GameJolt.IGamePackage, os: string, arch: string, options?: ILaunchOptions ): LaunchHandle
@@ -40,60 +53,65 @@ export abstract class Launcher
 		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
-	static async attach( pidOrLaunchInstance: number | string | LaunchInstanceHandle, expectedCmd?: string[], pollInterval?: number )
+	static getFreeWrapperId()
+	{
+		let newWrapperId: string;
+		do {
+			newWrapperId = crypto.randomBytes(16).toString('hex');
+		}
+		while ( this._runningInstances.has( newWrapperId ) );
+
+		return newWrapperId;
+	}
+
+	static async attach( options: IAttachOptions )
 	{
 		try {
-			let pid: number;
+			let wrapper: IParsedWrapper;
 			let instance: LaunchInstanceHandle;
-			let _expectedCmd: Set<string> = null;
-			if ( expectedCmd && expectedCmd.length ) {
-				_expectedCmd = new Set<string>();
-				for ( let cmd of expectedCmd ) {
-					_expectedCmd.add( cmd );
-				}
-			}
 
-			if ( typeof pidOrLaunchInstance === 'number' ) {
-				pid = pidOrLaunchInstance;
-				log( 'Attaching new instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + JSON.stringify( expectedCmd || [] ) );
-				instance = new LaunchInstanceHandle( pid, _expectedCmd, pollInterval );
+			if ( options.instance ) {
+				instance = options.instance;
+				log( `Attaching existing instance: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
 			}
-			else if ( typeof pidOrLaunchInstance === 'string' ) {
-				log( 'Attaching new instance with stringified pid: ' + pidOrLaunchInstance );
-				let parsedPid: IParsedPid = JSON.parse( pidOrLaunchInstance );
-				pid = parsedPid.pid;
-				if ( !_expectedCmd && parsedPid.expectedCmds && parsedPid.expectedCmds.length ) {
-					_expectedCmd = new Set<string>();
-					for ( let cmd of parsedPid.expectedCmds ) {
-						_expectedCmd.add( cmd );
-					}
-				}
-				log( 'Attaching new instance with parsed pid: pid - ' + pid + ', poll interval - ' + pollInterval + ', expected cmds - ' + JSON.stringify( parsedPid.expectedCmds || [] ) );
-				instance = new LaunchInstanceHandle( pid, _expectedCmd, pollInterval );
+			else if ( options.stringifiedWrapper ) {
+				let parsedWrapper: IParsedWrapper = JSON.parse( options.stringifiedWrapper );
+				instance = new LaunchInstanceHandle( parsedWrapper.wrapperId, parsedWrapper.wrapperPort, options.pollInterval );
+				log( `Attaching new instance from stringified wrapper: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
 			}
 			else {
-				instance = pidOrLaunchInstance;
-				pid = instance.pid;
-				log( 'Attaching existing instance: pid - ' + pid + ', poll interval - ' + pollInterval + ', expectedcmds - ' + JSON.stringify( expectedCmd || [] ) );
+				instance = new LaunchInstanceHandle( options.wrapperId, options.wrapperPort, options.pollInterval );
+				log( `Attaching new instance: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
+
 			}
 
 			// This validates if the process actually started and gets the command its running with
 			// It'll throw if it failed into this promise chain, so it shouldn't ever attach an invalid process.
-			await instance.tick( true );
+			let success = false;
+			for ( let i = 0; i < 25; i++ ) {
+				try {
+					await instance.tick();
+					success = true;
+					break;
+				}
+				catch ( err ) {}
+				await Common.wait( 200 );
+			}
 
-			if ( !this._runningInstances.has( pid ) ) {
-				this._runningInstances.set( pid, instance );
+			if ( !success ) {
+				// Here is where it throws
+				instance.abort( new Error( 'Couldn\'t attach to launch instance' ) );
+			}
+
+			if ( !this._runningInstances.has( instance.wrapperId ) ) {
+				this._runningInstances.set( instance.wrapperId, instance );
 			};
-			instance = this._runningInstances.get( pid );
+			instance = this._runningInstances.get( instance.wrapperId );
 
 			instance.once( 'end', () =>
 			{
 				log( 'Ended' );
-				let cmds: string[] = [];
-				for ( let cmd of instance.cmd.values() ) {
-					cmds.push( cmd );
-				}
-				this.detach( pid, cmds );
+				this.detach( instance.wrapperId );
 			} );
 
 			VoodooQueue.setSlower();
@@ -106,22 +124,13 @@ export abstract class Launcher
 		}
 	}
 
-	static async detach( pid: number, expectedCmd?: string[] )
+	static async detach( wrapperId: string, expectedWrapperPort?: number )
 	{
-		log( 'Detaching: pid - ' + pid + ', expected cmds - ' + JSON.stringify( expectedCmd ) );
-		let instance = this._runningInstances.get( pid );
-		let found = !(expectedCmd && expectedCmd.length);
-		if ( !found ) {
-			for ( let cmd of expectedCmd ) {
-				if ( instance.cmd.has( cmd ) ) {
-					found = true;
-					break;
-				}
-			}
-		}
-		if ( instance && found ) {
+		log( `Detaching: wrapperId - ${wrapperId}, expected port - ${expectedWrapperPort}` );
+		let instance = this._runningInstances.get( wrapperId );
+		if ( instance && (!expectedWrapperPort || instance.wrapperPort === expectedWrapperPort) ) {
 			instance.removeAllListeners();
-			if ( this._runningInstances.delete( pid ) && this._runningInstances.size === 0 ) {
+			if ( this._runningInstances.delete( wrapperId ) && this._runningInstances.size === 0 ) {
 				VoodooQueue.setFaster();
 			}
 		}
@@ -136,13 +145,15 @@ export class LaunchHandle
 	private _promise: Promise<LaunchInstanceHandle>;
 	private _file: string;
 
-	constructor( private _localPackage: GameJolt.IGamePackage, private _os: string, private _arch: string, options?: ILaunchOptions )
+	constructor( private _localPackage: GameJolt.IGamePackage, private _os: string, private _arch: string, private options?: ILaunchOptions )
 	{
-		options = options || {
+		this.options = _.defaultsDeep<ILaunchOptions, ILaunchOptions>( this.options || {}, {
 			pollInterval: 1000,
-		};
+			env: _.cloneDeep( process.env ),
+		} );
+		log( JSON.stringify( this.options ) );
 
-		this._promise = this.start( options.pollInterval );
+		this._promise = this.start();
 	}
 
 	get package()
@@ -191,7 +202,7 @@ export class LaunchHandle
 		await Common.chmod( file, '0755' );
 	}
 
-	private async start( pollInterval: number )
+	private async start()
 	{
 		let launchOption = this.findLaunchOption();
 		if ( !launchOption ) {
@@ -214,20 +225,20 @@ export class LaunchHandle
 
 		switch ( process.platform ) {
 			case 'win32':
-				return this.startWindows( stat, pollInterval, isJava );
+				return this.startWindows( stat, isJava );
 
 			case 'linux':
-				return this.startLinux( stat, pollInterval, isJava );
+				return this.startLinux( stat, isJava );
 
 			case 'darwin':
-				return this.startMac( stat, pollInterval, isJava );
+				return this.startMac( stat, isJava );
 
 			default:
 				throw new Error( 'What potato are you running on? Detected platform: ' + process.platform );
 		}
 	}
 
-	private async startWindows( stat: fs.Stats, pollInterval: number, isJava: boolean )
+	private async startWindows( stat: fs.Stats, isJava: boolean )
 	{
 		if ( !stat.isFile() ) {
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
@@ -243,18 +254,21 @@ export class LaunchHandle
 			args = [];
 		}
 
-		let child = childProcess.spawn( cmd, args, {
+		let wrapperId = Launcher.getFreeWrapperId();
+		let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
+			env: this.options.env,
 		} );
 
-		let pid = child.pid;
-		child.unref();
-
-		return Launcher.attach( pid, null, pollInterval );
+		return Launcher.attach( {
+			wrapperId: wrapperId,
+			wrapperPort: wrapperPort,
+			pollInterval: this.options.pollInterval,
+		} );
 	}
 
-	private async startLinux( stat: fs.Stats, pollInterval: number, isJava: boolean )
+	private async startLinux( stat: fs.Stats, isJava: boolean )
 	{
 		if ( !stat.isFile() ) {
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
@@ -272,18 +286,21 @@ export class LaunchHandle
 			args = [];
 		}
 
-		let child = childProcess.spawn( this._file, [], {
+		let wrapperId = Launcher.getFreeWrapperId();
+		let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
+			env: this.options.env,
 		} );
 
-		let pid = child.pid;
-		child.unref();
-
-		return Launcher.attach( pid, null, pollInterval );
+		return Launcher.attach( {
+			wrapperId: wrapperId,
+			wrapperPort: wrapperPort,
+			pollInterval: this.options.pollInterval,
+		} );
 	}
 
-	private async startMac( stat: fs.Stats, pollInterval: number, isJava: boolean )
+	private async startMac( stat: fs.Stats, isJava: boolean )
 	{
 		let pid;
 		if ( stat.isFile() ) {
@@ -300,12 +317,18 @@ export class LaunchHandle
 				args = [];
 			}
 
-			let child = childProcess.exec( shellEscape( [ this._file ] ), {
+			let wrapperId = Launcher.getFreeWrapperId();
+			let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
 				cwd: path.dirname( this._file ),
+				detached: true,
+				env: this.options.env,
 			} );
 
-			pid = child.pid;
-			child.unref();
+			return Launcher.attach( {
+				wrapperId: wrapperId,
+				wrapperPort: wrapperPort,
+				pollInterval: this.options.pollInterval,
+			} );
 		}
 		else {
 			if ( !this._file.toLowerCase().endsWith( '.app' ) && !this._file.toLowerCase().endsWith( '.app/' ) ) {
@@ -356,76 +379,67 @@ export class LaunchHandle
 			// 	} );
 			// } );
 
-
-			let child = childProcess.exec( shellEscape( [ executableFile ] ), {
-				cwd: macosPath, // TODO: maybe should be basename
+			let wrapperId = Launcher.getFreeWrapperId();
+			let wrapperPort = GameWrapper.start( wrapperId, executableFile, [], {
+				cwd: macosPath,
+				detached: true,
+				env: this.options.env,
 			} );
 
-			pid = child.pid;
-			child.unref();
+			return Launcher.attach( {
+				wrapperId: wrapperId,
+				wrapperPort: wrapperPort,
+				pollInterval: this.options.pollInterval,
+			} );
 		}
-
-		return Launcher.attach( pid, null, pollInterval );
 	}
 }
 
-export class LaunchInstanceHandle extends EventEmitter
+export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 {
 	private _interval: NodeJS.Timer;
+	private _stable: boolean;
 
-	constructor( private _pid: number, private _expectedCmd: Set<string>, pollInterval?: number )
+	constructor( private _wrapperId: string, private _wrapperPort: number, pollInterval?: number )
 	{
 		super();
 		this._interval = setInterval( () => this.tick(), pollInterval || 1000 );
+		this._stable = false;
 	}
 
-	get pid()
+	get wrapperId()
 	{
-		return this._pid;
+		return this._wrapperId;
 	}
 
-	get cmd()
+	get wrapperPort()
 	{
-		return this._expectedCmd;
+		return this._wrapperPort;
 	}
 
-	tick( validate?: boolean)
+	tick()
 	{
-		return PidFinder.find( this._pid, validate ? this._expectedCmd : null )
-			.then( ( result ) =>
+		return WrapperFinder.find( this._wrapperId, this._wrapperPort )
+			.then( () =>
 			{
-				if ( !result || result.size === 0 ) {
-					throw new Error( 'Process doesn\'t exist anymore' );
-				}
-
-				if ( !this._expectedCmd ) {
-					this._expectedCmd = new Set<string>();
-				}
-				for ( let value of result.values() ) {
-					if ( !this._expectedCmd.has( value ) ) {
-						log( 'Adding new expected cmd to launch instance handle ' + this._pid + ': ' + value );
-					}
-					this._expectedCmd.add( value );
-
-					let expectedCmdValues: string[] = [];
-					for ( let expectedCmdValue of this._expectedCmd.values() ) {
-						expectedCmdValues.push( expectedCmdValue );
-					}
-
-					let emittedPid: IParsedPid = {
-						pid: this._pid,
-						expectedCmds:  expectedCmdValues,
-					};
-
-					this.emit( 'pid', JSON.stringify( emittedPid ) );
-				}
+				this._stable = true;
 			} )
 			.catch( ( err ) =>
 			{
-				clearInterval( this._interval );
-				console.log( err );
-				this.emit( 'end', err );
-				throw err;
+				if ( this._stable ) {
+					clearInterval( this._interval );
+					console.log( err );
+					this.emit( 'end', err );
+					throw err;
+				}
 			} );
+	}
+
+	abort( err: NodeJS.ErrnoException )
+	{
+		clearInterval( this._interval );
+		console.log( err );
+		this.emit( 'end', err );
+		throw err;
 	}
 }

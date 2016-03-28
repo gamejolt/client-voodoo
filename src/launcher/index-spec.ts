@@ -2,7 +2,7 @@ import express = require( 'express' );
 import http = require( 'http' );
 import { Downloader } from '../downloader';
 import { Patcher, PatchHandle } from '../patcher';
-import { Launcher, IParsedPid } from './index';
+import { Launcher, IParsedWrapper } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
 import path = require( 'path' );
 import * as del from 'del';
@@ -147,9 +147,13 @@ describe( 'Launcher', function()
 
 			let launchHandle = Launcher.launch( localPackage, os, '32' );
 			let launchInstance = await launchHandle.promise;
-			await Launcher.detach( launchInstance.pid );
+			await Launcher.detach( launchInstance.wrapperId );
 
-			launchInstance = await Launcher.attach( launchInstance.pid );
+			launchInstance = await Launcher.attach( {
+				wrapperId: launchInstance.wrapperId,
+				wrapperPort: launchInstance.wrapperPort,
+			} );
+
 			await new Promise( ( resolve ) =>
 			{
 				launchInstance.on( 'end', () => {
@@ -171,9 +175,9 @@ describe( 'Launcher', function()
 
 			let launchHandle = Launcher.launch( localPackage, os, '32' );
 			let launchInstance = await launchHandle.promise;
-			await Launcher.detach( launchInstance.pid );
+			await Launcher.detach( launchInstance.wrapperId );
 
-			launchInstance = await Launcher.attach( launchInstance );
+			launchInstance = await Launcher.attach( { instance: launchInstance } );
 			await new Promise( ( resolve ) =>
 			{
 				launchInstance.on( 'end', () => {
@@ -188,25 +192,21 @@ describe( 'Launcher', function()
 		}
 	} );
 
-	it( 'Should work when reattacahing as json pid', async ( done ) =>
+	it( 'Should work when reattacahing as json wrapper', async ( done ) =>
 	{
 		try {
 			await patch();
 
 			let launchHandle = Launcher.launch( localPackage, os, '32' );
 			let launchInstance = await launchHandle.promise;
-			await Launcher.detach( launchInstance.pid );
+			await Launcher.detach( launchInstance.wrapperId );
 
-			let expectedCmds:string[] = [];
-			for ( let expectedCmd of launchInstance.cmd.values() ) {
-				expectedCmds.push( expectedCmd );
-			}
-			let jsonPid: IParsedPid = {
-				pid: launchInstance.pid,
-				expectedCmds: expectedCmds,
+			let jsonWrapper: IParsedWrapper = {
+				wrapperId: launchInstance.wrapperId,
+				wrapperPort: launchInstance.wrapperPort,
 			}
 
-			launchInstance = await Launcher.attach( JSON.stringify( jsonPid ) );
+			launchInstance = await Launcher.attach( { stringifiedWrapper: JSON.stringify( jsonWrapper ) } );
 			await new Promise( ( resolve ) =>
 			{
 				launchInstance.on( 'end', () => {
