@@ -53,17 +53,6 @@ export abstract class Launcher
 		return new LaunchHandle( localPackage, os, arch, options );
 	}
 
-	static getFreeWrapperId()
-	{
-		let newWrapperId: string;
-		do {
-			newWrapperId = crypto.randomBytes(16).toString('hex');
-		}
-		while ( this._runningInstances.has( newWrapperId ) );
-
-		return newWrapperId;
-	}
-
 	static async attach( options: IAttachOptions )
 	{
 		try {
@@ -79,10 +68,12 @@ export abstract class Launcher
 				instance = new LaunchInstanceHandle( parsedWrapper.wrapperId, parsedWrapper.wrapperPort, options.pollInterval );
 				log( `Attaching new instance from stringified wrapper: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
 			}
-			else {
+			else if ( options.wrapperId && options.wrapperPort ) {
 				instance = new LaunchInstanceHandle( options.wrapperId, options.wrapperPort, options.pollInterval );
 				log( `Attaching new instance: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
-
+			}
+			else {
+				throw new Error( 'Invalid launch attach options' );
 			}
 
 			// This validates if the process actually started and gets the command its running with
@@ -254,7 +245,7 @@ export class LaunchHandle
 			args = [];
 		}
 
-		let wrapperId = Launcher.getFreeWrapperId();
+		let wrapperId = this._localPackage.id.toString()
 		let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
@@ -286,7 +277,7 @@ export class LaunchHandle
 			args = [];
 		}
 
-		let wrapperId = Launcher.getFreeWrapperId();
+		let wrapperId = this._localPackage.id.toString()
 		let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
@@ -317,7 +308,7 @@ export class LaunchHandle
 				args = [];
 			}
 
-			let wrapperId = Launcher.getFreeWrapperId();
+			let wrapperId = this._localPackage.id.toString()
 			let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
 				cwd: path.dirname( this._file ),
 				detached: true,
@@ -379,7 +370,7 @@ export class LaunchHandle
 			// 	} );
 			// } );
 
-			let wrapperId = Launcher.getFreeWrapperId();
+			let wrapperId = this._localPackage.id.toString()
 			let wrapperPort = GameWrapper.start( wrapperId, executableFile, [], {
 				cwd: macosPath,
 				detached: true,
