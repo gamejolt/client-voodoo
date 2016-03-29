@@ -277,15 +277,29 @@ export class DownloadHandle
 	private onStopping()
 	{
 		log( 'Resumable state: stopping' );
-		this._streamSpeed.stop();
-		this._streamSpeed = null;
-		this._response.removeAllListeners();
-		this._destStream.removeAllListeners();
-		this._response.unpipe( this._destStream );
-		this._destStream.close();
-		this._destStream = null;
-		this._request.abort();
-		this._request = null;
+		if ( this._streamSpeed ) {
+			this._streamSpeed.stop();
+			this._streamSpeed = null;
+		}
+
+		if ( this._response ) {
+			this._response.removeAllListeners();
+		}
+		if ( this._destStream ) {
+			this._destStream.removeAllListeners();
+		}
+		if ( this._response ) {
+			this._response.unpipe( this._destStream );
+			this._response = null;
+		}
+		if ( this._destStream ) {
+			this._destStream.close();
+			this._destStream = null;
+		}
+		if ( this._request ) {
+			this._request.abort();
+			this._request = null;
+		}
 
 		this._resumable.stopped();
 		this._emitter.emit( 'stopped' );
