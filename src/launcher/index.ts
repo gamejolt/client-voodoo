@@ -81,9 +81,10 @@ export abstract class Launcher
 			let success = false;
 			for ( let i = 0; i < 25; i++ ) {
 				try {
-					await instance.tick();
-					success = true;
-					break;
+					if ( await instance.tick() ) {
+						success = true;
+						break;
+					}
 				}
 				catch ( err ) {}
 				await Common.wait( 200 );
@@ -398,6 +399,14 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 		this._stable = false;
 	}
 
+	get pid(): IParsedWrapper
+	{
+		return {
+			wrapperId: this._wrapperId,
+			wrapperPort: this._wrapperPort,
+		};
+	}
+
 	get wrapperId()
 	{
 		return this._wrapperId;
@@ -408,12 +417,13 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 		return this._wrapperPort;
 	}
 
-	tick()
+	tick(): Promise<boolean>
 	{
 		return WrapperFinder.find( this._wrapperId, this._wrapperPort )
 			.then( () =>
 			{
 				this._stable = true;
+				return true;
 			} )
 			.catch( ( err ) =>
 			{
@@ -423,6 +433,7 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 					this.emit( 'end', err );
 					throw err;
 				}
+				return false;
 			} );
 	}
 
