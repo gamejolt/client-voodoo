@@ -428,7 +428,7 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 			{
 				if ( this._stable ) {
 					clearInterval( this._interval );
-					console.log( err );
+					console.error( err );
 					this.emit( 'end', err );
 					throw err;
 				}
@@ -438,7 +438,7 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 	abort( err: NodeJS.ErrnoException )
 	{
 		clearInterval( this._interval );
-		console.log( err );
+		console.error( err );
 		this.emit( 'end', err );
 		throw err;
 	}
