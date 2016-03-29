@@ -173,7 +173,7 @@ export abstract class VoodooQueue
 		let concurrentPatches = this.fetch( true, false );
 
 		// Use > and not >= because also counting self
-		if ( this._maxExtractions < 0 || concurrentPatches.length > this._maxExtractions ) {
+		if ( this._maxExtractions >= 0 && concurrentPatches.length > this._maxExtractions ) {
 			this.pausePatch( patch, state );
 		}
 		this.tick( true );
