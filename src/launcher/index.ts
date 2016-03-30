@@ -143,7 +143,6 @@ export class LaunchHandle
 			pollInterval: 1000,
 			env: _.cloneDeep( process.env ),
 		} );
-		log( JSON.stringify( this.options ) );
 
 		this._promise = this.start();
 	}
