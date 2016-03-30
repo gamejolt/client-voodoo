@@ -29,6 +29,14 @@ let fsCopy = async function( from: string, to: string )
 let fsReadDir: ( path: string ) => Promise<string[]> = Bluebird.promisify( fs.readdir );
 let fsReadDirRecursively: ( path: string ) => Promise<string[]> = Bluebird.promisify( require( 'recursive-readdir' ) );
 
+let wait = function( millis: number ): Promise<void>
+{
+	return new Promise<void>( ( resolve ) =>
+	{
+		setTimeout( resolve, millis );
+	} );
+}
+
 let test = function( fn: Function, done?: Function )
 {
 	let func = function( _done )
@@ -63,4 +71,5 @@ export default {
 	fsReadDir: fsReadDir,
 	fsReadDirRecursively: fsReadDirRecursively,
 	test: test,
+	wait: wait,
 };
