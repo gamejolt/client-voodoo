@@ -157,9 +157,7 @@ var PatchHandle = (function () {
             }
             switch (this._localPackage.build.archive_type) {
                 case 'tar.xz':
-                    return require('lzma-native').createDecompressor({
-                        synchronous: true
-                    });
+                    return require('lzma-native').createDecompressor();
                 case 'tar.gz':
                     return require('gunzip-maybe')();
                 case 'brotli':

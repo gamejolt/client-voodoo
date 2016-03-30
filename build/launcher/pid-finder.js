@@ -1,17 +1,5 @@
 "use strict";
 
-var _set = require("babel-runtime/core-js/set");
-
-var _set2 = _interopRequireDefault(_set);
-
-var _getIterator2 = require("babel-runtime/core-js/get-iterator");
-
-var _getIterator3 = _interopRequireDefault(_getIterator2);
-
-var _stringify = require("babel-runtime/core-js/json/stringify");
-
-var _stringify2 = _interopRequireDefault(_stringify);
-
 var _promise = require("babel-runtime/core-js/promise");
 
 var _promise2 = _interopRequireDefault(_promise);
@@ -55,7 +43,7 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
         step("next", void 0);
     });
 };
-var childProcess = require('child_process');
+var net = require('net');
 function log(message) {
     console.log('Pid Finder: ' + message);
 }
@@ -65,167 +53,38 @@ function debug(message) {
     }
 }
 
-var PidFinder = (function () {
-    function PidFinder() {
-        (0, _classCallCheck3.default)(this, PidFinder);
+var WrapperFinder = (function () {
+    function WrapperFinder() {
+        (0, _classCallCheck3.default)(this, WrapperFinder);
     }
 
-    (0, _createClass3.default)(PidFinder, null, [{
-        key: "isWindows",
-        value: function isWindows() {
-            return process.platform === 'win32';
-        }
-    }, {
+    (0, _createClass3.default)(WrapperFinder, null, [{
         key: "find",
-        value: function find(pid, expectedCmd) {
-            return PidFinder.isWindows() ? PidFinder.findWindows(pid, expectedCmd) : PidFinder.findNonWindows(pid, expectedCmd);
-        }
-    }, {
-        key: "findWindows",
-        value: function findWindows(pid, expectedCmd) {
+        value: function find(id, port) {
             return new _promise2.default(function (resolve, reject) {
-                var expectedCmdArray = [];
-                if (expectedCmd && expectedCmd.size) {
-                    var _iteratorNormalCompletion = true;
-                    var _didIteratorError = false;
-                    var _iteratorError = undefined;
-
-                    try {
-                        for (var _iterator = (0, _getIterator3.default)(expectedCmd.values()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                            var expectedCmdValue = _step.value;
-
-                            expectedCmdArray.push(expectedCmdValue);
-                        }
-                    } catch (err) {
-                        _didIteratorError = true;
-                        _iteratorError = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion && _iterator.return) {
-                                _iterator.return();
+                var conn = net.connect({ port: port, host: '127.0.0.1' });
+                conn.on('data', function (data) {
+                    var parsedData = data.toString().split(':');
+                    switch (parsedData[0]) {
+                        case 'v0.0.1':
+                            if (parsedData[2] === id) {
+                                resolve();
+                            } else {
+                                reject(new Error("Expecting wrapper id " + id + ", received " + parsedData[2]));
                             }
-                        } finally {
-                            if (_didIteratorError) {
-                                throw _iteratorError;
-                            }
-                        }
+                            break;
                     }
-
-                    debug('Finding pid on windows. pid: ' + pid + ', expected cmds: ' + (0, _stringify2.default)(expectedCmdArray));
-                } else {
-                    debug('Finding pid on windows. pid: ' + pid + ', no expected cmd');
-                }
-                debug('Running cmd: "tasklist.exe /FI"pid eq ' + pid + '" /FO:CSV"');
-                var cmd = childProcess.exec('tasklist.exe /FI:"PID eq ' + pid.toString() + '" /FO:CSV', function (err, stdout, stderr) {
-                    var result = new _set2.default();
-                    if (err) {
-                        log('Error: ' + err.message);
-                        return reject(err);
-                    }
-                    var dataStr = stdout.toString();
-                    debug('Result: ' + dataStr);
-                    var data = dataStr.split('\n').filter(function (value) {
-                        return !!value;
-                    });
-                    if (data.length < 2) {
-                        return resolve(result);
-                    }
-                    var found = false;
-                    for (var i = 1; i < data.length; i++) {
-                        var imageName = /^\"(.*?)\",/.exec(data[i]);
-                        if (expectedCmd && expectedCmd.has(imageName[1])) {
-                            debug('Bingo, we\'re still running');
-                            found = true;
-                        }
-                        debug('Found matching process: ' + imageName[1]);
-                        result.add(imageName[1]);
-                    }
-                    if (expectedCmd && expectedCmd.size && !found) {
-                        log('Expected to match with a cmd name but none did.');
-                        log('Returning empty set');
-                        result.clear();
-                        resolve(result);
-                    }
-                    debug('Returning');
-                    resolve(result);
-                });
-            });
-        }
-    }, {
-        key: "findNonWindows",
-        value: function findNonWindows(pid, expectedCmd) {
-            return new _promise2.default(function (resolve, reject) {
-                var expectedCmdArray = [];
-                if (expectedCmd && expectedCmd.size) {
-                    var _iteratorNormalCompletion2 = true;
-                    var _didIteratorError2 = false;
-                    var _iteratorError2 = undefined;
-
-                    try {
-                        for (var _iterator2 = (0, _getIterator3.default)(expectedCmd.values()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                            var expectedCmdValue = _step2.value;
-
-                            expectedCmdArray.push(expectedCmdValue);
-                        }
-                    } catch (err) {
-                        _didIteratorError2 = true;
-                        _iteratorError2 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                                _iterator2.return();
-                            }
-                        } finally {
-                            if (_didIteratorError2) {
-                                throw _iteratorError2;
-                            }
-                        }
-                    }
-
-                    debug('Finding pid on non windows. pid: ' + pid + ', expected cmds: ' + (0, _stringify2.default)(expectedCmdArray));
-                } else {
-                    debug('Finding pid on non windows. pid: ' + pid + ', no expected cmd');
-                }
-                var cmdFormat = process.platform === 'linux' ? 'cmd' : 'command';
-                debug('Running cmd: "ps -p ' + pid + ' -o ' + cmdFormat + '"');
-                var cmd = childProcess.exec('ps -p ' + pid.toString() + ' -o ' + cmdFormat, function (err, stdout, stderr) {
-                    var result = new _set2.default();
-                    if (err) {
-                        debug('Error: ' + err.message);
-                        debug('Suppressing, returning empty set');
-                        // Have to resolve to '' instead of rejecting even on error cases.
-                        // This is because on no processes found stupid ps also returns a failed signal code.
-                        // return reject( err );
-                        return resolve(result);
-                    }
-                    var dataStr = stdout.toString();
-                    debug('Result: ' + dataStr);
-                    var data = dataStr.split(/[\r\n]/).filter(function (value) {
-                        return !!value;
-                    });
-                    var found = false;
-                    for (var i = 1; i < data.length; i++) {
-                        if (expectedCmd && expectedCmd.has(data[i])) {
-                            debug('Bingo, we\'re still running');
-                            found = true;
-                        }
-                        debug('Found matching process: ' + data[i]);
-                        result.add(data[i]);
-                    }
-                    if (expectedCmd && expectedCmd.size && !found) {
-                        log('Expected to match with a cmd name but none did.');
-                        log('Returning empty set');
-                        result.clear();
-                        resolve(result);
-                    }
-                    debug('Returning');
-                    resolve(result);
+                    conn.end();
+                }).on('end', function () {
+                    reject(new Error('Connection to wrapper ended before we got any info'));
+                }).on('error', function (err) {
+                    reject(new Error('Got an error in the connection: ' + err.message));
                 });
             });
         }
     }]);
-    return PidFinder;
+    return WrapperFinder;
 })();
 
-exports.PidFinder = PidFinder;
+exports.WrapperFinder = WrapperFinder;
 //# sourceMappingURL=pid-finder.js.map

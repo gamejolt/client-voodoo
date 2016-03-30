@@ -74,6 +74,11 @@ var fsCopy = function fsCopy(from, to) {
 };
 var fsReadDir = Bluebird.promisify(fs.readdir);
 var fsReadDirRecursively = Bluebird.promisify(require('recursive-readdir'));
+var wait = function wait(millis) {
+    return new _promise2.default(function (resolve) {
+        setTimeout(resolve, millis);
+    });
+};
 var test = function test(fn, done) {
     var func = function func(_done) {
         try {
@@ -103,6 +108,7 @@ exports.default = {
     fsCopy: fsCopy,
     fsReadDir: fsReadDir,
     fsReadDirRecursively: fsReadDirRecursively,
-    test: test
+    test: test,
+    wait: wait
 };
 //# sourceMappingURL=index.js.map
