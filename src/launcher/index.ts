@@ -187,10 +187,10 @@ export class LaunchHandle
 		return result;
 	}
 
-	private async ensureExecutable( file: string )
+	private ensureExecutable( file: string )
 	{
 		// Ensure that the main launcher file is executable.
-		await Common.chmod( file, '0755' );
+		return Common.chmod( file, '0755' );
 	}
 
 	private async start()
@@ -235,6 +235,8 @@ export class LaunchHandle
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
+		await this.ensureExecutable( this._file );
+
 		let cmd, args;
 		if ( isJava ) {
 			cmd = 'java';
@@ -265,7 +267,7 @@ export class LaunchHandle
 			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
 		}
 
-		await Common.chmod( this._file, '0755' );
+		await this.ensureExecutable( this._file );
 
 		let cmd, args;
 		if ( isJava ) {
@@ -296,7 +298,7 @@ export class LaunchHandle
 		let pid;
 		if ( stat.isFile() ) {
 
-			await Common.chmod( this._file, '0755' )
+			await this.ensureExecutable( this._file );
 
 			let cmd, args;
 			if ( isJava ) {
@@ -355,7 +357,7 @@ export class LaunchHandle
 			let executableName = parsedPlist.CFBundleExecutable || baseName.substr( 0, baseName.length - '.app'.length );
 
 			let executableFile = path.join( macosPath, executableName );
-			await Common.chmod( executableFile, '0755' );
+			await this.ensureExecutable( executableFile );
 
 			// Kept commented in case we lost our mind and we want to use gatekeeper
 			// let gatekeeper = await new Promise( ( resolve, reject ) =>

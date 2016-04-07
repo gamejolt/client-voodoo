@@ -12,6 +12,27 @@ describe( 'Launcher', function()
 	let app: express.Express;
 	let server: http.Server;
 
+	let url, os, launchOption;
+	switch  ( process.platform ) {
+		case 'win32':
+			url = 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/eggnoggplus-win.tar.xz';
+			os = 'windows';
+			launchOption = 'eggnoggplus-win/eggnoggplus.exe'
+			break;
+
+		case 'linux':
+			url = 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/eggnoggplus-linux-64.tar.xz';
+			os = 'linux';
+			launchOption = 'eggnoggplus-linux/eggnoggplus';
+			break;
+
+		case 'darwin':
+			url = 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/eggnoggplus-osx.tar.xz';
+			os = 'mac';
+			launchOption = 'eggnoggplus.app/';
+			break;
+	}
+
 	let localPackage: GameJolt.IGamePackage = {
 		id: 1,
 		title: 'test',
@@ -37,31 +58,16 @@ describe( 'Launcher', function()
 		},
 		file: {
 			id: 1,
-			filename: process.platform === 'darwin' ? 'supercrateboxosx.zip.tar.xz' : 'GJGas.exe.tar.xz',
+			filename: path.basename( url ),
 			filesize: 1,
 		},
 		launch_options: [ {
 			id: 1,
-			os: process.platform === 'win32' ? 'windows' : ( process.platform === 'darwin' ? 'mac' : 'linux' ),
-			executable_path: process.platform === 'darwin' ? 'Super Crate Box.app/' : 'GJGas.exe',
+			os: os,
+			executable_path: launchOption,
 		} ],
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 	};
-
-	let os;
-	switch ( process.platform ) {
-		case 'win32':
-			os = 'windows';
-			break;
-
-		case 'linux':
-			os = 'linux';
-			break;
-
-		case 'darwin':
-			os = 'mac';
-			break;
-	}
 
 	before( function( done )
 	{
@@ -91,11 +97,7 @@ describe( 'Launcher', function()
 
 	async function patch()
 	{
-		let patchHandle: PatchHandle = Patcher.patch(
-			process.platform === 'darwin' ?
-				'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/1/168/82418/files/5674a12dc66a7/supercrateboxosx.zip.tar.xz' :
-				'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz'
-			, localPackage, {
+		let patchHandle: PatchHandle = Patcher.patch( url, localPackage, {
 			overwrite: true,
 			decompressInDownload: false,
 		} );
