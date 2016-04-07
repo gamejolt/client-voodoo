@@ -42,7 +42,7 @@
   "dependencies": {
     "babel-runtime": "5.8.34",
     "bluebird": "3.0.5",
-    "client-game-wrapper": "0.0.2",
+    "client-game-wrapper": "0.0.3",
     "del": "2.1.0",
     "gunzip-maybe": "1.2.1",
     "lodash": "3.10.1",
