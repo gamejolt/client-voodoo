@@ -354,35 +354,22 @@ var LaunchHandle = (function () {
     }, {
         key: "ensureExecutable",
         value: function ensureExecutable(file) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
-                return _regenerator2.default.wrap(function _callee4$(_context4) {
-                    while (1) {
-                        switch (_context4.prev = _context4.next) {
-                            case 0:
-                                _context4.next = 2;
-                                return common_1.default.chmod(file, '0755');
-
-                            case 2:
-                            case "end":
-                                return _context4.stop();
-                        }
-                    }
-                }, _callee4, this);
-            }));
+            // Ensure that the main launcher file is executable.
+            return common_1.default.chmod(file, '0755');
         }
     }, {
         key: "start",
         value: function start() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
                 var launchOption, executablePath, stat, isJava;
-                return _regenerator2.default.wrap(function _callee5$(_context5) {
+                return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
-                        switch (_context5.prev = _context5.next) {
+                        switch (_context4.prev = _context4.next) {
                             case 0:
                                 launchOption = this.findLaunchOption();
 
                                 if (launchOption) {
-                                    _context5.next = 3;
+                                    _context4.next = 3;
                                     break;
                                 }
 
@@ -394,41 +381,91 @@ var LaunchHandle = (function () {
                                 executablePath = executablePath.replace(/\//, path.sep);
                                 this._file = path.join(this._localPackage.install_dir, executablePath);
                                 // If the destination already exists, make sure its valid.
-                                _context5.next = 8;
+                                _context4.next = 8;
                                 return common_1.default.fsExists(this._file);
 
                             case 8:
-                                if (_context5.sent) {
-                                    _context5.next = 10;
+                                if (_context4.sent) {
+                                    _context4.next = 10;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file doesn\'t exist.');
 
                             case 10:
-                                _context5.next = 12;
+                                _context4.next = 12;
                                 return common_1.default.fsStat(this._file);
 
                             case 12:
-                                stat = _context5.sent;
+                                stat = _context4.sent;
                                 isJava = path.extname(this._file) === 'jar';
-                                _context5.t0 = process.platform;
-                                _context5.next = _context5.t0 === 'win32' ? 17 : _context5.t0 === 'linux' ? 18 : _context5.t0 === 'darwin' ? 19 : 20;
+                                _context4.t0 = process.platform;
+                                _context4.next = _context4.t0 === 'win32' ? 17 : _context4.t0 === 'linux' ? 18 : _context4.t0 === 'darwin' ? 19 : 20;
                                 break;
 
                             case 17:
-                                return _context5.abrupt("return", this.startWindows(stat, isJava));
+                                return _context4.abrupt("return", this.startWindows(stat, isJava));
 
                             case 18:
-                                return _context5.abrupt("return", this.startLinux(stat, isJava));
+                                return _context4.abrupt("return", this.startLinux(stat, isJava));
 
                             case 19:
-                                return _context5.abrupt("return", this.startMac(stat, isJava));
+                                return _context4.abrupt("return", this.startMac(stat, isJava));
 
                             case 20:
                                 throw new Error('What potato are you running on? Detected platform: ' + process.platform);
 
                             case 21:
+                            case "end":
+                                return _context4.stop();
+                        }
+                    }
+                }, _callee4, this);
+            }));
+        }
+    }, {
+        key: "startWindows",
+        value: function startWindows(stat, isJava) {
+            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+                var cmd, args, wrapperId, wrapperPort;
+                return _regenerator2.default.wrap(function _callee5$(_context5) {
+                    while (1) {
+                        switch (_context5.prev = _context5.next) {
+                            case 0:
+                                if (stat.isFile()) {
+                                    _context5.next = 2;
+                                    break;
+                                }
+
+                                throw new Error('Can\'t launch because the file isn\'t valid.');
+
+                            case 2:
+                                _context5.next = 4;
+                                return this.ensureExecutable(this._file);
+
+                            case 4:
+                                cmd = undefined, args = undefined;
+
+                                if (isJava) {
+                                    cmd = 'java';
+                                    args = ['-jar', this._file];
+                                } else {
+                                    cmd = this._file;
+                                    args = [];
+                                }
+                                wrapperId = this._localPackage.id.toString();
+                                wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
+                                    cwd: path.dirname(this._file),
+                                    detached: true,
+                                    env: this.options.env
+                                });
+                                return _context5.abrupt("return", Launcher.attach({
+                                    wrapperId: wrapperId,
+                                    wrapperPort: wrapperPort,
+                                    pollInterval: this.options.pollInterval
+                                }));
+
+                            case 9:
                             case "end":
                                 return _context5.stop();
                         }
@@ -437,8 +474,8 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startWindows",
-        value: function startWindows(stat, isJava) {
+        key: "startLinux",
+        value: function startLinux(stat, isJava) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
                 var cmd, args, wrapperId, wrapperPort;
                 return _regenerator2.default.wrap(function _callee6$(_context6) {
@@ -453,6 +490,10 @@ var LaunchHandle = (function () {
                                 throw new Error('Can\'t launch because the file isn\'t valid.');
 
                             case 2:
+                                _context6.next = 4;
+                                return this.ensureExecutable(this._file);
+
+                            case 4:
                                 cmd = undefined, args = undefined;
 
                                 if (isJava) {
@@ -474,7 +515,7 @@ var LaunchHandle = (function () {
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 7:
+                            case 9:
                             case "end":
                                 return _context6.stop();
                         }
@@ -483,24 +524,23 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startLinux",
-        value: function startLinux(stat, isJava) {
+        key: "startMac",
+        value: function startMac(stat, isJava) {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
-                var cmd, args, wrapperId, wrapperPort;
+                var pid, cmd, args, wrapperId, wrapperPort, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile;
                 return _regenerator2.default.wrap(function _callee7$(_context7) {
                     while (1) {
                         switch (_context7.prev = _context7.next) {
                             case 0:
-                                if (stat.isFile()) {
-                                    _context7.next = 2;
+                                pid = undefined;
+
+                                if (!stat.isFile()) {
+                                    _context7.next = 11;
                                     break;
                                 }
 
-                                throw new Error('Can\'t launch because the file isn\'t valid.');
-
-                            case 2:
                                 _context7.next = 4;
-                                return common_1.default.chmod(this._file, '0755');
+                                return this.ensureExecutable(this._file);
 
                             case 4:
                                 cmd = undefined, args = undefined;
@@ -524,58 +564,9 @@ var LaunchHandle = (function () {
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 9:
-                            case "end":
-                                return _context7.stop();
-                        }
-                    }
-                }, _callee7, this);
-            }));
-        }
-    }, {
-        key: "startMac",
-        value: function startMac(stat, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee8() {
-                var pid, cmd, args, wrapperId, wrapperPort, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile;
-                return _regenerator2.default.wrap(function _callee8$(_context8) {
-                    while (1) {
-                        switch (_context8.prev = _context8.next) {
-                            case 0:
-                                pid = undefined;
-
-                                if (!stat.isFile()) {
-                                    _context8.next = 11;
-                                    break;
-                                }
-
-                                _context8.next = 4;
-                                return common_1.default.chmod(this._file, '0755');
-
-                            case 4:
-                                cmd = undefined, args = undefined;
-
-                                if (isJava) {
-                                    cmd = 'java';
-                                    args = ['-jar', this._file];
-                                } else {
-                                    cmd = this._file;
-                                    args = [];
-                                }
-                                wrapperId = this._localPackage.id.toString();
-                                wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
-                                    cwd: path.dirname(this._file),
-                                    detached: true,
-                                    env: this.options.env
-                                });
-                                return _context8.abrupt("return", Launcher.attach({
-                                    wrapperId: wrapperId,
-                                    wrapperPort: wrapperPort,
-                                    pollInterval: this.options.pollInterval
-                                }));
-
                             case 11:
                                 if (!(!this._file.toLowerCase().endsWith('.app') && !this._file.toLowerCase().endsWith('.app/'))) {
-                                    _context8.next = 13;
+                                    _context7.next = 13;
                                     break;
                                 }
 
@@ -583,42 +574,42 @@ var LaunchHandle = (function () {
 
                             case 13:
                                 plistPath = path.join(this._file, 'Contents', 'Info.plist');
-                                _context8.next = 16;
+                                _context7.next = 16;
                                 return common_1.default.fsExists(plistPath);
 
                             case 16:
-                                if (_context8.sent) {
-                                    _context8.next = 18;
+                                if (_context7.sent) {
+                                    _context7.next = 18;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.');
 
                             case 18:
-                                _context8.next = 20;
+                                _context7.next = 20;
                                 return common_1.default.fsStat(plistPath);
 
                             case 20:
-                                plistStat = _context8.sent;
+                                plistStat = _context7.sent;
 
                                 if (plistStat.isFile()) {
-                                    _context8.next = 23;
+                                    _context7.next = 23;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.');
 
                             case 23:
-                                _context8.t0 = plist;
-                                _context8.next = 26;
+                                _context7.t0 = plist;
+                                _context7.next = 26;
                                 return common_1.default.fsReadFile(plistPath, 'utf8');
 
                             case 26:
-                                _context8.t1 = _context8.sent;
-                                parsedPlist = _context8.t0.parse.call(_context8.t0, _context8.t1);
+                                _context7.t1 = _context7.sent;
+                                parsedPlist = _context7.t0.parse.call(_context7.t0, _context7.t1);
 
                                 if (parsedPlist) {
-                                    _context8.next = 30;
+                                    _context7.next = 30;
                                     break;
                                 }
 
@@ -626,26 +617,26 @@ var LaunchHandle = (function () {
 
                             case 30:
                                 macosPath = path.join(this._file, 'Contents', 'MacOS');
-                                _context8.next = 33;
+                                _context7.next = 33;
                                 return common_1.default.fsExists(macosPath);
 
                             case 33:
-                                if (_context8.sent) {
-                                    _context8.next = 35;
+                                if (_context7.sent) {
+                                    _context7.next = 35;
                                     break;
                                 }
 
                                 throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.');
 
                             case 35:
-                                _context8.next = 37;
+                                _context7.next = 37;
                                 return common_1.default.fsStat(macosPath);
 
                             case 37:
-                                macosStat = _context8.sent;
+                                macosStat = _context7.sent;
 
                                 if (macosStat.isDirectory()) {
-                                    _context8.next = 40;
+                                    _context7.next = 40;
                                     break;
                                 }
 
@@ -655,8 +646,8 @@ var LaunchHandle = (function () {
                                 baseName = path.basename(this._file);
                                 executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
                                 executableFile = path.join(macosPath, executableName);
-                                _context8.next = 45;
-                                return common_1.default.chmod(executableFile, '0755');
+                                _context7.next = 45;
+                                return this.ensureExecutable(executableFile);
 
                             case 45:
                                 // Kept commented in case we lost our mind and we want to use gatekeeper
@@ -676,7 +667,7 @@ var LaunchHandle = (function () {
                                     detached: true,
                                     env: this.options.env
                                 });
-                                return _context8.abrupt("return", Launcher.attach({
+                                return _context7.abrupt("return", Launcher.attach({
                                     wrapperId: wrapperId,
                                     wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
@@ -684,10 +675,10 @@ var LaunchHandle = (function () {
 
                             case 48:
                             case "end":
-                                return _context8.stop();
+                                return _context7.stop();
                         }
                     }
-                }, _callee8, this);
+                }, _callee7, this);
             }));
         }
     }, {
