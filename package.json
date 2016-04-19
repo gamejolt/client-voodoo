@@ -29,7 +29,7 @@
     "gulp-typescript": "2.9.2",
     "mocha": "2.3.4",
     "run-sequence": "1.1.4",
-    "typescript": "1.7.3"
+    "typescript": "1.8.10"
   },
   "optionalDependencies": {
     "applescript": "1.0.0",

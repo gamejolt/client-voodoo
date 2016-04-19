@@ -338,7 +338,36 @@ export class LaunchHandle
 				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.' );
 			}
 
-			let parsedPlist = plist.parse( await Common.fsReadFile( plistPath, 'utf8' ) );
+			let plistContents = await Common.fsReadFile( plistPath, 'utf8' );
+			let parsedPlist: any;
+			try {
+
+				// First try parsing normally.
+				parsedPlist = plist.parse( plistContents );
+			}
+			catch ( err ) {
+
+				// If failed, it may be a plist in binary format (http://www.forensicswiki.org/wiki/Converting_Binary_Plists)
+				// This makes sure to convert it to xml before parsing.
+				plistContents = await new Promise<string>( ( resolve, reject ) =>
+				{
+					childProcess.exec( shellEscape( [ 'plutil', '-convert', 'xml1', '-o', '-', plistPath ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
+					{
+						if ( err ) {
+							return reject( err );
+						}
+
+						let errMsg: string;
+						if ( stderr && ( errMsg = stderr.toString( 'utf8' ) ) ) {
+							return reject( new Error( errMsg ) );
+						}
+
+						return resolve( stdout.toString( 'utf8' ) );
+					} );
+				} );
+				parsedPlist = plist.parse( plistContents );
+			}
+
 			if ( !parsedPlist ) {
 				throw new Error( 'That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.' );
 			}
