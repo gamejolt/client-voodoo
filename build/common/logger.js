@@ -1,58 +1,53 @@
 "use strict";
 
-var _typeof2 = require("babel-runtime/helpers/typeof");
+var _typeof2 = require('babel-runtime/helpers/typeof');
 
 var _typeof3 = _interopRequireDefault(_typeof2);
 
-var _getIterator2 = require("babel-runtime/core-js/get-iterator");
+var _getIterator2 = require('babel-runtime/core-js/get-iterator');
 
 var _getIterator3 = _interopRequireDefault(_getIterator2);
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var util = require('util');
@@ -64,15 +59,15 @@ var LOG_LINES = 300;
 var CONSOLE_LOG = console.log;
 var CONSOLE_ERR = console.error;
 
-var Logger = (function () {
+var Logger = function () {
     function Logger() {
         (0, _classCallCheck3.default)(this, Logger);
     }
 
     (0, _createClass3.default)(Logger, null, [{
-        key: "_flushFile",
+        key: '_flushFile',
         value: function _flushFile() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
                 var str;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -103,12 +98,12 @@ var Logger = (function () {
 
                             case 12:
                                 _context.prev = 12;
-                                _context.t0 = _context["catch"](0);
+                                _context.t0 = _context['catch'](0);
 
                                 CONSOLE_LOG.apply(console, ['Babel sucks: ' + _context.t0.message + '\n' + _context.t0.stack]);
 
                             case 15:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -116,7 +111,7 @@ var Logger = (function () {
             }));
         }
     }, {
-        key: "_log",
+        key: '_log',
         value: function _log() {
             for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = arguments[_key];
@@ -157,7 +152,7 @@ var Logger = (function () {
             }
         }
     }, {
-        key: "_logErr",
+        key: '_logErr',
         value: function _logErr() {
             for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
                 args[_key2] = arguments[_key2];
@@ -198,9 +193,9 @@ var Logger = (function () {
             }
         }
     }, {
-        key: "hijack",
+        key: 'hijack',
         value: function hijack(file) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 var readLines, flushFunc;
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
@@ -211,7 +206,7 @@ var Logger = (function () {
                                     break;
                                 }
 
-                                return _context2.abrupt("return");
+                                return _context2.abrupt('return');
 
                             case 2:
                                 this._filePath = file || 'client.log';
@@ -231,7 +226,7 @@ var Logger = (function () {
                             case 9:
                                 readLines = _context2.sent;
 
-                                console.log(typeof readLines === "undefined" ? "undefined" : (0, _typeof3.default)(readLines));
+                                console.log(typeof readLines === 'undefined' ? 'undefined' : (0, _typeof3.default)(readLines));
                                 this._logLines = readLines.split('\n');
                                 if (this._logLines.length > LOG_LINES) {
                                     this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
@@ -241,7 +236,7 @@ var Logger = (function () {
 
                             case 15:
                                 _context2.prev = 15;
-                                _context2.t0 = _context2["catch"](6);
+                                _context2.t0 = _context2['catch'](6);
 
                                 console.log('Seroiusly babel gtfo: ' + _context2.t0.message + '\n' + _context2.t0.stack);
 
@@ -260,7 +255,7 @@ var Logger = (function () {
                                 this._hijacked = true;
 
                             case 26:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -268,9 +263,9 @@ var Logger = (function () {
             }));
         }
     }, {
-        key: "unhijack",
+        key: 'unhijack',
         value: function unhijack() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee3() {
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
                         switch (_context3.prev = _context3.next) {
@@ -280,7 +275,7 @@ var Logger = (function () {
                                     break;
                                 }
 
-                                return _context3.abrupt("return");
+                                return _context3.abrupt('return');
 
                             case 2:
                                 clearInterval(this._flushInterval);
@@ -298,7 +293,7 @@ var Logger = (function () {
                                 this._hijacked = false;
 
                             case 11:
-                            case "end":
+                            case 'end':
                                 return _context3.stop();
                         }
                     }
@@ -306,7 +301,7 @@ var Logger = (function () {
             }));
         }
     }, {
-        key: "getClientLog",
+        key: 'getClientLog',
         value: function getClientLog() {
             return {
                 logLines: _.clone(this._logLines),
@@ -323,7 +318,7 @@ var Logger = (function () {
         }
     }]);
     return Logger;
-})();
+}();
 
 Logger._logLines = [];
 Logger._hijacked = false;

@@ -1,78 +1,74 @@
 "use strict";
 
-var _getPrototypeOf = require("babel-runtime/core-js/object/get-prototype-of");
+var _getPrototypeOf = require('babel-runtime/core-js/object/get-prototype-of');
 
 var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
 
-var _possibleConstructorReturn2 = require("babel-runtime/helpers/possibleConstructorReturn");
+var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
 
 var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
 
-var _inherits2 = require("babel-runtime/helpers/inherits");
+var _inherits2 = require('babel-runtime/helpers/inherits');
 
 var _inherits3 = _interopRequireDefault(_inherits2);
 
-var _getIterator2 = require("babel-runtime/core-js/get-iterator");
+var _getIterator2 = require('babel-runtime/core-js/get-iterator');
 
 var _getIterator3 = _interopRequireDefault(_getIterator2);
 
-var _map = require("babel-runtime/core-js/map");
+var _map = require('babel-runtime/core-js/map');
 
 var _map2 = _interopRequireDefault(_map);
 
-var _typeof2 = require("babel-runtime/helpers/typeof");
+var _typeof2 = require('babel-runtime/helpers/typeof');
 
 var _typeof3 = _interopRequireDefault(_typeof2);
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var path = require('path');
 var events_1 = require('events');
+var childProcess = require('child_process');
 var _ = require('lodash');
 var common_1 = require('../common');
 var pid_finder_1 = require('./pid-finder');
@@ -87,22 +83,22 @@ function log(message) {
     console.log('Launcher: ' + message);
 }
 
-var Launcher = (function () {
+var Launcher = function () {
     function Launcher() {
         (0, _classCallCheck3.default)(this, Launcher);
     }
 
     (0, _createClass3.default)(Launcher, null, [{
-        key: "launch",
+        key: 'launch',
 
         // Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
         value: function launch(localPackage, os, arch, options) {
             return new LaunchHandle(localPackage, os, arch, options);
         }
     }, {
-        key: "attach",
+        key: 'attach',
         value: function attach(options) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 var _this = this;
 
                 var _ret;
@@ -118,8 +114,8 @@ var Launcher = (function () {
                                         while (1) {
                                             switch (_context.prev = _context.next) {
                                                 case 0:
-                                                    wrapper = undefined;
-                                                    instance = undefined;
+                                                    wrapper = void 0;
+                                                    instance = void 0;
 
                                                     if (!options.instance) {
                                                         _context.next = 7;
@@ -127,7 +123,7 @@ var Launcher = (function () {
                                                     }
 
                                                     instance = options.instance;
-                                                    log("Attaching existing instance: id - " + instance.wrapperId + ", port - " + instance.wrapperPort + ", poll interval - " + options.pollInterval);
+                                                    log('Attaching existing instance: id - ' + instance.wrapperId + ', port - ' + instance.wrapperPort + ', poll interval - ' + options.pollInterval);
                                                     _context.next = 19;
                                                     break;
 
@@ -140,7 +136,7 @@ var Launcher = (function () {
                                                     parsedWrapper = JSON.parse(options.stringifiedWrapper);
 
                                                     instance = new LaunchInstanceHandle(parsedWrapper.wrapperId, parsedWrapper.wrapperPort, options.pollInterval);
-                                                    log("Attaching new instance from stringified wrapper: id - " + instance.wrapperId + ", port - " + instance.wrapperPort + ", poll interval - " + options.pollInterval);
+                                                    log('Attaching new instance from stringified wrapper: id - ' + instance.wrapperId + ', port - ' + instance.wrapperPort + ', poll interval - ' + options.pollInterval);
                                                     _context.next = 19;
                                                     break;
 
@@ -151,7 +147,7 @@ var Launcher = (function () {
                                                     }
 
                                                     instance = new LaunchInstanceHandle(options.wrapperId, options.wrapperPort, options.pollInterval);
-                                                    log("Attaching new instance: id - " + instance.wrapperId + ", port - " + instance.wrapperPort + ", poll interval - " + options.pollInterval);
+                                                    log('Attaching new instance: id - ' + instance.wrapperId + ', port - ' + instance.wrapperPort + ', poll interval - ' + options.pollInterval);
                                                     _context.next = 19;
                                                     break;
 
@@ -181,7 +177,7 @@ var Launcher = (function () {
                                                     }
 
                                                     success = true;
-                                                    return _context.abrupt("break", 37);
+                                                    return _context.abrupt('break', 37);
 
                                                 case 28:
                                                     _context.next = 32;
@@ -189,7 +185,7 @@ var Launcher = (function () {
 
                                                 case 30:
                                                     _context.prev = 30;
-                                                    _context.t0 = _context["catch"](22);
+                                                    _context.t0 = _context['catch'](22);
 
                                                 case 32:
                                                     _context.next = 34;
@@ -215,27 +211,27 @@ var Launcher = (function () {
                                                         _this.detach(instance.wrapperId);
                                                     });
                                                     queue_1.VoodooQueue.setSlower();
-                                                    return _context.abrupt("return", {
+                                                    return _context.abrupt('return', {
                                                         v: instance
                                                     });
 
                                                 case 44:
-                                                case "end":
+                                                case 'end':
                                                     return _context.stop();
                                             }
                                         }
                                     }, _callee, _this, [[22, 30]]);
-                                })(), "t0", 2);
+                                })(), 't0', 2);
 
                             case 2:
                                 _ret = _context2.t0;
 
-                                if (!((typeof _ret === "undefined" ? "undefined" : (0, _typeof3.default)(_ret)) === "object")) {
+                                if (!((typeof _ret === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret)) === "object")) {
                                     _context2.next = 5;
                                     break;
                                 }
 
-                                return _context2.abrupt("return", _ret.v);
+                                return _context2.abrupt('return', _ret.v);
 
                             case 5:
                                 _context2.next = 11;
@@ -243,13 +239,13 @@ var Launcher = (function () {
 
                             case 7:
                                 _context2.prev = 7;
-                                _context2.t1 = _context2["catch"](0);
+                                _context2.t1 = _context2['catch'](0);
 
                                 log('Got error: ' + _context2.t1.message + "\n" + _context2.t1.stack);
                                 throw _context2.t1;
 
                             case 11:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -257,15 +253,15 @@ var Launcher = (function () {
             }));
         }
     }, {
-        key: "detach",
+        key: 'detach',
         value: function detach(wrapperId, expectedWrapperPort) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee3() {
                 var instance;
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
                         switch (_context3.prev = _context3.next) {
                             case 0:
-                                log("Detaching: wrapperId - " + wrapperId + ", expected port - " + expectedWrapperPort);
+                                log('Detaching: wrapperId - ' + wrapperId + ', expected port - ' + expectedWrapperPort);
                                 instance = this._runningInstances.get(wrapperId);
 
                                 if (instance && (!expectedWrapperPort || instance.wrapperPort === expectedWrapperPort)) {
@@ -278,7 +274,7 @@ var Launcher = (function () {
                                 }
 
                             case 3:
-                            case "end":
+                            case 'end':
                                 return _context3.stop();
                         }
                     }
@@ -287,12 +283,12 @@ var Launcher = (function () {
         }
     }]);
     return Launcher;
-})();
+}();
 
 Launcher._runningInstances = new _map2.default();
 exports.Launcher = Launcher;
 
-var LaunchHandle = (function () {
+var LaunchHandle = function () {
     function LaunchHandle(_localPackage, _os, _arch, options) {
         (0, _classCallCheck3.default)(this, LaunchHandle);
 
@@ -308,7 +304,7 @@ var LaunchHandle = (function () {
     }
 
     (0, _createClass3.default)(LaunchHandle, [{
-        key: "findLaunchOption",
+        key: 'findLaunchOption',
         value: function findLaunchOption() {
             var result = null;
             var _iteratorNormalCompletion = true;
@@ -352,15 +348,15 @@ var LaunchHandle = (function () {
             return result;
         }
     }, {
-        key: "ensureExecutable",
+        key: 'ensureExecutable',
         value: function ensureExecutable(file) {
             // Ensure that the main launcher file is executable.
             return common_1.default.chmod(file, '0755');
         }
     }, {
-        key: "start",
+        key: 'start',
         value: function start() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee4() {
                 var launchOption, executablePath, stat, isJava;
                 return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
@@ -404,19 +400,19 @@ var LaunchHandle = (function () {
                                 break;
 
                             case 17:
-                                return _context4.abrupt("return", this.startWindows(stat, isJava));
+                                return _context4.abrupt('return', this.startWindows(stat, isJava));
 
                             case 18:
-                                return _context4.abrupt("return", this.startLinux(stat, isJava));
+                                return _context4.abrupt('return', this.startLinux(stat, isJava));
 
                             case 19:
-                                return _context4.abrupt("return", this.startMac(stat, isJava));
+                                return _context4.abrupt('return', this.startMac(stat, isJava));
 
                             case 20:
                                 throw new Error('What potato are you running on? Detected platform: ' + process.platform);
 
                             case 21:
-                            case "end":
+                            case 'end':
                                 return _context4.stop();
                         }
                     }
@@ -424,9 +420,9 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startWindows",
+        key: 'startWindows',
         value: function startWindows(stat, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee5() {
                 var cmd, args, wrapperId, wrapperPort;
                 return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
@@ -444,7 +440,7 @@ var LaunchHandle = (function () {
                                 return this.ensureExecutable(this._file);
 
                             case 4:
-                                cmd = undefined, args = undefined;
+                                cmd = void 0, args = void 0;
 
                                 if (isJava) {
                                     cmd = 'java';
@@ -459,14 +455,14 @@ var LaunchHandle = (function () {
                                     detached: true,
                                     env: this.options.env
                                 });
-                                return _context5.abrupt("return", Launcher.attach({
+                                return _context5.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
                                     wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
                                 }));
 
                             case 9:
-                            case "end":
+                            case 'end':
                                 return _context5.stop();
                         }
                     }
@@ -474,9 +470,9 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startLinux",
+        key: 'startLinux',
         value: function startLinux(stat, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee6() {
                 var cmd, args, wrapperId, wrapperPort;
                 return _regenerator2.default.wrap(function _callee6$(_context6) {
                     while (1) {
@@ -494,7 +490,7 @@ var LaunchHandle = (function () {
                                 return this.ensureExecutable(this._file);
 
                             case 4:
-                                cmd = undefined, args = undefined;
+                                cmd = void 0, args = void 0;
 
                                 if (isJava) {
                                     cmd = 'java';
@@ -509,14 +505,14 @@ var LaunchHandle = (function () {
                                     detached: true,
                                     env: this.options.env
                                 });
-                                return _context6.abrupt("return", Launcher.attach({
+                                return _context6.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
                                     wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
                                 }));
 
                             case 9:
-                            case "end":
+                            case 'end':
                                 return _context6.stop();
                         }
                     }
@@ -524,26 +520,29 @@ var LaunchHandle = (function () {
             }));
         }
     }, {
-        key: "startMac",
+        key: 'startMac',
         value: function startMac(stat, isJava) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
-                var pid, cmd, args, wrapperId, wrapperPort, plistPath, plistStat, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile;
-                return _regenerator2.default.wrap(function _callee7$(_context7) {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee8() {
+                var _this2 = this;
+
+                var pid, cmd, args, wrapperId, wrapperPort, _ret2;
+
+                return _regenerator2.default.wrap(function _callee8$(_context8) {
                     while (1) {
-                        switch (_context7.prev = _context7.next) {
+                        switch (_context8.prev = _context8.next) {
                             case 0:
-                                pid = undefined;
+                                pid = void 0;
 
                                 if (!stat.isFile()) {
-                                    _context7.next = 11;
+                                    _context8.next = 11;
                                     break;
                                 }
 
-                                _context7.next = 4;
+                                _context8.next = 4;
                                 return this.ensureExecutable(this._file);
 
                             case 4:
-                                cmd = undefined, args = undefined;
+                                cmd = void 0, args = void 0;
 
                                 if (isJava) {
                                     cmd = 'java';
@@ -558,187 +557,241 @@ var LaunchHandle = (function () {
                                     detached: true,
                                     env: this.options.env
                                 });
-                                return _context7.abrupt("return", Launcher.attach({
+                                return _context8.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
                                     wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
                                 }));
 
                             case 11:
-                                if (!(!this._file.toLowerCase().endsWith('.app') && !this._file.toLowerCase().endsWith('.app/'))) {
-                                    _context7.next = 13;
+                                return _context8.delegateYield(_regenerator2.default.mark(function _callee7() {
+                                    var plistPath, plistStat, plistContents, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile, wrapperId, wrapperPort;
+                                    return _regenerator2.default.wrap(function _callee7$(_context7) {
+                                        while (1) {
+                                            switch (_context7.prev = _context7.next) {
+                                                case 0:
+                                                    if (!(!_this2._file.toLowerCase().endsWith('.app') && !_this2._file.toLowerCase().endsWith('.app/'))) {
+                                                        _context7.next = 2;
+                                                        break;
+                                                    }
+
+                                                    throw new Error('That doesn\'t look like a valid Mac OS X bundle. Expecting .app folder');
+
+                                                case 2:
+                                                    plistPath = path.join(_this2._file, 'Contents', 'Info.plist');
+                                                    _context7.next = 5;
+                                                    return common_1.default.fsExists(plistPath);
+
+                                                case 5:
+                                                    if (_context7.sent) {
+                                                        _context7.next = 7;
+                                                        break;
+                                                    }
+
+                                                    throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.');
+
+                                                case 7:
+                                                    _context7.next = 9;
+                                                    return common_1.default.fsStat(plistPath);
+
+                                                case 9:
+                                                    plistStat = _context7.sent;
+
+                                                    if (plistStat.isFile()) {
+                                                        _context7.next = 12;
+                                                        break;
+                                                    }
+
+                                                    throw new Error('That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.');
+
+                                                case 12:
+                                                    _context7.next = 14;
+                                                    return common_1.default.fsReadFile(plistPath, 'utf8');
+
+                                                case 14:
+                                                    plistContents = _context7.sent;
+                                                    parsedPlist = void 0;
+                                                    _context7.prev = 16;
+
+                                                    // First try parsing normally.
+                                                    parsedPlist = plist.parse(plistContents);
+                                                    _context7.next = 26;
+                                                    break;
+
+                                                case 20:
+                                                    _context7.prev = 20;
+                                                    _context7.t0 = _context7['catch'](16);
+                                                    _context7.next = 24;
+                                                    return new _promise2.default(function (resolve, reject) {
+                                                        childProcess.exec(shellEscape(['plutil', '-convert', 'xml1', '-o', '-', plistPath]), function (err, stdout, stderr) {
+                                                            if (err) {
+                                                                return reject(err);
+                                                            }
+                                                            var errMsg = void 0;
+                                                            if (stderr && (errMsg = stderr.toString('utf8'))) {
+                                                                return reject(new Error(errMsg));
+                                                            }
+                                                            return resolve(stdout.toString('utf8'));
+                                                        });
+                                                    });
+
+                                                case 24:
+                                                    plistContents = _context7.sent;
+
+                                                    parsedPlist = plist.parse(plistContents);
+
+                                                case 26:
+                                                    if (parsedPlist) {
+                                                        _context7.next = 28;
+                                                        break;
+                                                    }
+
+                                                    throw new Error('That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.');
+
+                                                case 28:
+                                                    macosPath = path.join(_this2._file, 'Contents', 'MacOS');
+                                                    _context7.next = 31;
+                                                    return common_1.default.fsExists(macosPath);
+
+                                                case 31:
+                                                    if (_context7.sent) {
+                                                        _context7.next = 33;
+                                                        break;
+                                                    }
+
+                                                    throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.');
+
+                                                case 33:
+                                                    _context7.next = 35;
+                                                    return common_1.default.fsStat(macosPath);
+
+                                                case 35:
+                                                    macosStat = _context7.sent;
+
+                                                    if (macosStat.isDirectory()) {
+                                                        _context7.next = 38;
+                                                        break;
+                                                    }
+
+                                                    throw new Error('That doesn\'t look like a valid Mac OS X bundle. MacOS isn\'t a valid directory.');
+
+                                                case 38:
+                                                    baseName = path.basename(_this2._file);
+                                                    executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
+                                                    executableFile = path.join(macosPath, executableName);
+                                                    _context7.next = 43;
+                                                    return _this2.ensureExecutable(executableFile);
+
+                                                case 43:
+                                                    // Kept commented in case we lost our mind and we want to use gatekeeper
+                                                    // let gatekeeper = await new Promise( ( resolve, reject ) =>
+                                                    // {
+                                                    // 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
+                                                    // 	{
+                                                    // 		if ( err || ( stderr && stderr.length ) ) {
+                                                    // 			return reject( err );
+                                                    // 		}
+                                                    // 		resolve();
+                                                    // 	} );
+                                                    // } );
+                                                    wrapperId = _this2._localPackage.id.toString();
+                                                    wrapperPort = GameWrapper.start(wrapperId, executableFile, [], {
+                                                        cwd: macosPath,
+                                                        detached: true,
+                                                        env: _this2.options.env
+                                                    });
+                                                    return _context7.abrupt('return', {
+                                                        v: Launcher.attach({
+                                                            wrapperId: wrapperId,
+                                                            wrapperPort: wrapperPort,
+                                                            pollInterval: _this2.options.pollInterval
+                                                        })
+                                                    });
+
+                                                case 46:
+                                                case 'end':
+                                                    return _context7.stop();
+                                            }
+                                        }
+                                    }, _callee7, _this2, [[16, 20]]);
+                                })(), 't0', 12);
+
+                            case 12:
+                                _ret2 = _context8.t0;
+
+                                if (!((typeof _ret2 === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret2)) === "object")) {
+                                    _context8.next = 15;
                                     break;
                                 }
 
-                                throw new Error('That doesn\'t look like a valid Mac OS X bundle. Expecting .app folder');
+                                return _context8.abrupt('return', _ret2.v);
 
-                            case 13:
-                                plistPath = path.join(this._file, 'Contents', 'Info.plist');
-                                _context7.next = 16;
-                                return common_1.default.fsExists(plistPath);
-
-                            case 16:
-                                if (_context7.sent) {
-                                    _context7.next = 18;
-                                    break;
-                                }
-
-                                throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.');
-
-                            case 18:
-                                _context7.next = 20;
-                                return common_1.default.fsStat(plistPath);
-
-                            case 20:
-                                plistStat = _context7.sent;
-
-                                if (plistStat.isFile()) {
-                                    _context7.next = 23;
-                                    break;
-                                }
-
-                                throw new Error('That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.');
-
-                            case 23:
-                                _context7.t0 = plist;
-                                _context7.next = 26;
-                                return common_1.default.fsReadFile(plistPath, 'utf8');
-
-                            case 26:
-                                _context7.t1 = _context7.sent;
-                                parsedPlist = _context7.t0.parse.call(_context7.t0, _context7.t1);
-
-                                if (parsedPlist) {
-                                    _context7.next = 30;
-                                    break;
-                                }
-
-                                throw new Error('That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.');
-
-                            case 30:
-                                macosPath = path.join(this._file, 'Contents', 'MacOS');
-                                _context7.next = 33;
-                                return common_1.default.fsExists(macosPath);
-
-                            case 33:
-                                if (_context7.sent) {
-                                    _context7.next = 35;
-                                    break;
-                                }
-
-                                throw new Error('That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.');
-
-                            case 35:
-                                _context7.next = 37;
-                                return common_1.default.fsStat(macosPath);
-
-                            case 37:
-                                macosStat = _context7.sent;
-
-                                if (macosStat.isDirectory()) {
-                                    _context7.next = 40;
-                                    break;
-                                }
-
-                                throw new Error('That doesn\'t look like a valid Mac OS X bundle. MacOS isn\'t a valid directory.');
-
-                            case 40:
-                                baseName = path.basename(this._file);
-                                executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
-                                executableFile = path.join(macosPath, executableName);
-                                _context7.next = 45;
-                                return this.ensureExecutable(executableFile);
-
-                            case 45:
-                                // Kept commented in case we lost our mind and we want to use gatekeeper
-                                // let gatekeeper = await new Promise( ( resolve, reject ) =>
-                                // {
-                                // 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
-                                // 	{
-                                // 		if ( err || ( stderr && stderr.length ) ) {
-                                // 			return reject( err );
-                                // 		}
-                                // 		resolve();
-                                // 	} );
-                                // } );
-                                wrapperId = this._localPackage.id.toString();
-                                wrapperPort = GameWrapper.start(wrapperId, executableFile, [], {
-                                    cwd: macosPath,
-                                    detached: true,
-                                    env: this.options.env
-                                });
-                                return _context7.abrupt("return", Launcher.attach({
-                                    wrapperId: wrapperId,
-                                    wrapperPort: wrapperPort,
-                                    pollInterval: this.options.pollInterval
-                                }));
-
-                            case 48:
-                            case "end":
-                                return _context7.stop();
+                            case 15:
+                            case 'end':
+                                return _context8.stop();
                         }
                     }
-                }, _callee7, this);
+                }, _callee8, this);
             }));
         }
     }, {
-        key: "package",
+        key: 'package',
         get: function get() {
             return this._localPackage;
         }
     }, {
-        key: "file",
+        key: 'file',
         get: function get() {
             return this._file;
         }
     }, {
-        key: "promise",
+        key: 'promise',
         get: function get() {
             return this._promise;
         }
     }]);
     return LaunchHandle;
-})();
+}();
 
 exports.LaunchHandle = LaunchHandle;
 
-var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
+var LaunchInstanceHandle = function (_events_1$EventEmitte) {
     (0, _inherits3.default)(LaunchInstanceHandle, _events_1$EventEmitte);
 
     function LaunchInstanceHandle(_wrapperId, _wrapperPort, pollInterval) {
         (0, _classCallCheck3.default)(this, LaunchInstanceHandle);
 
-        var _this2 = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(LaunchInstanceHandle).call(this));
+        var _this3 = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(LaunchInstanceHandle).call(this));
 
-        _this2._wrapperId = _wrapperId;
-        _this2._wrapperPort = _wrapperPort;
-        _this2._interval = setInterval(function () {
-            return _this2.tick();
+        _this3._wrapperId = _wrapperId;
+        _this3._wrapperPort = _wrapperPort;
+        _this3._interval = setInterval(function () {
+            return _this3.tick();
         }, pollInterval || 1000);
-        _this2._stable = false;
-        return _this2;
+        _this3._stable = false;
+        return _this3;
     }
 
     (0, _createClass3.default)(LaunchInstanceHandle, [{
-        key: "tick",
+        key: 'tick',
         value: function tick() {
-            var _this3 = this;
+            var _this4 = this;
 
             return pid_finder_1.WrapperFinder.find(this._wrapperId, this._wrapperPort).then(function () {
-                _this3._stable = true;
+                _this4._stable = true;
                 return true;
             }).catch(function (err) {
-                if (_this3._stable) {
-                    clearInterval(_this3._interval);
+                if (_this4._stable) {
+                    clearInterval(_this4._interval);
                     console.error(err);
-                    _this3.emit('end', err);
+                    _this4.emit('end', err);
                     throw err;
                 }
                 return false;
             });
         }
     }, {
-        key: "abort",
+        key: 'abort',
         value: function abort(err) {
             clearInterval(this._interval);
             console.error(err);
@@ -746,7 +799,7 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
             throw err;
         }
     }, {
-        key: "pid",
+        key: 'pid',
         get: function get() {
             return {
                 wrapperId: this._wrapperId,
@@ -754,18 +807,18 @@ var LaunchInstanceHandle = (function (_events_1$EventEmitte) {
             };
         }
     }, {
-        key: "wrapperId",
+        key: 'wrapperId',
         get: function get() {
             return this._wrapperId;
         }
     }, {
-        key: "wrapperPort",
+        key: 'wrapperPort',
         get: function get() {
             return this._wrapperPort;
         }
     }]);
     return LaunchInstanceHandle;
-})(events_1.EventEmitter);
+}(events_1.EventEmitter);
 
 exports.LaunchInstanceHandle = LaunchInstanceHandle;
 //# sourceMappingURL=index.js.map

@@ -1,50 +1,45 @@
 "use strict";
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var path = require('path');
@@ -56,25 +51,25 @@ var applescript = Bluebird.promisify(require('applescript').execString);
 var shellEscape = require('shell-escape');
 var autostartId = 'GameJoltClient';
 
-var WindowsAutostarter = (function () {
+var WindowsAutostarter = function () {
     function WindowsAutostarter() {
         (0, _classCallCheck3.default)(this, WindowsAutostarter);
     }
 
     (0, _createClass3.default)(WindowsAutostarter, [{
-        key: "set",
+        key: 'set',
         value: function set(program, args) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                return _context.abrupt("return", new _promise2.default(function (resolve) {
+                                return _context.abrupt('return', new _promise2.default(function (resolve) {
                                     WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, '\"' + program + '\"' + (args && args.length ? ' ' + args.join(' ') : ''), resolve);
                                 }));
 
                             case 1:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -82,14 +77,14 @@ var WindowsAutostarter = (function () {
             }));
         }
     }, {
-        key: "unset",
+        key: 'unset',
         value: function unset() {
             return new _promise2.default(function (resolve) {
                 WindowsAutostarter.getKey().remove(autostartId, resolve);
             });
         }
     }, {
-        key: "isset",
+        key: 'isset',
         value: function isset() {
             return new _promise2.default(function (resolve) {
                 WindowsAutostarter.getKey().get(autostartId, function (err, item) {
@@ -98,7 +93,7 @@ var WindowsAutostarter = (function () {
             });
         }
     }], [{
-        key: "getKey",
+        key: 'getKey',
         value: function getKey() {
             return new Winreg({
                 hive: Winreg.HKCU,
@@ -107,17 +102,17 @@ var WindowsAutostarter = (function () {
         }
     }]);
     return WindowsAutostarter;
-})();
+}();
 
-var LinuxAutostarter = (function () {
+var LinuxAutostarter = function () {
     function LinuxAutostarter() {
         (0, _classCallCheck3.default)(this, LinuxAutostarter);
     }
 
     (0, _createClass3.default)(LinuxAutostarter, [{
-        key: "createRunner",
+        key: 'createRunner',
         value: function createRunner(program, runner, args) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 var runnerScript;
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
@@ -132,7 +127,7 @@ var LinuxAutostarter = (function () {
                                 return common_1.default.chmod(runner, '0755');
 
                             case 5:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -140,9 +135,9 @@ var LinuxAutostarter = (function () {
             }));
         }
     }, {
-        key: "set",
+        key: 'set',
         value: function set(program, args, runner) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee3() {
                 var desktopContents;
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
@@ -161,7 +156,7 @@ var LinuxAutostarter = (function () {
                                 return common_1.default.chmod(LinuxAutostarter.desktopFilePath, '0755');
 
                             case 7:
-                            case "end":
+                            case 'end':
                                 return _context3.stop();
                         }
                     }
@@ -169,7 +164,7 @@ var LinuxAutostarter = (function () {
             }));
         }
     }, {
-        key: "unset",
+        key: 'unset',
         value: function unset() {
             return common_1.default.fsUnlink(LinuxAutostarter.desktopFilePath).then(function (err) {
                 if (err) {
@@ -178,25 +173,25 @@ var LinuxAutostarter = (function () {
             });
         }
     }, {
-        key: "isset",
+        key: 'isset',
         value: function isset() {
             return common_1.default.fsExists(LinuxAutostarter.desktopFilePath);
         }
     }]);
     return LinuxAutostarter;
-})();
+}();
 
 LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config, 'autostart', autostartId + '.desktop');
 
-var MacAutostarter = (function () {
+var MacAutostarter = function () {
     function MacAutostarter() {
         (0, _classCallCheck3.default)(this, MacAutostarter);
     }
 
     (0, _createClass3.default)(MacAutostarter, [{
-        key: "createRunner",
+        key: 'createRunner',
         value: function createRunner(program, runner, args) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee4() {
                 var runnerScript;
                 return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
@@ -211,7 +206,7 @@ var MacAutostarter = (function () {
                                 return common_1.default.chmod(runner, '0755');
 
                             case 5:
-                            case "end":
+                            case 'end':
                                 return _context4.stop();
                         }
                     }
@@ -219,9 +214,9 @@ var MacAutostarter = (function () {
             }));
         }
     }, {
-        key: "set",
+        key: 'set',
         value: function set(program, args, runner) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee5() {
                 return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
                         switch (_context5.prev = _context5.next) {
@@ -230,10 +225,10 @@ var MacAutostarter = (function () {
                                 return this.createRunner(program, runner, args);
 
                             case 2:
-                                return _context5.abrupt("return", applescript('tell application "System Events" to make login item at end with properties {path:"' + runner + '", hidden:false, name:"' + autostartId + '"}'));
+                                return _context5.abrupt('return', applescript('tell application "System Events" to make login item at end with properties {path:"' + runner + '", hidden:false, name:"' + autostartId + '"}'));
 
                             case 3:
-                            case "end":
+                            case 'end':
                                 return _context5.stop();
                         }
                     }
@@ -241,12 +236,12 @@ var MacAutostarter = (function () {
             }));
         }
     }, {
-        key: "unset",
+        key: 'unset',
         value: function unset(runner) {
             return applescript('tell application "System Events" to delete every login item whose name is "' + autostartId + '"');
         }
     }, {
-        key: "isset",
+        key: 'isset',
         value: function isset() {
             return applescript('tell application "System Events" to get the name of every login item').then(function (loginItems) {
                 return loginItems && loginItems.indexOf(autostartId) !== -1;
@@ -254,15 +249,15 @@ var MacAutostarter = (function () {
         }
     }]);
     return MacAutostarter;
-})();
+}();
 
-var Autostarter = (function () {
+var Autostarter = function () {
     function Autostarter() {
         (0, _classCallCheck3.default)(this, Autostarter);
     }
 
     (0, _createClass3.default)(Autostarter, null, [{
-        key: "_getAutostarter",
+        key: '_getAutostarter',
         value: function _getAutostarter() {
             switch (process.platform) {
                 case 'win32':
@@ -274,7 +269,7 @@ var Autostarter = (function () {
             }
         }
     }, {
-        key: "set",
+        key: 'set',
         value: function set(path, args, runner) {
             var _this = this;
 
@@ -283,7 +278,7 @@ var Autostarter = (function () {
             });
         }
     }, {
-        key: "unset",
+        key: 'unset',
         value: function unset(runner) {
             var _this2 = this;
 
@@ -295,13 +290,13 @@ var Autostarter = (function () {
             });
         }
     }, {
-        key: "isset",
+        key: 'isset',
         value: function isset() {
             return this._getAutostarter().isset();
         }
     }]);
     return Autostarter;
-})();
+}();
 
 Autostarter.winAutostarter = new WindowsAutostarter();
 Autostarter.linuxAutostarter = new LinuxAutostarter();

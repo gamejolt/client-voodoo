@@ -1,50 +1,45 @@
 "use strict";
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var path = require('path');
@@ -52,13 +47,13 @@ var common_1 = require('../common');
 var xdgBasedir = require('xdg-basedir');
 var shellEscape = require('shell-escape');
 
-var Shortcut = (function () {
+var Shortcut = function () {
     function Shortcut() {
         (0, _classCallCheck3.default)(this, Shortcut);
     }
 
     (0, _createClass3.default)(Shortcut, null, [{
-        key: "create",
+        key: 'create',
         value: function create(program, icon) {
             var _this = this;
 
@@ -71,7 +66,7 @@ var Shortcut = (function () {
             }
         }
     }, {
-        key: "remove",
+        key: 'remove',
         value: function remove() {
             if (process.platform === 'linux') {
                 return this.removeLinux();
@@ -80,9 +75,9 @@ var Shortcut = (function () {
             }
         }
     }, {
-        key: "createLinux",
+        key: 'createLinux',
         value: function createLinux(program, icon) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
                 var desktopFile, desktopContents;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -94,10 +89,10 @@ var Shortcut = (function () {
                                 return common_1.default.fsWriteFile(desktopFile, desktopContents);
 
                             case 4:
-                                return _context.abrupt("return", common_1.default.chmod(desktopFile, '0755'));
+                                return _context.abrupt('return', common_1.default.chmod(desktopFile, '0755'));
 
                             case 5:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -105,7 +100,7 @@ var Shortcut = (function () {
             }));
         }
     }, {
-        key: "removeLinux",
+        key: 'removeLinux',
         value: function removeLinux() {
             var desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
             var oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
@@ -117,7 +112,7 @@ var Shortcut = (function () {
         }
     }]);
     return Shortcut;
-})();
+}();
 
 exports.Shortcut = Shortcut;
 //# sourceMappingURL=index.js.map

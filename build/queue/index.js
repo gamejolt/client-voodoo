@@ -1,74 +1,69 @@
 "use strict";
 
-var _map = require("babel-runtime/core-js/map");
+var _map = require('babel-runtime/core-js/map');
 
 var _map2 = _interopRequireDefault(_map);
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _getIterator2 = require("babel-runtime/core-js/get-iterator");
+var _getIterator2 = require('babel-runtime/core-js/get-iterator');
 
 var _getIterator3 = _interopRequireDefault(_getIterator2);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _stringify = require("babel-runtime/core-js/json/stringify");
+var _stringify = require('babel-runtime/core-js/json/stringify');
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var stream_speed_1 = require('../downloader/stream-speed');
 var _ = require('lodash');
 
-var VoodooQueue = (function () {
+var VoodooQueue = function () {
     function VoodooQueue() {
         (0, _classCallCheck3.default)(this, VoodooQueue);
     }
 
     (0, _createClass3.default)(VoodooQueue, null, [{
-        key: "log",
+        key: 'log',
         value: function log(message, patch) {
             var state = patch ? this._patches.get(patch) : null;
             console.log('Voodoo Queue: ' + message + (state ? ' ( ' + (0, _stringify2.default)({
@@ -78,7 +73,7 @@ var VoodooQueue = (function () {
             }) + ' )' : ''));
         }
     }, {
-        key: "reset",
+        key: 'reset',
         value: function reset(cancel) {
             this.log('Restting ' + this._patches.size + ' patches');
             var patchesToReset = [];
@@ -118,7 +113,7 @@ var VoodooQueue = (function () {
             }));
         }
     }, {
-        key: "fetch",
+        key: 'fetch',
         value: function fetch(running, isDownloading) {
             this.log('Fetching ' + (running ? 'running' : 'pending') + ' ' + (isDownloading ? 'downloading' : isDownloading === false ? 'patching' : 'all') + ' tasks');
             var patches = [];
@@ -141,28 +136,28 @@ var VoodooQueue = (function () {
             return sortedPatches;
         }
     }, {
-        key: "applyProfile",
+        key: 'applyProfile',
         value: function applyProfile(profile) {
             this._maxDownloads = profile.downloads;
             this._maxExtractions = profile.extractions;
             this.tick();
         }
     }, {
-        key: "setFaster",
+        key: 'setFaster',
         value: function setFaster() {
             this.log('Applying faster profile');
             this._isFast = true;
             this.applyProfile(this._fastProfile);
         }
     }, {
-        key: "setSlower",
+        key: 'setSlower',
         value: function setSlower() {
             this.log('Applying slower profile');
             this._isFast = false;
             this.applyProfile(this._slowProfile);
         }
     }, {
-        key: "onProgress",
+        key: 'onProgress',
         value: function onProgress(patch, state, progress) {
             if (!state.managed) {
                 return;
@@ -170,7 +165,7 @@ var VoodooQueue = (function () {
             state.timeLeft = progress.timeLeft;
         }
     }, {
-        key: "onPatching",
+        key: 'onPatching',
         value: function onPatching(patch, state, progress) {
             if (!state.managed) {
                 return;
@@ -184,7 +179,7 @@ var VoodooQueue = (function () {
             this.tick(true);
         }
     }, {
-        key: "onExtractProgress",
+        key: 'onExtractProgress',
         value: function onExtractProgress(patch, state, progress) {
             if (!state.managed) {
                 return;
@@ -192,7 +187,7 @@ var VoodooQueue = (function () {
             state.timeLeft = progress.timeLeft;
         }
     }, {
-        key: "onPaused",
+        key: 'onPaused',
         value: function onPaused(patch, state, voodooQueue) {
             if (!state.managed) {
                 return;
@@ -205,7 +200,7 @@ var VoodooQueue = (function () {
             }
         }
     }, {
-        key: "onResumed",
+        key: 'onResumed',
         value: function onResumed(patch, state, voodooQueue) {
             if (!state.managed) {
                 return;
@@ -214,7 +209,7 @@ var VoodooQueue = (function () {
             state.queued = false;
         }
     }, {
-        key: "onCanceled",
+        key: 'onCanceled',
         value: function onCanceled(patch, state) {
             if (!state.managed) {
                 return;
@@ -223,7 +218,7 @@ var VoodooQueue = (function () {
             this.unmanage(patch);
         }
     }, {
-        key: "canResume",
+        key: 'canResume',
         value: function canResume(patch) {
             var isDownloading = patch.isDownloading();
             var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
@@ -233,7 +228,7 @@ var VoodooQueue = (function () {
             return operationLimit < 0 || operationLimit > concurrentPatches.length;
         }
     }, {
-        key: "manage",
+        key: 'manage',
         value: function manage(patch) {
             var _this = this;
 
@@ -279,7 +274,7 @@ var VoodooQueue = (function () {
             return state;
         }
     }, {
-        key: "unmanage",
+        key: 'unmanage',
         value: function unmanage(patch, noTick) {
             this.log('Unmanaging', patch);
             var state = this._patches.get(patch);
@@ -294,10 +289,10 @@ var VoodooQueue = (function () {
             }
         }
     }, {
-        key: "resumePatch",
+        key: 'resumePatch',
         value: function resumePatch(patch, state) {
             this.log('Resuming patch', patch);
-            var result = undefined;
+            var result = void 0;
             try {
                 patch.start({ voodooQueue: true });
             } catch (err) {
@@ -306,10 +301,10 @@ var VoodooQueue = (function () {
             return result;
         }
     }, {
-        key: "pausePatch",
+        key: 'pausePatch',
         value: function pausePatch(patch, state) {
             this.log('Pausing patch', patch);
-            var result = undefined;
+            var result = void 0;
             try {
                 patch.stop({ voodooQueue: true });
             } catch (err) {
@@ -318,7 +313,7 @@ var VoodooQueue = (function () {
             return result;
         }
     }, {
-        key: "tick",
+        key: 'tick',
         value: function tick(downloads) {
             if (typeof downloads !== 'boolean') {
                 this.tick(false);
@@ -339,15 +334,15 @@ var VoodooQueue = (function () {
             } else if (patchesToResume < 0) {
                 var patchesToPause = -patchesToResume;
                 this.log('Pausing ' + patchesToPause + ' patches');
-                for (var i = 0; i < patchesToPause; i += 1) {
-                    this.pausePatch(running[i].patch, running[i].state);
+                for (var _i = 0; _i < patchesToPause; _i += 1) {
+                    this.pausePatch(running[_i].patch, running[_i].state);
                 }
             }
         }
     }, {
-        key: "setMaxDownloads",
+        key: 'setMaxDownloads',
         value: function setMaxDownloads(newMaxDownloads) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
@@ -360,7 +355,7 @@ var VoodooQueue = (function () {
                                 }
 
                                 this.log('Can\'t set max downloads now because theres a setting in progress');
-                                return _context.abrupt("return", false);
+                                return _context.abrupt('return', false);
 
                             case 4:
                                 this._settingDownloads = true;
@@ -386,7 +381,7 @@ var VoodooQueue = (function () {
                                 return _context.finish(10);
 
                             case 13:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -394,9 +389,9 @@ var VoodooQueue = (function () {
             }));
         }
     }, {
-        key: "setMaxExtractions",
+        key: 'setMaxExtractions',
         value: function setMaxExtractions(newMaxExtractions) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
@@ -409,7 +404,7 @@ var VoodooQueue = (function () {
                                 }
 
                                 this.log('Can\'t set max extractions now because theres a setting in progress');
-                                return _context2.abrupt("return", false);
+                                return _context2.abrupt('return', false);
 
                             case 4:
                                 this._settingExtractions = true;
@@ -431,7 +426,7 @@ var VoodooQueue = (function () {
                                 return _context2.finish(10);
 
                             case 13:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -439,7 +434,7 @@ var VoodooQueue = (function () {
             }));
         }
     }, {
-        key: "faster",
+        key: 'faster',
         get: function get() {
             return _.clone(this._fastProfile);
         },
@@ -450,7 +445,7 @@ var VoodooQueue = (function () {
             }
         }
     }, {
-        key: "slower",
+        key: 'slower',
         get: function get() {
             return _.clone(this._slowProfile);
         },
@@ -461,18 +456,18 @@ var VoodooQueue = (function () {
             }
         }
     }, {
-        key: "maxDownloads",
+        key: 'maxDownloads',
         get: function get() {
             return this._maxDownloads;
         }
     }, {
-        key: "maxExtractions",
+        key: 'maxExtractions',
         get: function get() {
             return this._maxExtractions;
         }
     }]);
     return VoodooQueue;
-})();
+}();
 
 VoodooQueue._isFast = true;
 VoodooQueue._fastProfile = {

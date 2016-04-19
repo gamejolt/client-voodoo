@@ -1,58 +1,53 @@
 "use strict";
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _stringify = require("babel-runtime/core-js/json/stringify");
+var _stringify = require('babel-runtime/core-js/json/stringify');
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _map = require("babel-runtime/core-js/map");
+var _map = require('babel-runtime/core-js/map');
 
 var _map2 = _interopRequireDefault(_map);
 
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var _ = require('lodash');
@@ -72,26 +67,26 @@ var common_1 = require('../common');
 })(exports.PatchOperation || (exports.PatchOperation = {}));
 var PatchOperation = exports.PatchOperation;
 
-var Patcher = (function () {
+var Patcher = function () {
     function Patcher() {
         (0, _classCallCheck3.default)(this, Patcher);
     }
 
     (0, _createClass3.default)(Patcher, null, [{
-        key: "patch",
+        key: 'patch',
         value: function patch(generateUrl, localPackage, options) {
             return new PatchHandle(generateUrl, localPackage, options);
         }
     }]);
     return Patcher;
-})();
+}();
 
 exports.Patcher = Patcher;
 function log(message) {
     console.log('Patcher: ' + message);
 }
 
-var PatchHandle = (function () {
+var PatchHandle = function () {
     function PatchHandle(_generateUrl, _localPackage, _options) {
         var _this = this;
 
@@ -123,22 +118,22 @@ var PatchHandle = (function () {
     }
 
     (0, _createClass3.default)(PatchHandle, [{
-        key: "isDownloading",
+        key: 'isDownloading',
         value: function isDownloading() {
             return this._state === PatchOperation.DOWNLOADING || this._state === PatchOperation.STOPPED;
         }
     }, {
-        key: "isPatching",
+        key: 'isPatching',
         value: function isPatching() {
             return this._state === PatchOperation.PATCHING;
         }
     }, {
-        key: "isFinished",
+        key: 'isFinished',
         value: function isFinished() {
             return this._state === PatchOperation.FINISHED;
         }
     }, {
-        key: "isRunning",
+        key: 'isRunning',
         value: function isRunning() {
             switch (this._state) {
                 case PatchOperation.DOWNLOADING:
@@ -150,7 +145,7 @@ var PatchHandle = (function () {
             }
         }
     }, {
-        key: "_getDecompressStream",
+        key: '_getDecompressStream',
         value: function _getDecompressStream() {
             if (!this._localPackage.build.archive_type) {
                 return null;
@@ -167,7 +162,7 @@ var PatchHandle = (function () {
             }
         }
     }, {
-        key: "download",
+        key: 'download',
         value: function download() {
             var _this2 = this;
 
@@ -185,18 +180,19 @@ var PatchHandle = (function () {
             });
         }
     }, {
-        key: "patchPrepare",
+        key: 'patchPrepare',
         value: function patchPrepare() {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this3 = this;
 
-                var createdByOldBuild, currentFiles, stat, archiveListFileDir, dirStat, oldBuildFiles;
+                var createdByOldBuild, currentFiles, stat, _stat, archiveListFileDir, dirStat, oldBuildFiles;
+
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
                                 this._state = PatchOperation.PATCHING;
-                                createdByOldBuild = undefined;
+                                createdByOldBuild = void 0;
                                 // TODO: check if ./ is valid on windows platforms as well.
 
                                 _context.next = 4;
@@ -262,9 +258,9 @@ var PatchHandle = (function () {
                                 return common_1.default.fsStat(this._archiveListFile);
 
                             case 27:
-                                stat = _context.sent;
+                                _stat = _context.sent;
 
-                                if (stat.isFile()) {
+                                if (_stat.isFile()) {
                                     _context.next = 30;
                                     break;
                                 }
@@ -316,7 +312,7 @@ var PatchHandle = (function () {
                                 throw new Error('Couldn\'t create the patch archive file list folder path');
 
                             case 47:
-                                oldBuildFiles = undefined;
+                                oldBuildFiles = void 0;
                                 _context.next = 50;
                                 return common_1.default.fsExists(this._archiveListFile);
 
@@ -346,13 +342,13 @@ var PatchHandle = (function () {
                                 return common_1.default.fsWriteFile(this._patchListFile, createdByOldBuild.join("\n"));
 
                             case 62:
-                                return _context.abrupt("return", {
+                                return _context.abrupt('return', {
                                     createdByOldBuild: createdByOldBuild,
                                     currentFiles: currentFiles
                                 });
 
                             case 63:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -360,9 +356,9 @@ var PatchHandle = (function () {
             }));
         }
     }, {
-        key: "finalizePatch",
+        key: 'finalizePatch',
         value: function finalizePatch(prepareResult, extractResult) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 var _this4 = this;
 
                 var newBuildFiles, filesToRemove, unlinks;
@@ -397,7 +393,7 @@ var PatchHandle = (function () {
                                 return common_1.default.fsUnlink(this._patchListFile);
 
                             case 11:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -405,7 +401,7 @@ var PatchHandle = (function () {
             }));
         }
     }, {
-        key: "patch",
+        key: 'patch',
         value: function patch() {
             var _this5 = this;
 
@@ -426,15 +422,15 @@ var PatchHandle = (function () {
             });
         }
     }, {
-        key: "start",
+        key: 'start',
         value: function start(options) {
             log('Starting resumable');
             this._resumable.start({ cb: this.onStarting, args: [options], context: this });
         }
     }, {
-        key: "onStarting",
+        key: 'onStarting',
         value: function onStarting(options) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee3() {
                 var _this6 = this;
 
                 var waitForDownload, prepareResult, waitForPatch, unpackResult;
@@ -492,7 +488,7 @@ var PatchHandle = (function () {
 
                             case 27:
                                 _context3.prev = 27;
-                                _context3.t0 = _context3["catch"](3);
+                                _context3.t0 = _context3['catch'](3);
 
                                 log('I really really hate you babel: ' + _context3.t0.message + '\n' + _context3.t0.stack);
                                 this.onError(_context3.t0);
@@ -519,7 +515,7 @@ var PatchHandle = (function () {
                                 }
 
                             case 34:
-                            case "end":
+                            case 'end':
                                 return _context3.stop();
                         }
                     }
@@ -527,7 +523,7 @@ var PatchHandle = (function () {
             }));
         }
     }, {
-        key: "_stop",
+        key: '_stop',
         value: function _stop(options) {
             log('Stopping resumable');
             this._resumable.stop({
@@ -537,9 +533,9 @@ var PatchHandle = (function () {
             });
         }
     }, {
-        key: "onStopping",
+        key: 'onStopping',
         value: function onStopping(options) {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee4() {
                 var _this7 = this;
 
                 return _regenerator2.default.wrap(function _callee4$(_context4) {
@@ -561,7 +557,7 @@ var PatchHandle = (function () {
                                 }
 
                             case 1:
-                            case "end":
+                            case 'end':
                                 return _context4.stop();
                         }
                     }
@@ -569,7 +565,7 @@ var PatchHandle = (function () {
             }));
         }
     }, {
-        key: "stop",
+        key: 'stop',
         value: function stop(options) {
             var stopOptions = _.assign(options || { voodooQueue: false }, {
                 terminate: false
@@ -577,7 +573,7 @@ var PatchHandle = (function () {
             return this._stop(stopOptions);
         }
     }, {
-        key: "cancel",
+        key: 'cancel',
         value: function cancel(options) {
             var stopOptions = _.assign(options || { voodooQueue: false }, {
                 terminate: true
@@ -590,19 +586,19 @@ var PatchHandle = (function () {
             return this._stop(stopOptions);
         }
     }, {
-        key: "onDownloading",
+        key: 'onDownloading',
         value: function onDownloading(fn) {
             this._emitter.addListener('downloading', fn);
             return this;
         }
     }, {
-        key: "deregisterOnDownloading",
+        key: 'deregisterOnDownloading',
         value: function deregisterOnDownloading(fn) {
             this._emitter.removeListener('downloading', fn);
             return this;
         }
     }, {
-        key: "onProgress",
+        key: 'onProgress',
         value: function onProgress(unit, fn) {
             var func = function func(progress) {
                 progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
@@ -614,7 +610,7 @@ var PatchHandle = (function () {
             return this;
         }
     }, {
-        key: "deregisterOnProgress",
+        key: 'deregisterOnProgress',
         value: function deregisterOnProgress(fn) {
             var func = this._onProgressFuncMapping.get(fn);
             if (func) {
@@ -624,19 +620,19 @@ var PatchHandle = (function () {
             return this;
         }
     }, {
-        key: "onPatching",
+        key: 'onPatching',
         value: function onPatching(fn) {
             this._emitter.addListener('patching', fn);
             return this;
         }
     }, {
-        key: "deregisterOnPatching",
+        key: 'deregisterOnPatching',
         value: function deregisterOnPatching(fn) {
             this._emitter.removeListener('patching', fn);
             return this;
         }
     }, {
-        key: "onExtractProgress",
+        key: 'onExtractProgress',
         value: function onExtractProgress(unit, fn) {
             var func = function func(progress) {
                 progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
@@ -648,7 +644,7 @@ var PatchHandle = (function () {
             return this;
         }
     }, {
-        key: "deregisterOnExtractProgress",
+        key: 'deregisterOnExtractProgress',
         value: function deregisterOnExtractProgress(fn) {
             var func = this._onExtractProgressFuncMapping.get(fn);
             if (func) {
@@ -658,70 +654,70 @@ var PatchHandle = (function () {
             return this;
         }
     }, {
-        key: "onFile",
+        key: 'onFile',
         value: function onFile(fn) {
             this._emitter.addListener('file', fn);
             return this;
         }
     }, {
-        key: "deregisterOnFile",
+        key: 'deregisterOnFile',
         value: function deregisterOnFile(fn) {
             this._emitter.removeListener('file', fn);
             return this;
         }
     }, {
-        key: "onPaused",
+        key: 'onPaused',
         value: function onPaused(fn) {
             this._emitter.addListener('stopped', fn);
             return this;
         }
     }, {
-        key: "deregisterOnPaused",
+        key: 'deregisterOnPaused',
         value: function deregisterOnPaused(fn) {
             this._emitter.removeListener('stopped', fn);
             return this;
         }
     }, {
-        key: "onResumed",
+        key: 'onResumed',
         value: function onResumed(fn) {
             this._emitter.addListener('resumed', fn);
             return this;
         }
     }, {
-        key: "deregisterOnResumed",
+        key: 'deregisterOnResumed',
         value: function deregisterOnResumed(fn) {
             this._emitter.removeListener('resumed', fn);
             return this;
         }
     }, {
-        key: "onCanceled",
+        key: 'onCanceled',
         value: function onCanceled(fn) {
             this._emitter.addListener('canceled', fn);
             return this;
         }
     }, {
-        key: "deregisterOnCanceled",
+        key: 'deregisterOnCanceled',
         value: function deregisterOnCanceled(fn) {
             this._emitter.removeListener('canceled', fn);
             return this;
         }
     }, {
-        key: "emitProgress",
+        key: 'emitProgress',
         value: function emitProgress(progress) {
             this._emitter.emit('progress', progress);
         }
     }, {
-        key: "emitExtractProgress",
+        key: 'emitExtractProgress',
         value: function emitExtractProgress(progress) {
             this._emitter.emit('extract-progress', progress);
         }
     }, {
-        key: "emitFile",
+        key: 'emitFile',
         value: function emitFile(file) {
             this._emitter.emit('file', file);
         }
     }, {
-        key: "onError",
+        key: 'onError',
         value: function onError(err) {
             log(err.message + '\n' + err.stack);
             if (this._resumable.state === Resumable.State.STARTING) {
@@ -733,13 +729,13 @@ var PatchHandle = (function () {
             this._resumable.stop({ cb: this.onErrorStopping, args: [err], context: this }, true);
         }
     }, {
-        key: "onErrorStopping",
+        key: 'onErrorStopping',
         value: function onErrorStopping(err) {
             this._resumable.finished();
             this._rejector(err);
         }
     }, {
-        key: "onFinished",
+        key: 'onFinished',
         value: function onFinished() {
             if (this._resumable.state === Resumable.State.STARTING) {
                 log('Forced to stop before started. Marking as started first. ');
@@ -751,18 +747,18 @@ var PatchHandle = (function () {
             this._resolver();
         }
     }, {
-        key: "promise",
+        key: 'promise',
         get: function get() {
             return this._promise;
         }
     }, {
-        key: "state",
+        key: 'state',
         get: function get() {
             return this._state;
         }
     }]);
     return PatchHandle;
-})();
+}();
 
 exports.PatchHandle = PatchHandle;
 //# sourceMappingURL=index.js.map

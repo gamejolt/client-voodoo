@@ -1,5 +1,3 @@
-"use strict";
-
 /*
 node-bzip - a pure-javascript Node.JS module for decoding bzip2 data
 
@@ -29,35 +27,6 @@ Peter Fenwick, Alistair Moffat, Radford Neal, Ian H. Witten,
 Robert Sedgewick, and Jon L. Bentley.
 */
 // import { Readable } from 'stream';
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
-            try {
-                step("next", value);
-            } catch (e) {
-                reject(e);
-            }
-        }
-        function onreject(value) {
-            try {
-                step("throw", value);
-            } catch (e) {
-                reject(e);
-            }
-        }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
 // const BITMASK = [0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF];
 // // offset in bytes
 // class BitReader
@@ -150,4 +119,5 @@ var __awaiter = undefined && undefined.__awaiter || function (thisArg, _argument
 //   return buf.toString('hex');
 // };
 // module.exports = BitReader;
+"use strict";
 //# sourceMappingURL=bit-reader.js.map

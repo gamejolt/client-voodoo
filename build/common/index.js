@@ -1,42 +1,37 @@
 "use strict";
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
+var _promise = require('babel-runtime/core-js/promise');
 
 var _promise2 = _interopRequireDefault(_promise);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var fs = require('fs');
@@ -53,19 +48,19 @@ var fsWriteFile = Bluebird.promisify(fs.writeFile);
 var chmod = Bluebird.promisify(fs.chmod);
 var fsStat = Bluebird.promisify(fs.stat);
 var fsCopy = function fsCopy(from, to) {
-    return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+    return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
         return _regenerator2.default.wrap(function _callee$(_context) {
             while (1) {
                 switch (_context.prev = _context.next) {
                     case 0:
-                        return _context.abrupt("return", new _promise2.default(function (resolve, reject) {
+                        return _context.abrupt('return', new _promise2.default(function (resolve, reject) {
                             var destStream = fs.createWriteStream(to);
                             destStream.on('finish', resolve).on('error', reject);
                             fs.createReadStream(from).pipe(destStream);
                         }));
 
                     case 1:
-                    case "end":
+                    case 'end':
                         return _context.stop();
                 }
             }
@@ -97,6 +92,7 @@ var test = function test(fn, done) {
     }
     return func;
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
     mkdirp: mkdirp,
     fsUnlink: fsUnlink,

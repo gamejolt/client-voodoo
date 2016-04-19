@@ -1,50 +1,45 @@
 "use strict";
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var fs = require('fs');
@@ -57,26 +52,26 @@ var StreamSpeed = require('./stream-speed');
 var Resumable = require('../common/resumable');
 var common_1 = require('../common');
 
-var Downloader = (function () {
+var Downloader = function () {
     function Downloader() {
         (0, _classCallCheck3.default)(this, Downloader);
     }
 
     (0, _createClass3.default)(Downloader, null, [{
-        key: "download",
+        key: 'download',
         value: function download(generateUrl, to, options) {
             return new DownloadHandle(generateUrl, to, options);
         }
     }]);
     return Downloader;
-})();
+}();
 
 exports.Downloader = Downloader;
 function log(message) {
     console.log('Downloader: ' + message);
 }
 
-var DownloadHandle = (function () {
+var DownloadHandle = function () {
     function DownloadHandle(_generateUrl, _to, _options) {
         var _this = this;
 
@@ -99,9 +94,9 @@ var DownloadHandle = (function () {
     }
 
     (0, _createClass3.default)(DownloadHandle, [{
-        key: "prepareFS",
+        key: 'prepareFS',
         value: function prepareFS() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
                 var stat, unlinked, toDir, dirStat;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -202,7 +197,7 @@ var DownloadHandle = (function () {
                                 this._options.overwrite = false;
 
                             case 37:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -210,9 +205,9 @@ var DownloadHandle = (function () {
             }));
         }
     }, {
-        key: "generateUrl",
+        key: 'generateUrl',
         value: function generateUrl() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 var _generateUrl;
 
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
@@ -239,7 +234,7 @@ var DownloadHandle = (function () {
                                 this._url = _context2.sent;
 
                             case 9:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -247,7 +242,7 @@ var DownloadHandle = (function () {
             }));
         }
     }, {
-        key: "download",
+        key: 'download',
         value: function download() {
             var _this2 = this;
 
@@ -320,15 +315,15 @@ var DownloadHandle = (function () {
             });
         }
     }, {
-        key: "start",
+        key: 'start',
         value: function start() {
             log('Starting resumable');
             this._resumable.start({ cb: this.onStarting, context: this });
         }
     }, {
-        key: "onStarting",
+        key: 'onStarting',
         value: function onStarting() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee3() {
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
                         switch (_context3.prev = _context3.next) {
@@ -349,13 +344,13 @@ var DownloadHandle = (function () {
 
                             case 9:
                                 _context3.prev = 9;
-                                _context3.t0 = _context3["catch"](1);
+                                _context3.t0 = _context3['catch'](1);
 
                                 log('I hate you babel: ' + _context3.t0.message + '\n' + _context3.t0.stack);
                                 this.onError(_context3.t0);
 
                             case 13:
-                            case "end":
+                            case 'end':
                                 return _context3.stop();
                         }
                     }
@@ -363,19 +358,19 @@ var DownloadHandle = (function () {
             }));
         }
     }, {
-        key: "onStarted",
+        key: 'onStarted',
         value: function onStarted(cb) {
             this._emitter.once('started', cb);
             return this;
         }
     }, {
-        key: "stop",
+        key: 'stop',
         value: function stop() {
             log('Stopping resumable');
             this._resumable.stop({ cb: this.onStopping, context: this });
         }
     }, {
-        key: "onStopping",
+        key: 'onStopping',
         value: function onStopping() {
             log('Resumable state: stopping');
             if (this._streamSpeed) {
@@ -405,13 +400,13 @@ var DownloadHandle = (function () {
             log('Resumable state: stopped');
         }
     }, {
-        key: "onStopped",
+        key: 'onStopped',
         value: function onStopped(cb) {
             this._emitter.once('stopped', cb);
             return this;
         }
     }, {
-        key: "onProgress",
+        key: 'onProgress',
         value: function onProgress(unit, fn) {
             this._emitter.addListener('progress', function (progress) {
                 progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
@@ -420,12 +415,12 @@ var DownloadHandle = (function () {
             return this;
         }
     }, {
-        key: "emitProgress",
+        key: 'emitProgress',
         value: function emitProgress(progress) {
             this._emitter.emit('progress', progress);
         }
     }, {
-        key: "onError",
+        key: 'onError',
         value: function onError(err) {
             log(err.message + '\n' + err.stack);
             if (this._resumable.state === Resumable.State.STARTING) {
@@ -437,7 +432,7 @@ var DownloadHandle = (function () {
             this._resumable.stop({ cb: this.onErrorStopping, args: [err], context: this }, true);
         }
     }, {
-        key: "onErrorStopping",
+        key: 'onErrorStopping',
         value: function onErrorStopping(err) {
             log('Error');
             this.onStopping();
@@ -445,7 +440,7 @@ var DownloadHandle = (function () {
             this._rejector(err);
         }
     }, {
-        key: "onFinished",
+        key: 'onFinished',
         value: function onFinished() {
             log('Finished');
             if (this._resumable.state === Resumable.State.STARTING) {
@@ -459,38 +454,38 @@ var DownloadHandle = (function () {
             this._resolver();
         }
     }, {
-        key: "url",
+        key: 'url',
         get: function get() {
             return this._url;
         }
     }, {
-        key: "to",
+        key: 'to',
         get: function get() {
             return this._to;
         }
     }, {
-        key: "state",
+        key: 'state',
         get: function get() {
             return this._resumable.state;
         }
     }, {
-        key: "totalSize",
+        key: 'totalSize',
         get: function get() {
             return this._totalSize;
         }
     }, {
-        key: "totalDownloaded",
+        key: 'totalDownloaded',
         get: function get() {
             return this._totalDownloaded;
         }
     }, {
-        key: "promise",
+        key: 'promise',
         get: function get() {
             return this._promise;
         }
     }]);
     return DownloadHandle;
-})();
+}();
 
 exports.DownloadHandle = DownloadHandle;
 //# sourceMappingURL=index.js.map

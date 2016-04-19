@@ -1,50 +1,45 @@
 "use strict";
 
-var _regenerator = require("babel-runtime/regenerator");
+var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
 
-var _promise = require("babel-runtime/core-js/promise");
-
-var _promise2 = _interopRequireDefault(_promise);
-
-var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var _createClass2 = require("babel-runtime/helpers/createClass");
+var _createClass2 = require('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
+var _promise = require('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) {
-            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
-                resolve(value);
-            });
-        }
-        function onfulfill(value) {
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = _promise2.default))(function (resolve, reject) {
+        function fulfilled(value) {
             try {
-                step("next", value);
+                step(generator.next(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function onreject(value) {
+        function rejected(value) {
             try {
-                step("throw", value);
+                step(generator.throw(value));
             } catch (e) {
                 reject(e);
             }
         }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
         }
-        step("next", void 0);
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var fs = require('fs');
@@ -56,26 +51,26 @@ var Resumable = require('../common/resumable');
 var common_1 = require('../common');
 var through2 = require('through2');
 
-var Extractor = (function () {
+var Extractor = function () {
     function Extractor() {
         (0, _classCallCheck3.default)(this, Extractor);
     }
 
     (0, _createClass3.default)(Extractor, null, [{
-        key: "extract",
+        key: 'extract',
         value: function extract(from, to, options) {
             return new ExtractHandle(from, to, options);
         }
     }]);
     return Extractor;
-})();
+}();
 
 exports.Extractor = Extractor;
 function log(message) {
     console.log('Extractor: ' + message);
 }
 
-var ExtractHandle = (function () {
+var ExtractHandle = function () {
     function ExtractHandle(_from, _to, _options) {
         var _this = this;
 
@@ -101,9 +96,9 @@ var ExtractHandle = (function () {
     }
 
     (0, _createClass3.default)(ExtractHandle, [{
-        key: "prepareFS",
+        key: 'prepareFS',
         value: function prepareFS() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee() {
                 var srcStat, destStat, filesInDest;
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -197,7 +192,7 @@ var ExtractHandle = (function () {
                                 throw new Error('Couldn\'t create destination folder path');
 
                             case 32:
-                            case "end":
+                            case 'end':
                                 return _context.stop();
                         }
                     }
@@ -205,9 +200,9 @@ var ExtractHandle = (function () {
             }));
         }
     }, {
-        key: "unpack",
+        key: 'unpack',
         value: function unpack() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee2() {
                 var _this2 = this;
 
                 return _regenerator2.default.wrap(function _callee2$(_context2) {
@@ -215,7 +210,7 @@ var ExtractHandle = (function () {
                         switch (_context2.prev = _context2.next) {
                             case 0:
                                 log('Unpacking from ' + this._from + ' to ' + this._to);
-                                return _context2.abrupt("return", new _promise2.default(function (resolve, reject) {
+                                return _context2.abrupt('return', new _promise2.default(function (resolve, reject) {
                                     _this2._readStream = fs.createReadStream(_this2._from);
                                     _this2._readStream.on('error', function (err) {
                                         return _this2._rejector(err);
@@ -261,7 +256,7 @@ var ExtractHandle = (function () {
                                 }));
 
                             case 2:
-                            case "end":
+                            case 'end':
                                 return _context2.stop();
                         }
                     }
@@ -269,15 +264,15 @@ var ExtractHandle = (function () {
             }));
         }
     }, {
-        key: "start",
+        key: 'start',
         value: function start() {
             log('Starting resumable');
             this._resumable.start({ cb: this.onStarting, context: this });
         }
     }, {
-        key: "onStarting",
+        key: 'onStarting',
         value: function onStarting() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee3() {
                 var unlinked;
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                     while (1) {
@@ -338,7 +333,7 @@ var ExtractHandle = (function () {
 
                             case 22:
                                 _context3.prev = 22;
-                                _context3.t1 = _context3["catch"](3);
+                                _context3.t1 = _context3['catch'](3);
 
                                 log('I really hate you babel: ' + _context3.t1.message + '\n' + _context3.t1.stack);
                                 this.onError(_context3.t1);
@@ -354,7 +349,7 @@ var ExtractHandle = (function () {
                                 log('Resumable state: started');
 
                             case 32:
-                            case "end":
+                            case 'end':
                                 return _context3.stop();
                         }
                     }
@@ -362,19 +357,19 @@ var ExtractHandle = (function () {
             }));
         }
     }, {
-        key: "onStarted",
+        key: 'onStarted',
         value: function onStarted(cb) {
             this._emitter.once('started', cb);
             return this;
         }
     }, {
-        key: "stop",
+        key: 'stop',
         value: function stop(terminate) {
             log('Stopping resumable');
             this._resumable.stop({ cb: terminate ? this.onTerminating : this.onStopping, context: this });
         }
     }, {
-        key: "onStopping",
+        key: 'onStopping',
         value: function onStopping() {
             log('Resumable state: stopping');
             this.pause();
@@ -383,17 +378,16 @@ var ExtractHandle = (function () {
             log('Resumable state: stopped');
         }
     }, {
-        key: "onStopped",
+        key: 'onStopped',
         value: function onStopped(cb) {
             this._emitter.once('stopped', cb);
             return this;
         }
     }, {
-        key: "onTerminating",
+        key: 'onTerminating',
         value: function onTerminating() {
-            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
-                var readStreamHack, _unlinked;
-
+            return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee4() {
+                var readStreamHack, unlinked;
                 return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
                         switch (_context4.prev = _context4.next) {
@@ -412,8 +406,8 @@ var ExtractHandle = (function () {
                                 return common_1.default.fsUnlink(this._from);
 
                             case 6:
-                                _unlinked = _context4.sent;
-                                _context4.t0 = _unlinked;
+                                unlinked = _context4.sent;
+                                _context4.t0 = unlinked;
 
                                 if (!_context4.t0) {
                                     _context4.next = 12;
@@ -432,7 +426,7 @@ var ExtractHandle = (function () {
                                     break;
                                 }
 
-                                throw _unlinked;
+                                throw unlinked;
 
                             case 14:
                                 this._resumable.stopped();
@@ -440,7 +434,7 @@ var ExtractHandle = (function () {
                                 log('Resumable state: stopped');
 
                             case 17:
-                            case "end":
+                            case 'end':
                                 return _context4.stop();
                         }
                     }
@@ -448,7 +442,7 @@ var ExtractHandle = (function () {
             }));
         }
     }, {
-        key: "onProgress",
+        key: 'onProgress',
         value: function onProgress(unit, fn) {
             this._emitter.addListener('progress', function (progress) {
                 progress.sample = StreamSpeed.StreamSpeed.convertSample(progress.sample, unit);
@@ -457,23 +451,23 @@ var ExtractHandle = (function () {
             return this;
         }
     }, {
-        key: "emitProgress",
+        key: 'emitProgress',
         value: function emitProgress(progress) {
             this._emitter.emit('progress', progress);
         }
     }, {
-        key: "onFile",
+        key: 'onFile',
         value: function onFile(fn) {
             this._emitter.addListener('file', fn);
             return this;
         }
     }, {
-        key: "emitFile",
+        key: 'emitFile',
         value: function emitFile(file) {
             this._emitter.emit('file', file);
         }
     }, {
-        key: "resume",
+        key: 'resume',
         value: function resume() {
             var _this3 = this;
 
@@ -484,7 +478,7 @@ var ExtractHandle = (function () {
             this._streamSpeed.start();
         }
     }, {
-        key: "pause",
+        key: 'pause',
         value: function pause() {
             if (this._readStream) {
                 this._readStream.unpipe();
@@ -494,7 +488,7 @@ var ExtractHandle = (function () {
             }
         }
     }, {
-        key: "onError",
+        key: 'onError',
         value: function onError(err) {
             log(err.message + '\n' + err.stack);
             if (this._resumable.state === Resumable.State.STARTING) {
@@ -506,14 +500,14 @@ var ExtractHandle = (function () {
             this._resumable.stop({ cb: this.onErrorStopping, args: [err], context: this }, true);
         }
     }, {
-        key: "onErrorStopping",
+        key: 'onErrorStopping',
         value: function onErrorStopping(err) {
             this.pause();
             this._resumable.finished();
             this._rejector(err);
         }
     }, {
-        key: "onFinished",
+        key: 'onFinished',
         value: function onFinished() {
             if (this._resumable.state === Resumable.State.STARTING) {
                 log('Forced to stop before started. Marking as started first. ');
@@ -528,28 +522,28 @@ var ExtractHandle = (function () {
             });
         }
     }, {
-        key: "from",
+        key: 'from',
         get: function get() {
             return this._from;
         }
     }, {
-        key: "to",
+        key: 'to',
         get: function get() {
             return this._to;
         }
     }, {
-        key: "state",
+        key: 'state',
         get: function get() {
             return this._resumable.state;
         }
     }, {
-        key: "promise",
+        key: 'promise',
         get: function get() {
             return this._promise;
         }
     }]);
     return ExtractHandle;
-})();
+}();
 
 exports.ExtractHandle = ExtractHandle;
 //# sourceMappingURL=index.js.map
