@@ -161,7 +161,8 @@ describe( 'Patcher', function()
 		patchHandle.start();
 		await patchHandle.promise;
 
-		await Common.fsWriteFile( path.join( testPatcher.install_dir, 'fDynamic' ), 'test' );
+		await Common.fsWriteFile( path.join( testPatcher.install_dir, 'fDynamic' ), 'test\n' );
+		await Common.fsWriteFile( path.join( testPatcher.install_dir, 'fDynamicCase' ), 'test\n' );
 
 		console.log( 'Patching second patch dir on top of the first' );
 		patchHandle = Patcher.patch( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/.gj-testPatcher2.tar.xz', testPatcher, {
@@ -175,10 +176,11 @@ describe( 'Patcher', function()
 		let files = await Common.fsReadDirRecursively( testPatcher.install_dir );
 		files = files.map( ( file ) => file.substring( testPatcher.install_dir.length + 1 ) );
 		let expectFiles: string[];
-		if ( process.platform === 'win32' ) {
+		if ( process.platform !== 'linux' ) {
 			expectFiles = [
 				'.gj-archive-file-list',
 				'fDynamic',
+				'fDynamicCase',
 				'fToPreserve',
 				'fToPreserveCase',
 				'fToUpdate',
@@ -187,24 +189,27 @@ describe( 'Patcher', function()
 				path.join( 'toAdd', 'file2' ),
 				path.join( 'toRemove', 'file1' ),
 			];
+			expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fDynamicCase' ), 'utf8' ) ).to.eq( 'update\n' );
 		}
 		else {
 			expectFiles = [
 				'.gj-archive-file-list',
 				'fDynamic',
+				'fDynamiccase',
+				'fDynamicCase',
 				'fToPreserve',
-				'fToPreserveCase',
 				'fToPreservecase',
 				'fToUpdate',
-				'fToUpdateCase',
 				'fToUpdatecase',
 				path.join( 'toAdd', 'file1' ),
 				path.join( 'toAdd', 'file2' ),
 				path.join( 'toRemove', 'file1' ),
 			];
+			expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fDynamicCase' ), 'utf8' ) ).to.eq( 'test\n' );
+			expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fDynamiccase' ), 'utf8' ) ).to.eq( 'update\n' );
 		}
 		expect( files.sort( ( a, b ) => a.localeCompare( b ) ) ).to.deep.equal( expectFiles );
-		
+
 		expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fToUpdate' ), 'utf8' ) ).to.eq( 'update\n' );
 		expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fToUpdatecase' ), 'utf8' ) ).to.eq( 'update\n' );
 

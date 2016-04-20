@@ -64,7 +64,7 @@ function difference( arr1: string[], arr2: string[], caseInsensitive?: boolean )
 	if ( !caseInsensitive ) {
 		return _.difference<string>( arr1, arr2 );
 	}
-	
+
 	let result: string[] = [];
 	for ( let e1 of arr1 ) {
 		let lcE1 = e1.toLowerCase();
@@ -75,7 +75,7 @@ function difference( arr1: string[], arr2: string[], caseInsensitive?: boolean )
 				break;
 			}
 		}
-		
+
 		if ( !found ) {
 			result.push( e1 );
 		}
@@ -248,7 +248,7 @@ export class PatchHandle
 		else {
 
 			let oldBuildFiles: string[];
-			
+
 			// If the destination already exists, make sure its valid.
 			if ( await Common.fsExists( this._archiveListFile ) ) {
 
@@ -279,7 +279,7 @@ export class PatchHandle
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
 			// In Windows we need to compare the files case insensitively.
-			createdByOldBuild = difference( currentFiles, oldBuildFiles, process.platform === 'win32' );
+			createdByOldBuild = difference( currentFiles, oldBuildFiles, process.platform !== 'linux' );
 			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 
 			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
@@ -298,7 +298,7 @@ export class PatchHandle
 
 		// Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
 		// In Windows we need to compare the files case insensitively.
-		let filesToRemove = difference( prepareResult.currentFiles, newBuildFiles.concat( prepareResult.createdByOldBuild ), process.platform === 'win32' );
+		let filesToRemove = difference( prepareResult.currentFiles, newBuildFiles.concat( prepareResult.createdByOldBuild ), process.platform !== 'linux' );
 		log( 'Files to remove: ' + JSON.stringify( filesToRemove ) );
 
 		// TODO: use del lib
