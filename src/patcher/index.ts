@@ -59,6 +59,30 @@ function log( message ) {
 	console.log( 'Patcher: ' + message );
 }
 
+function difference( arr1: string[], arr2: string[], caseInsensitive?: boolean )
+{
+	if ( !caseInsensitive ) {
+		return _.difference<string>( arr1, arr2 );
+	}
+	
+	let result: string[] = [];
+	for ( let e1 of arr1 ) {
+		let lcE1 = e1.toLowerCase();
+		let found = false;
+		for ( let e2 of arr2 ) {
+			if ( lcE1 == e2.toLowerCase() ) {
+				found = true;
+				break;
+			}
+		}
+		
+		if ( !found ) {
+			result.push( e1 );
+		}
+	}
+	return result;
+}
+
 export class PatchHandle
 {
 	private _state: PatchOperation;
@@ -198,7 +222,6 @@ export class PatchHandle
 
 		let createdByOldBuild: string[];
 
-		// TODO: check if ./ is valid on windows platforms as well.
 		let currentFiles = ( await Common.fsReadDirRecursively( this._to ) )
 			.filter( ( file ) =>
 			{
@@ -224,6 +247,8 @@ export class PatchHandle
 		}
 		else {
 
+			let oldBuildFiles: string[];
+			
 			// If the destination already exists, make sure its valid.
 			if ( await Common.fsExists( this._archiveListFile ) ) {
 
@@ -232,6 +257,7 @@ export class PatchHandle
 				if ( !stat.isFile() ) {
 					throw new Error( 'Can\'t patch because the archive file list isn\'t a file.' );
 				}
+				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
 			}
 			// Otherwise, we validate the folder path.
 			else {
@@ -246,19 +272,14 @@ export class PatchHandle
 				else if ( !( await Common.mkdirp( archiveListFileDir ) ) ) {
 					throw new Error( 'Couldn\'t create the patch archive file list folder path' );
 				}
-			}
-
-			let oldBuildFiles;
-			if ( !( await Common.fsExists( this._archiveListFile ) ) ) {
 				oldBuildFiles = currentFiles;
 			}
-			else {
-				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
-			}
+
 			log( 'Old build files: ' + JSON.stringify( oldBuildFiles ) );
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
-			createdByOldBuild = _.difference( currentFiles, oldBuildFiles );
+			// In Windows we need to compare the files case insensitively.
+			createdByOldBuild = difference( currentFiles, oldBuildFiles, process.platform === 'win32' );
 			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
 
 			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
@@ -276,7 +297,8 @@ export class PatchHandle
 		log( 'New build files: ' + JSON.stringify( newBuildFiles ) );
 
 		// Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
-		let filesToRemove = _.difference( prepareResult.currentFiles, newBuildFiles, prepareResult.createdByOldBuild );
+		// In Windows we need to compare the files case insensitively.
+		let filesToRemove = difference( prepareResult.currentFiles, newBuildFiles.concat( prepareResult.createdByOldBuild ), process.platform === 'win32' );
 		log( 'Files to remove: ' + JSON.stringify( filesToRemove ) );
 
 		// TODO: use del lib

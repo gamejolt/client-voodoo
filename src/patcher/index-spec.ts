@@ -174,15 +174,39 @@ describe( 'Patcher', function()
 
 		let files = await Common.fsReadDirRecursively( testPatcher.install_dir );
 		files = files.map( ( file ) => file.substring( testPatcher.install_dir.length + 1 ) );
-		expect( files.sort( ( a, b ) => a.localeCompare( b ) ) ).to.deep.equal( [
-			'.gj-archive-file-list',
-			'fDynamic',
-			'fToPreserve',
-			'fToUpdate',
-			path.join( 'toAdd', 'file1' ),
-			path.join( 'toAdd', 'file2' ),
-			path.join( 'toRemove', 'file1' ),
-		] );
+		let expectFiles: string[];
+		if ( process.platform === 'win32' ) {
+			expectFiles = [
+				'.gj-archive-file-list',
+				'fDynamic',
+				'fToPreserve',
+				'fToPreserveCase',
+				'fToUpdate',
+				'fToUpdateCase',
+				path.join( 'toAdd', 'file1' ),
+				path.join( 'toAdd', 'file2' ),
+				path.join( 'toRemove', 'file1' ),
+			];
+		}
+		else {
+			expectFiles = [
+				'.gj-archive-file-list',
+				'fDynamic',
+				'fToPreserve',
+				'fToPreserveCase',
+				'fToPreservecase',
+				'fToUpdate',
+				'fToUpdateCase',
+				'fToUpdatecase',
+				path.join( 'toAdd', 'file1' ),
+				path.join( 'toAdd', 'file2' ),
+				path.join( 'toRemove', 'file1' ),
+			];
+		}
+		expect( files.sort( ( a, b ) => a.localeCompare( b ) ) ).to.deep.equal( expectFiles );
+		
+		expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fToUpdate' ), 'utf8' ) ).to.eq( 'update\n' );
+		expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fToUpdatecase' ), 'utf8' ) ).to.eq( 'update\n' );
 
 		//expect( await Common.fsExists( path.join( testPatcher.install_dir, 'empty' ) ) ).to.eq( false, 'Old empty dir has been removed' );
 		expect( await Common.fsExists( path.join( testPatcher.install_dir, 'newEmpty' ) ) ).to.eq( true, 'New empty dir has been created' );

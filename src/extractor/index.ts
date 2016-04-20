@@ -220,7 +220,8 @@ export class ExtractHandle
 				this.onFinished();
 			}
 			catch ( err ) {
-				log( 'I really hate you babel: ' + err.message + '\n' + err.stack );
+				console.log( err );
+				log( 'I really hate you babel: ' + err.message + '\n' + JSON.stringify( err.stack ) );
 				this.onError( err );
 			}
 		}
