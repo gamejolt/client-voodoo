@@ -153,8 +153,7 @@ export class ExtractHandle
 						header = optionsMap( header );
 					}
 
-					// TODO: fuggin symlinks and the likes.
-					if ( header && header.type === 'file' ) {
+					if ( header && ( header.type === 'file' || header.type === 'symlink' ) ) {
 						this._extractedFiles.push( header.name );
 						this.emitFile( header );
 					}
