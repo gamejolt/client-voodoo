@@ -12,6 +12,10 @@ var _map = require('babel-runtime/core-js/map');
 
 var _map2 = _interopRequireDefault(_map);
 
+var _getIterator2 = require('babel-runtime/core-js/get-iterator');
+
+var _getIterator3 = _interopRequireDefault(_getIterator2);
+
 var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
@@ -84,6 +88,70 @@ var Patcher = function () {
 exports.Patcher = Patcher;
 function log(message) {
     console.log('Patcher: ' + message);
+}
+function difference(arr1, arr2, caseInsensitive) {
+    if (!caseInsensitive) {
+        return _.difference(arr1, arr2);
+    }
+    var result = [];
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+        for (var _iterator = (0, _getIterator3.default)(arr1), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var e1 = _step.value;
+
+            var lcE1 = e1.toLowerCase();
+            var found = false;
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = (0, _getIterator3.default)(arr2), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var e2 = _step2.value;
+
+                    if (lcE1 == e2.toLowerCase()) {
+                        found = true;
+                        break;
+                    }
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
+            }
+
+            if (!found) {
+                result.push(e1);
+            }
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+            }
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
+            }
+        }
+    }
+
+    return result;
 }
 
 var PatchHandle = function () {
@@ -185,7 +253,7 @@ var PatchHandle = function () {
             return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
                 var _this3 = this;
 
-                var createdByOldBuild, currentFiles, stat, _stat, archiveListFileDir, dirStat, oldBuildFiles;
+                var createdByOldBuild, currentFiles, stat, oldBuildFiles, _stat, archiveListFileDir, dirStat;
 
                 return _regenerator2.default.wrap(function _callee$(_context) {
                     while (1) {
@@ -193,8 +261,6 @@ var PatchHandle = function () {
                             case 0:
                                 this._state = PatchOperation.PATCHING;
                                 createdByOldBuild = void 0;
-                                // TODO: check if ./ is valid on windows platforms as well.
-
                                 _context.next = 4;
                                 return common_1.default.fsReadDirRecursively(this._to);
 
@@ -241,113 +307,103 @@ var PatchHandle = function () {
                                 createdByOldBuild = _context.sent.split("\n");
 
                                 log('Created by old build files: ' + (0, _stringify2.default)(createdByOldBuild));
-                                _context.next = 62;
+                                _context.next = 57;
                                 break;
 
                             case 22:
-                                _context.next = 24;
+                                oldBuildFiles = void 0;
+                                // If the destination already exists, make sure its valid.
+
+                                _context.next = 25;
                                 return common_1.default.fsExists(this._archiveListFile);
 
-                            case 24:
+                            case 25:
                                 if (!_context.sent) {
-                                    _context.next = 32;
+                                    _context.next = 36;
                                     break;
                                 }
 
-                                _context.next = 27;
+                                _context.next = 28;
                                 return common_1.default.fsStat(this._archiveListFile);
 
-                            case 27:
+                            case 28:
                                 _stat = _context.sent;
 
                                 if (_stat.isFile()) {
-                                    _context.next = 30;
+                                    _context.next = 31;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the archive file list isn\'t a file.');
 
-                            case 30:
-                                _context.next = 47;
+                            case 31:
+                                _context.next = 33;
+                                return common_1.default.fsReadFile(this._archiveListFile, 'utf8');
+
+                            case 33:
+                                oldBuildFiles = _context.sent.split("\n");
+                                _context.next = 52;
                                 break;
 
-                            case 32:
+                            case 36:
                                 archiveListFileDir = path.dirname(this._archiveListFile);
-                                _context.next = 35;
+                                _context.next = 39;
                                 return common_1.default.fsExists(archiveListFileDir);
 
-                            case 35:
+                            case 39:
                                 if (!_context.sent) {
-                                    _context.next = 43;
+                                    _context.next = 47;
                                     break;
                                 }
 
-                                _context.next = 38;
+                                _context.next = 42;
                                 return common_1.default.fsStat(archiveListFileDir);
 
-                            case 38:
+                            case 42:
                                 dirStat = _context.sent;
 
                                 if (dirStat.isDirectory()) {
-                                    _context.next = 41;
+                                    _context.next = 45;
                                     break;
                                 }
 
                                 throw new Error('Can\'t patch because the path to the archive file list is invalid.');
 
-                            case 41:
-                                _context.next = 47;
+                            case 45:
+                                _context.next = 51;
                                 break;
 
-                            case 43:
-                                _context.next = 45;
+                            case 47:
+                                _context.next = 49;
                                 return common_1.default.mkdirp(archiveListFileDir);
 
-                            case 45:
+                            case 49:
                                 if (_context.sent) {
-                                    _context.next = 47;
+                                    _context.next = 51;
                                     break;
                                 }
 
                                 throw new Error('Couldn\'t create the patch archive file list folder path');
 
-                            case 47:
-                                oldBuildFiles = void 0;
-                                _context.next = 50;
-                                return common_1.default.fsExists(this._archiveListFile);
-
-                            case 50:
-                                if (_context.sent) {
-                                    _context.next = 54;
-                                    break;
-                                }
-
+                            case 51:
                                 oldBuildFiles = currentFiles;
-                                _context.next = 57;
-                                break;
 
-                            case 54:
-                                _context.next = 56;
-                                return common_1.default.fsReadFile(this._archiveListFile, 'utf8');
-
-                            case 56:
-                                oldBuildFiles = _context.sent.split("\n");
-
-                            case 57:
+                            case 52:
                                 log('Old build files: ' + (0, _stringify2.default)(oldBuildFiles));
                                 // Files that the old build created are files in the file system that are not listed in the old build files
-                                createdByOldBuild = _.difference(currentFiles, oldBuildFiles);
+                                // In Windows we need to compare the files case insensitively.
+                                createdByOldBuild = difference(currentFiles, oldBuildFiles, process.platform !== 'linux');
                                 log('Created by old build files: ' + (0, _stringify2.default)(createdByOldBuild));
-                                _context.next = 62;
+                                _context.next = 57;
                                 return common_1.default.fsWriteFile(this._patchListFile, createdByOldBuild.join("\n"));
 
-                            case 62:
+                            case 57:
                                 return _context.abrupt('return', {
                                     createdByOldBuild: createdByOldBuild,
                                     currentFiles: currentFiles
                                 });
 
-                            case 63:
+                            case 58:
                             case 'end':
                                 return _context.stop();
                         }
@@ -370,7 +426,8 @@ var PatchHandle = function () {
 
                                 log('New build files: ' + (0, _stringify2.default)(newBuildFiles));
                                 // Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
-                                filesToRemove = _.difference(prepareResult.currentFiles, newBuildFiles, prepareResult.createdByOldBuild);
+                                // In Windows we need to compare the files case insensitively.
+                                filesToRemove = difference(prepareResult.currentFiles, newBuildFiles.concat(prepareResult.createdByOldBuild), process.platform !== 'linux');
 
                                 log('Files to remove: ' + (0, _stringify2.default)(filesToRemove));
                                 // TODO: use del lib

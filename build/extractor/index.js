@@ -1,5 +1,9 @@
 "use strict";
 
+var _stringify = require('babel-runtime/core-js/json/stringify');
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
 var _regenerator = require('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -221,8 +225,7 @@ var ExtractHandle = function () {
                                             if (optionsMap) {
                                                 header = optionsMap(header);
                                             }
-                                            // TODO: fuggin symlinks and the likes.
-                                            if (header && header.type === 'file') {
+                                            if (header && (header.type === 'file' || header.type === 'symlink')) {
                                                 _this2._extractedFiles.push(header.name);
                                                 _this2.emitFile(header);
                                             }
@@ -281,7 +284,7 @@ var ExtractHandle = function () {
                                 log('Resumable state: starting');
 
                                 if (!this._firstRun) {
-                                    _context3.next = 28;
+                                    _context3.next = 29;
                                     break;
                                 }
 
@@ -328,27 +331,28 @@ var ExtractHandle = function () {
 
                             case 19:
                                 this.onFinished();
-                                _context3.next = 26;
+                                _context3.next = 27;
                                 break;
 
                             case 22:
                                 _context3.prev = 22;
                                 _context3.t1 = _context3['catch'](3);
 
-                                log('I really hate you babel: ' + _context3.t1.message + '\n' + _context3.t1.stack);
+                                console.log(_context3.t1);
+                                log('I really hate you babel: ' + _context3.t1.message + '\n' + (0, _stringify2.default)(_context3.t1.stack));
                                 this.onError(_context3.t1);
 
-                            case 26:
-                                _context3.next = 32;
+                            case 27:
+                                _context3.next = 33;
                                 break;
 
-                            case 28:
+                            case 29:
                                 this.resume();
                                 this._resumable.started();
                                 this._emitter.emit('started');
                                 log('Resumable state: started');
 
-                            case 32:
+                            case 33:
                             case 'end':
                                 return _context3.stop();
                         }
