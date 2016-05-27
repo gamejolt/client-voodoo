@@ -7,6 +7,7 @@
 /// <reference path="./../typings/assertion-error/assertion-error.d.ts" />
 /// <reference path="./../typings/chai/chai.d.ts" />
 /// <reference path="./../typings/lodash/lodash.d.ts" />
+/// <reference path="./typings/client-game-wrapper/client-game-wrapper.d.ts" />
 /// <reference path="./typings/tar-fs/tar-fs.d.ts" />
 /// <reference path="./../typings/del/del.d.ts" />
 /// <reference path="./../typings/glob/glob.d.ts" />

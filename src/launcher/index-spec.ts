@@ -4,6 +4,7 @@ import { Downloader } from '../downloader';
 import { Patcher, PatchHandle } from '../patcher';
 import { Launcher, IParsedWrapper } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
+import { Application } from '../application';
 import path = require( 'path' );
 import * as del from 'del';
 
@@ -69,6 +70,13 @@ describe( 'Launcher', function()
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 	};
 
+	let credentials: GameJolt.IGameCredentials = {
+		username: 'user',
+		user_token: 'token',
+	}
+
+	Application.setPidDir( path.resolve( process.cwd(), path.join( 'test-files', 'game-pids' ) ) );
+
 	before( function( done )
 	{
 		app = express();
@@ -126,7 +134,7 @@ describe( 'Launcher', function()
 		try {
 			await patch();
 
-			let launchHandle = Launcher.launch( localPackage, os, '32' );
+			let launchHandle = Launcher.launch( localPackage, os, '32', credentials );
 			let launchInstance = await launchHandle.promise;
 			await new Promise( ( resolve ) =>
 			{
@@ -147,13 +155,12 @@ describe( 'Launcher', function()
 		try {
 			await patch();
 
-			let launchHandle = Launcher.launch( localPackage, os, '32' );
+			let launchHandle = Launcher.launch( localPackage, os, '32', credentials );
 			let launchInstance = await launchHandle.promise;
 			await Launcher.detach( launchInstance.wrapperId );
 
 			launchInstance = await Launcher.attach( {
 				wrapperId: launchInstance.wrapperId,
-				wrapperPort: launchInstance.wrapperPort,
 			} );
 
 			await new Promise( ( resolve ) =>
@@ -175,7 +182,7 @@ describe( 'Launcher', function()
 		try {
 			await patch();
 
-			let launchHandle = Launcher.launch( localPackage, os, '32' );
+			let launchHandle = Launcher.launch( localPackage, os, '32', credentials );
 			let launchInstance = await launchHandle.promise;
 			await Launcher.detach( launchInstance.wrapperId );
 
@@ -199,13 +206,12 @@ describe( 'Launcher', function()
 		try {
 			await patch();
 
-			let launchHandle = Launcher.launch( localPackage, os, '32' );
+			let launchHandle = Launcher.launch( localPackage, os, '32', credentials );
 			let launchInstance = await launchHandle.promise;
 			await Launcher.detach( launchInstance.wrapperId );
 
 			let jsonWrapper: IParsedWrapper = {
 				wrapperId: launchInstance.wrapperId,
-				wrapperPort: launchInstance.wrapperPort,
 			}
 
 			launchInstance = await Launcher.attach( { stringifiedWrapper: JSON.stringify( jsonWrapper ) } );
