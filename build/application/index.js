@@ -10,6 +10,7 @@ var _createClass3 = _interopRequireDefault(_createClass2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var common_1 = require('../common');
 var MUTEX_NAME = 'game-jolt-client';
 
 var Application = function () {
@@ -18,6 +19,20 @@ var Application = function () {
     }
 
     (0, _createClass3.default)(Application, null, [{
+        key: 'ensurePidDir',
+        value: function ensurePidDir() {
+            return common_1.default.mkdirp(this._pidDir);
+        }
+    }, {
+        key: 'setPidDir',
+        value: function setPidDir(pidDir) {
+            if (!this._pidDir) {
+                this._pidDir = pidDir;
+                return true;
+            }
+            return false;
+        }
+    }, {
         key: 'start',
         value: function start() {
             var _this = this;
@@ -40,6 +55,11 @@ var Application = function () {
                 this.mutex.release();
                 this.mutex = null;
             }
+        }
+    }, {
+        key: 'PID_DIR',
+        get: function get() {
+            return this._pidDir;
         }
     }]);
     return Application;

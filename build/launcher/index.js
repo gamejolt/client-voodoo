@@ -73,12 +73,13 @@ var _ = require('lodash');
 var common_1 = require('../common');
 var pid_finder_1 = require('./pid-finder');
 var queue_1 = require('../queue');
+var application_1 = require('../application');
+var GameWrapper = require('client-game-wrapper');
 var plist = require('plist');
 var shellEscape = require('shell-escape');
 var spawnShellEscape = function spawnShellEscape(cmd) {
     return '"' + cmd.replace(/(["\s'$`\\])/g, '\\$1') + '"';
 };
-var GameWrapper = require('client-game-wrapper');
 function log(message) {
     console.log('Launcher: ' + message);
 }
@@ -92,8 +93,8 @@ var Launcher = function () {
         key: 'launch',
 
         // Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
-        value: function launch(localPackage, os, arch, options) {
-            return new LaunchHandle(localPackage, os, arch, options);
+        value: function launch(localPackage, os, arch, credentials, options) {
+            return new LaunchHandle(localPackage, os, arch, credentials, options);
         }
     }, {
         key: 'attach',
@@ -135,18 +136,18 @@ var Launcher = function () {
 
                                                     parsedWrapper = JSON.parse(options.stringifiedWrapper);
 
-                                                    instance = new LaunchInstanceHandle(parsedWrapper.wrapperId, parsedWrapper.wrapperPort, options.pollInterval);
+                                                    instance = new LaunchInstanceHandle(parsedWrapper.wrapperId, options.pollInterval);
                                                     log('Attaching new instance from stringified wrapper: id - ' + instance.wrapperId + ', port - ' + instance.wrapperPort + ', poll interval - ' + options.pollInterval);
                                                     _context.next = 19;
                                                     break;
 
                                                 case 13:
-                                                    if (!(options.wrapperId && options.wrapperPort)) {
+                                                    if (!options.wrapperId) {
                                                         _context.next = 18;
                                                         break;
                                                     }
 
-                                                    instance = new LaunchInstanceHandle(options.wrapperId, options.wrapperPort, options.pollInterval);
+                                                    instance = new LaunchInstanceHandle(options.wrapperId, options.pollInterval);
                                                     log('Attaching new instance: id - ' + instance.wrapperId + ', port - ' + instance.wrapperPort + ', poll interval - ' + options.pollInterval);
                                                     _context.next = 19;
                                                     break;
@@ -289,12 +290,13 @@ Launcher._runningInstances = new _map2.default();
 exports.Launcher = Launcher;
 
 var LaunchHandle = function () {
-    function LaunchHandle(_localPackage, _os, _arch, options) {
+    function LaunchHandle(_localPackage, _os, _arch, _credentials, options) {
         (0, _classCallCheck3.default)(this, LaunchHandle);
 
         this._localPackage = _localPackage;
         this._os = _os;
         this._arch = _arch;
+        this._credentials = _credentials;
         this.options = options;
         this.options = _.defaultsDeep(this.options || {}, {
             pollInterval: 1000,
@@ -354,6 +356,11 @@ var LaunchHandle = function () {
             return common_1.default.chmod(file, '0755');
         }
     }, {
+        key: 'ensureCredentials',
+        value: function ensureCredentials() {
+            return common_1.default.fsWriteFile(path.join(this._localPackage.install_dir, '.gj-credentials'), '0.1.0\n' + this._credentials.username + '\n' + this._credentials.user_token + '\n');
+        }
+    }, {
         key: 'start',
         value: function start() {
             return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee4() {
@@ -374,8 +381,8 @@ var LaunchHandle = function () {
                             case 3:
                                 executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
 
-                                executablePath = executablePath.replace(/\//, path.sep);
-                                this._file = path.join(this._localPackage.install_dir, executablePath);
+                                this._executablePath = executablePath.replace(/\//, path.sep);
+                                this._file = path.join(this._localPackage.install_dir, this._executablePath);
                                 // If the destination already exists, make sure its valid.
                                 _context4.next = 8;
                                 return common_1.default.fsExists(this._file);
@@ -423,7 +430,7 @@ var LaunchHandle = function () {
         key: 'startWindows',
         value: function startWindows(stat, isJava) {
             return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee5() {
-                var cmd, args, wrapperId, wrapperPort;
+                var cmd, args, wrapperId;
                 return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
                         switch (_context5.prev = _context5.next) {
@@ -450,18 +457,18 @@ var LaunchHandle = function () {
                                     args = [];
                                 }
                                 wrapperId = this._localPackage.id.toString();
-                                wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
-                                    cwd: path.dirname(this._file),
-                                    detached: true,
-                                    env: this.options.env
-                                });
+                                // let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
+                                // 	cwd: path.dirname( this._file ),
+                                // 	detached: true,
+                                // 	env: this.options.env,
+                                // } );
+
                                 return _context5.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
-                                    wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 9:
+                            case 8:
                             case 'end':
                                 return _context5.stop();
                         }
@@ -499,19 +506,26 @@ var LaunchHandle = function () {
                                     cmd = this._file;
                                     args = [];
                                 }
+                                _context6.next = 8;
+                                return application_1.Application.ensurePidDir();
+
+                            case 8:
+                                _context6.next = 10;
+                                return this.ensureCredentials();
+
+                            case 10:
                                 wrapperId = this._localPackage.id.toString();
-                                wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
+                                wrapperPort = GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
                                     cwd: path.dirname(this._file),
                                     detached: true,
                                     env: this.options.env
                                 });
                                 return _context6.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
-                                    wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 9:
+                            case 13:
                             case 'end':
                                 return _context6.stop();
                         }
@@ -525,7 +539,7 @@ var LaunchHandle = function () {
             return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee8() {
                 var _this2 = this;
 
-                var pid, cmd, args, wrapperId, wrapperPort, _ret2;
+                var pid, cmd, args, wrapperId, _ret2;
 
                 return _regenerator2.default.wrap(function _callee8$(_context8) {
                     while (1) {
@@ -534,7 +548,7 @@ var LaunchHandle = function () {
                                 pid = void 0;
 
                                 if (!stat.isFile()) {
-                                    _context8.next = 11;
+                                    _context8.next = 10;
                                     break;
                                 }
 
@@ -552,20 +566,20 @@ var LaunchHandle = function () {
                                     args = [];
                                 }
                                 wrapperId = this._localPackage.id.toString();
-                                wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
-                                    cwd: path.dirname(this._file),
-                                    detached: true,
-                                    env: this.options.env
-                                });
+                                // let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
+                                // 	cwd: path.dirname( this._file ),
+                                // 	detached: true,
+                                // 	env: this.options.env,
+                                // } );
+
                                 return _context8.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
-                                    wrapperPort: wrapperPort,
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 11:
+                            case 10:
                                 return _context8.delegateYield(_regenerator2.default.mark(function _callee7() {
-                                    var plistPath, plistStat, plistContents, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile, wrapperId, wrapperPort;
+                                    var plistPath, plistStat, plistContents, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile, wrapperId;
                                     return _regenerator2.default.wrap(function _callee7$(_context7) {
                                         while (1) {
                                             switch (_context7.prev = _context7.next) {
@@ -695,38 +709,38 @@ var LaunchHandle = function () {
                                                     // 	} );
                                                     // } );
                                                     wrapperId = _this2._localPackage.id.toString();
-                                                    wrapperPort = GameWrapper.start(wrapperId, executableFile, [], {
-                                                        cwd: macosPath,
-                                                        detached: true,
-                                                        env: _this2.options.env
-                                                    });
+                                                    // let wrapperPort = GameWrapper.start( wrapperId, executableFile, [], {
+                                                    // 	cwd: macosPath,
+                                                    // 	detached: true,
+                                                    // 	env: this.options.env,
+                                                    // } );
+
                                                     return _context7.abrupt('return', {
                                                         v: Launcher.attach({
                                                             wrapperId: wrapperId,
-                                                            wrapperPort: wrapperPort,
                                                             pollInterval: _this2.options.pollInterval
                                                         })
                                                     });
 
-                                                case 46:
+                                                case 45:
                                                 case 'end':
                                                     return _context7.stop();
                                             }
                                         }
                                     }, _callee7, _this2, [[16, 20]]);
-                                })(), 't0', 12);
+                                })(), 't0', 11);
 
-                            case 12:
+                            case 11:
                                 _ret2 = _context8.t0;
 
                                 if (!((typeof _ret2 === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret2)) === "object")) {
-                                    _context8.next = 15;
+                                    _context8.next = 14;
                                     break;
                                 }
 
                                 return _context8.abrupt('return', _ret2.v);
 
-                            case 15:
+                            case 14:
                             case 'end':
                                 return _context8.stop();
                         }
@@ -758,13 +772,12 @@ exports.LaunchHandle = LaunchHandle;
 var LaunchInstanceHandle = function (_events_1$EventEmitte) {
     (0, _inherits3.default)(LaunchInstanceHandle, _events_1$EventEmitte);
 
-    function LaunchInstanceHandle(_wrapperId, _wrapperPort, pollInterval) {
+    function LaunchInstanceHandle(_wrapperId, pollInterval) {
         (0, _classCallCheck3.default)(this, LaunchInstanceHandle);
 
         var _this3 = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(LaunchInstanceHandle).call(this));
 
         _this3._wrapperId = _wrapperId;
-        _this3._wrapperPort = _wrapperPort;
         _this3._interval = setInterval(function () {
             return _this3.tick();
         }, pollInterval || 1000);
@@ -777,15 +790,15 @@ var LaunchInstanceHandle = function (_events_1$EventEmitte) {
         value: function tick() {
             var _this4 = this;
 
-            return pid_finder_1.WrapperFinder.find(this._wrapperId, this._wrapperPort).then(function () {
+            return pid_finder_1.WrapperFinder.find(this._wrapperId).then(function (port) {
                 _this4._stable = true;
+                _this4._wrapperPort = port;
                 return true;
             }).catch(function (err) {
                 if (_this4._stable) {
                     clearInterval(_this4._interval);
                     console.error(err);
                     _this4.emit('end', err);
-                    throw err;
                 }
                 return false;
             });
@@ -802,8 +815,7 @@ var LaunchInstanceHandle = function (_events_1$EventEmitte) {
         key: 'pid',
         get: function get() {
             return {
-                wrapperId: this._wrapperId,
-                wrapperPort: this._wrapperPort
+                wrapperId: this._wrapperId
             };
         }
     }, {
