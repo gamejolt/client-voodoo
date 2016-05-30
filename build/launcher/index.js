@@ -364,7 +364,7 @@ var LaunchHandle = function () {
         key: 'start',
         value: function start() {
             return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee4() {
-                var launchOption, executablePath, stat, isJava;
+                var launchOption, stat, isJava;
                 return _regenerator2.default.wrap(function _callee4$(_context4) {
                     while (1) {
                         switch (_context4.prev = _context4.next) {
@@ -379,46 +379,44 @@ var LaunchHandle = function () {
                                 throw new Error('Can\'t find valid launch options for the given os/arch');
 
                             case 3:
-                                executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
-
-                                this._executablePath = executablePath.replace(/\//, path.sep);
+                                this._executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
                                 this._file = path.join(this._localPackage.install_dir, this._executablePath);
                                 // If the destination already exists, make sure its valid.
-                                _context4.next = 8;
+                                _context4.next = 7;
                                 return common_1.default.fsExists(this._file);
 
-                            case 8:
+                            case 7:
                                 if (_context4.sent) {
-                                    _context4.next = 10;
+                                    _context4.next = 9;
                                     break;
                                 }
 
                                 throw new Error('Can\'t launch because the file doesn\'t exist.');
 
-                            case 10:
-                                _context4.next = 12;
+                            case 9:
+                                _context4.next = 11;
                                 return common_1.default.fsStat(this._file);
 
-                            case 12:
+                            case 11:
                                 stat = _context4.sent;
                                 isJava = path.extname(this._file) === 'jar';
                                 _context4.t0 = process.platform;
-                                _context4.next = _context4.t0 === 'win32' ? 17 : _context4.t0 === 'linux' ? 18 : _context4.t0 === 'darwin' ? 19 : 20;
+                                _context4.next = _context4.t0 === 'win32' ? 16 : _context4.t0 === 'linux' ? 17 : _context4.t0 === 'darwin' ? 18 : 19;
                                 break;
 
-                            case 17:
+                            case 16:
                                 return _context4.abrupt('return', this.startWindows(stat, isJava));
 
-                            case 18:
+                            case 17:
                                 return _context4.abrupt('return', this.startLinux(stat, isJava));
 
-                            case 19:
+                            case 18:
                                 return _context4.abrupt('return', this.startMac(stat, isJava));
 
-                            case 20:
+                            case 19:
                                 throw new Error('What potato are you running on? Detected platform: ' + process.platform);
 
-                            case 21:
+                            case 20:
                             case 'end':
                                 return _context4.stop();
                         }
@@ -430,7 +428,7 @@ var LaunchHandle = function () {
         key: 'startWindows',
         value: function startWindows(stat, isJava) {
             return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee5() {
-                var cmd, args, wrapperId;
+                var cmd, args, wrapperId, wrapperPort;
                 return _regenerator2.default.wrap(function _callee5$(_context5) {
                     while (1) {
                         switch (_context5.prev = _context5.next) {
@@ -456,19 +454,26 @@ var LaunchHandle = function () {
                                     cmd = this._file;
                                     args = [];
                                 }
-                                wrapperId = this._localPackage.id.toString();
-                                // let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
-                                // 	cwd: path.dirname( this._file ),
-                                // 	detached: true,
-                                // 	env: this.options.env,
-                                // } );
+                                _context5.next = 8;
+                                return application_1.Application.ensurePidDir();
 
+                            case 8:
+                                _context5.next = 10;
+                                return this.ensureCredentials();
+
+                            case 10:
+                                wrapperId = this._localPackage.id.toString();
+                                wrapperPort = GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+                                    cwd: path.dirname(this._file),
+                                    detached: true,
+                                    env: this.options.env
+                                });
                                 return _context5.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 8:
+                            case 13:
                             case 'end':
                                 return _context5.stop();
                         }
@@ -539,7 +544,7 @@ var LaunchHandle = function () {
             return __awaiter(this, void 0, void 0, _regenerator2.default.mark(function _callee8() {
                 var _this2 = this;
 
-                var pid, cmd, args, wrapperId, _ret2;
+                var pid, cmd, args, wrapperId, wrapperPort, _ret2;
 
                 return _regenerator2.default.wrap(function _callee8$(_context8) {
                     while (1) {
@@ -548,7 +553,7 @@ var LaunchHandle = function () {
                                 pid = void 0;
 
                                 if (!stat.isFile()) {
-                                    _context8.next = 10;
+                                    _context8.next = 15;
                                     break;
                                 }
 
@@ -565,21 +570,28 @@ var LaunchHandle = function () {
                                     cmd = this._file;
                                     args = [];
                                 }
-                                wrapperId = this._localPackage.id.toString();
-                                // let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
-                                // 	cwd: path.dirname( this._file ),
-                                // 	detached: true,
-                                // 	env: this.options.env,
-                                // } );
+                                _context8.next = 8;
+                                return application_1.Application.ensurePidDir();
 
+                            case 8:
+                                _context8.next = 10;
+                                return this.ensureCredentials();
+
+                            case 10:
+                                wrapperId = this._localPackage.id.toString();
+                                wrapperPort = GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+                                    cwd: path.dirname(this._file),
+                                    detached: true,
+                                    env: this.options.env
+                                });
                                 return _context8.abrupt('return', Launcher.attach({
                                     wrapperId: wrapperId,
                                     pollInterval: this.options.pollInterval
                                 }));
 
-                            case 10:
+                            case 15:
                                 return _context8.delegateYield(_regenerator2.default.mark(function _callee7() {
-                                    var plistPath, plistStat, plistContents, parsedPlist, macosPath, macosStat, baseName, executableName, executableFile, wrapperId;
+                                    var plistPath, plistStat, plistContents, parsedPlist, macosPath, macosStat, baseName, executableName, wrapperId, wrapperPort;
                                     return _regenerator2.default.wrap(function _callee7$(_context7) {
                                         while (1) {
                                             switch (_context7.prev = _context7.next) {
@@ -692,29 +704,27 @@ var LaunchHandle = function () {
                                                 case 38:
                                                     baseName = path.basename(_this2._file);
                                                     executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
-                                                    executableFile = path.join(macosPath, executableName);
-                                                    _context7.next = 43;
-                                                    return _this2.ensureExecutable(executableFile);
 
-                                                case 43:
-                                                    // Kept commented in case we lost our mind and we want to use gatekeeper
-                                                    // let gatekeeper = await new Promise( ( resolve, reject ) =>
-                                                    // {
-                                                    // 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
-                                                    // 	{
-                                                    // 		if ( err || ( stderr && stderr.length ) ) {
-                                                    // 			return reject( err );
-                                                    // 		}
-                                                    // 		resolve();
-                                                    // 	} );
-                                                    // } );
+                                                    _this2._executablePath = path.join(_this2._executablePath, 'Contents', 'MacOS', executableName);
+                                                    _this2._file = path.join(_this2._localPackage.install_dir, _this2._executablePath);
+                                                    _context7.next = 44;
+                                                    return _this2.ensureExecutable(_this2._file);
+
+                                                case 44:
+                                                    _context7.next = 46;
+                                                    return application_1.Application.ensurePidDir();
+
+                                                case 46:
+                                                    _context7.next = 48;
+                                                    return _this2.ensureCredentials();
+
+                                                case 48:
                                                     wrapperId = _this2._localPackage.id.toString();
-                                                    // let wrapperPort = GameWrapper.start( wrapperId, executableFile, [], {
-                                                    // 	cwd: macosPath,
-                                                    // 	detached: true,
-                                                    // 	env: this.options.env,
-                                                    // } );
-
+                                                    wrapperPort = GameWrapper.start(wrapperId, application_1.Application.PID_DIR, _this2._localPackage.install_dir, _this2._executablePath, [], {
+                                                        cwd: path.dirname(_this2._file),
+                                                        detached: true,
+                                                        env: _this2.options.env
+                                                    });
                                                     return _context7.abrupt('return', {
                                                         v: Launcher.attach({
                                                             wrapperId: wrapperId,
@@ -722,25 +732,25 @@ var LaunchHandle = function () {
                                                         })
                                                     });
 
-                                                case 45:
+                                                case 51:
                                                 case 'end':
                                                     return _context7.stop();
                                             }
                                         }
                                     }, _callee7, _this2, [[16, 20]]);
-                                })(), 't0', 11);
+                                })(), 't0', 16);
 
-                            case 11:
+                            case 16:
                                 _ret2 = _context8.t0;
 
                                 if (!((typeof _ret2 === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret2)) === "object")) {
-                                    _context8.next = 14;
+                                    _context8.next = 19;
                                     break;
                                 }
 
                                 return _context8.abrupt('return', _ret2.v);
 
-                            case 14:
+                            case 19:
                             case 'end':
                                 return _context8.stop();
                         }
