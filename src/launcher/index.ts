@@ -204,8 +204,7 @@ export class LaunchHandle
 			throw new Error( 'Can\'t find valid launch options for the given os/arch' );
 		}
 
-		var executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
-		this._executablePath = executablePath.replace( /\//, path.sep );
+		this._executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
 		this._file = path.join( this._localPackage.install_dir, this._executablePath );
 
 		// If the destination already exists, make sure its valid.
@@ -251,12 +250,15 @@ export class LaunchHandle
 			args = [];
 		}
 
-		let wrapperId = this._localPackage.id.toString()
-		// let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
-		// 	cwd: path.dirname( this._file ),
-		// 	detached: true,
-		// 	env: this.options.env,
-		// } );
+		await Application.ensurePidDir();
+		await this.ensureCredentials();
+
+		let wrapperId = this._localPackage.id.toString();
+		let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+			cwd: path.dirname( this._file ),
+			detached: true,
+			env: this.options.env,
+		} );
 
 		return Launcher.attach( {
 			wrapperId: wrapperId,
@@ -315,12 +317,15 @@ export class LaunchHandle
 				args = [];
 			}
 
-			let wrapperId = this._localPackage.id.toString()
-			// let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
-			// 	cwd: path.dirname( this._file ),
-			// 	detached: true,
-			// 	env: this.options.env,
-			// } );
+			await Application.ensurePidDir();
+			await this.ensureCredentials();
+
+			let wrapperId = this._localPackage.id.toString();
+			let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+				cwd: path.dirname( this._file ),
+				detached: true,
+				env: this.options.env,
+			} );
 
 			return Launcher.attach( {
 				wrapperId: wrapperId,
@@ -389,8 +394,9 @@ export class LaunchHandle
 			let baseName = path.basename( this._file );
 			let executableName = parsedPlist.CFBundleExecutable || baseName.substr( 0, baseName.length - '.app'.length );
 
-			let executableFile = path.join( macosPath, executableName );
-			await this.ensureExecutable( executableFile );
+			this._executablePath = path.join( this._executablePath, 'Contents', 'MacOS', executableName );
+			this._file = path.join( this._localPackage.install_dir, this._executablePath );
+			await this.ensureExecutable( this._file );
 
 			// Kept commented in case we lost our mind and we want to use gatekeeper
 			// let gatekeeper = await new Promise( ( resolve, reject ) =>
@@ -405,12 +411,15 @@ export class LaunchHandle
 			// 	} );
 			// } );
 
-			let wrapperId = this._localPackage.id.toString()
-			// let wrapperPort = GameWrapper.start( wrapperId, executableFile, [], {
-			// 	cwd: macosPath,
-			// 	detached: true,
-			// 	env: this.options.env,
-			// } );
+			await Application.ensurePidDir();
+			await this.ensureCredentials();
+
+			let wrapperId = this._localPackage.id.toString();
+			let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, [], {
+				cwd: path.dirname( this._file ),
+				detached: true,
+				env: this.options.env,
+			} );
 
 			return Launcher.attach( {
 				wrapperId: wrapperId,
