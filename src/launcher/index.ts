@@ -194,6 +194,9 @@ export class LaunchHandle
 
 	private ensureCredentials()
 	{
+		if ( !this._credentials ) {
+			return Promise.resolve( null );
+		}
 		return Common.fsWriteFile( path.join( this._localPackage.install_dir, '.gj-credentials' ), `0.1.0\n${this._credentials.username}\n${this._credentials.user_token}\n` );
 	}
 
