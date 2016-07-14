@@ -2,7 +2,7 @@ import * as fs from 'fs';
 let Bluebird = require( 'bluebird' );
 
 let mkdirp: ( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
-let fsUnlink: ( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
+let fsUnlink: ( path: string ) => Promise<void> = Bluebird.promisify( fs.unlink );
 let fsExists = function( path: string ): Promise<boolean>
 {
 	return new Promise<boolean>( function( resolve )

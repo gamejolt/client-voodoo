@@ -85,12 +85,7 @@ class LinuxAutostarter implements IAutostarter
 
 	unset()
 	{
-		return Common.fsUnlink( LinuxAutostarter.desktopFilePath ).then( ( err ) =>
-		{
-			if ( err ) {
-				throw err;
-			}
-		} );
+		return Common.fsUnlink( LinuxAutostarter.desktopFilePath );
 	}
 
 	isset()

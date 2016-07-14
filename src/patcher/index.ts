@@ -304,12 +304,7 @@ export class PatchHandle
 		// TODO: use del lib
 		let unlinks = await Promise.all( filesToRemove.map( ( file ) =>
 		{
-			return Common.fsUnlink( path.resolve( this._to, file ) ).then( function( err )
-			{
-				if ( err ) {
-					throw err;
-				}
-			} );
+			return Common.fsUnlink( path.resolve( this._to, file ) );
 		} ) );
 
 		await Common.fsWriteFile( this._archiveListFile, newBuildFiles.join( "\n" ) );

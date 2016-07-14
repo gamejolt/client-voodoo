@@ -210,9 +210,13 @@ export class ExtractHandle
 				if ( this._options.deleteSource ) {
 
 					// Remove the source file, but throw only if there was an error and the file still exists.
-					let unlinked = await Common.fsUnlink( this._from );
-					if ( unlinked && ( await Common.fsExists( this._from ) ) ) {
-						throw unlinked;
+					try {
+						await Common.fsUnlink( this._from );
+					}
+					catch ( err ) {
+						if ( await Common.fsExists( this._from ) ) {
+							throw err;
+						}
 					}
 				}
 
@@ -272,10 +276,13 @@ export class ExtractHandle
 		if ( this._options.deleteSource ) {
 
 			// Remove the source file, but throw only if there was an error and the file still exists.
-			let unlinked = await Common.fsUnlink( this._from );
-			if ( unlinked && ( await Common.fsExists( this._from ) ) ) {
-				// TODO: what to do with this error
-				throw unlinked;
+			try {
+				await Common.fsUnlink( this._from );
+			}
+			catch ( err ) {
+				if ( await Common.fsExists( this._from ) ) {
+					throw err;
+				}
 			}
 		}
 
