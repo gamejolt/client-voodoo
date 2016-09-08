@@ -115,10 +115,7 @@ export class DownloadHandle
 				throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
 			}
 			else if ( this._options.overwrite ) {
-				let unlinked = await Common.fsUnlink( this._to );
-				if ( unlinked ) {
-					throw new Error( 'Can\'t download because destination cannot be overwritten.' );
-				}
+				await Common.fsUnlink( this._to );
 				stat.size = 0;
 			}
 			this._totalDownloaded = stat.size;
