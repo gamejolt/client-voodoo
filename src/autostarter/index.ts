@@ -1,12 +1,22 @@
 import * as path from 'path';
 import Common from '../common';
-let xdgBasedir = require( 'xdg-basedir' );
-let Winreg = require( 'winreg' );
-let Bluebird = require( 'bluebird' );
-let applescript: ( script: string ) => Promise<any> = Bluebird.promisify( require( 'applescript' ).execString );
-let shellEscape = require( 'shell-escape' );
+import * as Winreg from 'winreg';
+import * as Bluebird from 'bluebird';
+import * as xdgBasedir from 'xdg-basedir';
+const _applescript = require( 'applescript' );
+const shellEscape = require( 'shell-escape' );
 
-const autostartId = 'GameJoltClient';
+const applescript: ( script: string ) => PromiseLike<any> = Bluebird.promisify( _applescript.execString );
+
+const AUTOSTART_ID = 'GameJoltClient';
+
+interface IAutostarter
+{
+	set: ( path: string, args: string[], runner?: string ) => PromiseLike<void>;
+	unset: ( runner?: string ) => PromiseLike<void>;
+	isset: () => PromiseLike<boolean>;
+}
+
 class WindowsAutostarter implements IAutostarter
 {
 	private static getKey()
@@ -19,27 +29,39 @@ class WindowsAutostarter implements IAutostarter
 
 	async set( program: string, args: string[] )
 	{
-		return new Promise<void>( ( resolve ) =>
+		return new Promise<void>( ( resolve, reject ) =>
 		{
-			WindowsAutostarter.getKey().set( autostartId , Winreg.REG_SZ, '\"' + program + '\"' + ( ( args && args.length ) ? ( ' ' + args.join( ' ' ) ) : '' ), resolve );
+			const argsString = args && args.length ? ' ' + args.join( ' ' ) : '';
+
+			WindowsAutostarter.getKey().set(
+				AUTOSTART_ID,
+				Winreg.REG_SZ,
+				`"${program}" ${argsString}`,
+				Common.makeCallbackPromise( resolve, reject ),
+			);
 		} );
 	}
 
 	unset()
 	{
-		return new Promise<void>( ( resolve ) =>
+		return new Promise<void>( ( resolve, reject ) =>
 		{
-			WindowsAutostarter.getKey().remove( autostartId, resolve );
+			WindowsAutostarter.getKey().remove( AUTOSTART_ID, Common.makeCallbackPromise( resolve, reject ) );
 		} );
 	}
 
 	isset()
 	{
-		return new Promise<boolean>( ( resolve ) =>
+		return new Promise<boolean>( ( resolve, reject ) =>
 		{
-			WindowsAutostarter.getKey().get( autostartId, ( err, item ) =>
+			WindowsAutostarter.getKey().get( AUTOSTART_ID, ( err, item ) =>
 			{
-				resolve( !!item );
+				if ( err ) {
+					reject( err );
+				}
+				else {
+					resolve( !!item );
+				}
 			} );
 		} );
 	}
@@ -47,45 +69,50 @@ class WindowsAutostarter implements IAutostarter
 
 class LinuxAutostarter implements IAutostarter
 {
-	private static desktopFilePath = path.join( xdgBasedir.config, 'autostart', autostartId + '.desktop' );
+	static readonly DESKTOP_FILE_PATH = path.join( xdgBasedir.config, 'autostart', AUTOSTART_ID + '.desktop' );
 
-	private async createRunner( program: string, runner: string, args?: string[] )
+	private async createRunner( program: string, runner: string, args: string[] = [] )
 	{
-		let runnerScript =
-			'#!/bin/bash\n'
-		+ 'if [ -e "' + program + '" ]; then\n'
-		+ '	' + shellEscape( [ program ].concat( args || [] ) ) + '\n'
-		+ 'fi';
+		const escaped = shellEscape( [ program ].concat( args || [] ) );
+		const runnerScript =
+`#!/bin/bash
+if [ -e "${program}" ]; then
+	${escaped}
+fi
+`;
 
 		await Common.fsWriteFile( runner, runnerScript );
 		await Common.chmod( runner, '0755' );
 	}
 
-	async set( program: string, args?: string[], runner?: string )
+	async set( program: string, args: string[], runner: string )
 	{
 		await this.createRunner( program, runner, args );
-		let desktopContents =
-			'[Desktop Entry]\n'
-		  + 'Version=1.0\n'
-		  + 'Type=Application\n'
-		  + 'Name=Game Jolt Client\n'
-		  + 'GenericName=Game Client\n'
-		  + 'Comment=The power of Game Jolt website in your desktop\n'
-		  + 'Exec=' + shellEscape( [ runner ] ) + '\n'
-		  + 'Terminal=false\n'
-		  + 'Categories=Game;\n'
-		  + 'Keywords=Play;GJ;GameJolt;\n'
-		  + 'Hidden=false\n'
-		  + 'Name[en_US]=Game Jolt Client\n'
-		  + 'TX-GNOME-Autostart-enabled=true\n';
 
-		await Common.fsWriteFile( LinuxAutostarter.desktopFilePath, desktopContents );
-		await Common.chmod( LinuxAutostarter.desktopFilePath, '0755' );
+		const escaped = shellEscape( [ runner ] );
+		const desktopContents =
+`[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Game Jolt Client
+GenericName=Game Client
+Comment=The power of Game Jolt website in your desktop
+Exec='${escaped}
+Terminal=false
+Categories=Game;
+Keywords=Play;GJ;GameJolt;
+Hidden=false
+Name[en_US]=Game Jolt Client
+TX-GNOME-Autostart-enabled=true
+`;
+
+		await Common.fsWriteFile( LinuxAutostarter.DESKTOP_FILE_PATH, desktopContents );
+		await Common.chmod( LinuxAutostarter.DESKTOP_FILE_PATH, '0755' );
 	}
 
 	unset()
 	{
-		return Common.fsUnlink( LinuxAutostarter.desktopFilePath ).then( ( err ) =>
+		return Common.fsUnlink( LinuxAutostarter.DESKTOP_FILE_PATH ).then( ( err ) =>
 		{
 			if ( err ) {
 				throw err;
@@ -95,7 +122,7 @@ class LinuxAutostarter implements IAutostarter
 
 	isset()
 	{
-		return Common.fsExists( LinuxAutostarter.desktopFilePath );
+		return Common.fsExists( LinuxAutostarter.DESKTOP_FILE_PATH );
 	}
 }
 
@@ -103,48 +130,44 @@ class MacAutostarter implements IAutostarter
 {
 	private async createRunner( program: string, runner: string, args?: string[] )
 	{
-		let runnerScript =
-			'#!/bin/bash\n'
-		+ 'if [ -e "' + program + '" ]; then\n'
-		+ '	' + shellEscape( [ program ].concat( args || [] ) ) + '\n'
-		+ 'fi';
+		const escaped = shellEscape( [ program ].concat( args || [] ) ) ;
+		const runnerScript =
+`#!/bin/bash
+if [ -e "${program}" ]; then
+	${escaped}
+fi
+`;
 
 		await Common.fsWriteFile( runner, runnerScript );
 		await Common.chmod( runner, '0755' );
 	}
 
-	async set( program: string, args?: string[], runner?: string )
+	async set( program: string, args: string[], runner: string )
 	{
 		await this.createRunner( program, runner, args );
-		return applescript( 'tell application "System Events" to make login item at end with properties {path:"' + runner + '", hidden:false, name:"' + autostartId + '"}' );
+		return applescript( `tell application "System Events" to make login item at end with properties {path:"${runner}", hidden:false, name:"${AUTOSTART_ID}"}` );
 	}
 
-	unset( runner?: string )
+	unset()
 	{
-		return applescript( 'tell application "System Events" to delete every login item whose name is "' + autostartId + '"' );
+		return applescript( `tell application "System Events" to delete every login item whose name is "${AUTOSTART_ID}"` );
 	}
 
 	isset()
 	{
-		return applescript( 'tell application "System Events" to get the name of every login item' ).then( ( loginItems: string ) =>
-		{
-			return ( loginItems && loginItems.indexOf( autostartId ) !== -1 );
-		} );
+		return applescript( `tell application "System Events" to get the name of every login item` )
+			.then( ( loginItems: string ) =>
+			{
+				return loginItems && loginItems.indexOf( AUTOSTART_ID ) !== -1;
+			} );
 	}
-}
-
-interface IAutostarter
-{
-	set: ( path: string, args?: string[], runner?: string ) => Promise<void>;
-	unset: ( runner?: string ) => Promise<void>;
-	isset: () => Promise<boolean>;
 }
 
 export abstract class Autostarter
 {
-	private static winAutostarter: WindowsAutostarter = new  WindowsAutostarter();
-	private static linuxAutostarter: LinuxAutostarter = new LinuxAutostarter();
-	private static macAutostarter: MacAutostarter = new MacAutostarter();
+	static readonly winAutostarter = new  WindowsAutostarter();
+	static readonly linuxAutostarter = new LinuxAutostarter();
+	static readonly macAutostarter = new MacAutostarter();
 
 	private static _getAutostarter(): IAutostarter
 	{
@@ -157,29 +180,32 @@ export abstract class Autostarter
 
 			case 'darwin':
 				return this.macAutostarter;
+
+			default:
+				throw new Error( 'Invalid platform.' );
 		}
 	}
 
-    static set( path: string, args?: string[], runner?: string ): Promise<void>
-    {
-        return this.unset( path )
-            .then( () => this._getAutostarter().set( path, args, runner ) );
-    }
+	static set( path: string, args?: string[], runner?: string )
+	{
+		return this.unset( path )
+			.then( () => this._getAutostarter().set( path, args || [], runner ) );
+	}
 
-    static unset( runner?: string ): Promise<void>
-    {
-		let autostarter = this._getAutostarter();
-        return this.isset()
-            .then( ( isset ) =>
-            {
-                if ( isset ) {
-                    return this._getAutostarter().unset( runner );
-                }
-            } );
-    }
+	static unset( runner?: string )
+	{
+		const autostarter = this._getAutostarter();
+		return this.isset()
+			.then( ( isset ) =>
+			{
+				if ( isset ) {
+					return autostarter.unset( runner );
+				}
+			} );
+	}
 
-    static isset(): Promise<boolean>
-    {
-        return this._getAutostarter().isset();
-    }
+	static isset()
+	{
+		return this._getAutostarter().isset();
+	}
 }

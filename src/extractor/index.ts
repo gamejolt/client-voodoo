@@ -55,8 +55,6 @@ export class ExtractHandle
 	private _totalSize: number;
 
 	private _emitter: EventEmitter;
-	private _running: boolean;
-	private _terminated: boolean;
 
 	constructor( private _from: string, private _to: string, private _options?: IExtractOptions )
 	{

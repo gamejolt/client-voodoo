@@ -9,9 +9,9 @@ export enum State
 
 export interface ICallback
 {
-	cb: Function,
-	args?: any[],
-	context?: any,
+	cb: Function;
+	args?: any[];
+	context?: any;
 }
 
 export class Resumable
@@ -19,12 +19,12 @@ export class Resumable
 	private _currentState: State;
 	private _wantsStart: boolean;
 
-	private _waitForStart: Promise<void>;
-	private _waitForStartResolver: () => void;
+	private _waitForStart?: Promise<void>;
+	private _waitForStartResolver?: () => void;
 	private _startCbs: Set<ICallback>;
 
-	private _waitForStop: Promise<void>;
-	private _waitForStopResolver: () => void;
+	private _waitForStop?: Promise<void>;
+	private _waitForStopResolver?: () => void;
 	private _stopCbs: Set<ICallback>;
 
 	constructor()
@@ -51,20 +51,22 @@ export class Resumable
 		this._startCbs.add( cb );
 
 		if ( !this._waitForStop ) {
-			this._waitForStop = new Promise<void>( ( resolve ) => {
+			this._waitForStop = new Promise<void>( ( resolve ) =>
+			{
 				this._waitForStopResolver = resolve;
-			} ).then( () =>
+			} )
+			.then( () =>
 			{
 				if ( this._currentState === State.FINISHED ) {
 					return;
 				}
 
 				this._currentState = State.STARTING;
-				this._waitForStop = null;
-				this._waitForStopResolver = null;
+				this._waitForStop = undefined;
+				this._waitForStopResolver = undefined;
 
 				let cbCount = this._startCbs.size;
-				for ( let _cb of this._startCbs.values() ) {
+				for ( const _cb of this._startCbs.values() ) {
 					this._startCbs.delete( _cb );
 					_cb.cb.apply( _cb.context || this, _cb.args );
 
@@ -77,7 +79,9 @@ export class Resumable
 		}
 
 		if ( this._currentState === State.STOPPED || force ) {
-			this._waitForStopResolver();
+			if ( this._waitForStopResolver ) {
+				this._waitForStopResolver();
+			}
 		}
 
 		return this._waitForStop;
@@ -85,7 +89,7 @@ export class Resumable
 
 	started()
 	{
-		if ( this._waitForStart ) {
+		if ( this._waitForStartResolver ) {
 			this._waitForStartResolver();
 		}
 		this._currentState = State.STARTED;
@@ -102,20 +106,22 @@ export class Resumable
 		this._stopCbs.add( cb );
 
 		if ( !this._waitForStart ) {
-			this._waitForStart = new Promise<void>( ( resolve ) => {
+			this._waitForStart = new Promise<void>( ( resolve ) =>
+			{
 				this._waitForStartResolver = resolve;
-			} ).then( () =>
+			} )
+			.then( () =>
 			{
 				if ( this._currentState === State.FINISHED ) {
 					return;
 				}
 
 				this._currentState = State.STOPPING;
-				this._waitForStart = null;
-				this._waitForStartResolver = null;
+				this._waitForStart = undefined;
+				this._waitForStartResolver = undefined;
 
 				let cbCount = this._stopCbs.size;
-				for ( let _cb of this._stopCbs.values() ) {
+				for ( const _cb of this._stopCbs.values() ) {
 					this._stopCbs.delete( _cb );
 					_cb.cb.apply( _cb.context || this, _cb.args );
 
@@ -128,7 +134,9 @@ export class Resumable
 		}
 
 		if ( this._currentState === State.STARTED || force ) {
-			this._waitForStartResolver();
+			if ( this._waitForStartResolver ) {
+				this._waitForStartResolver();
+			}
 		}
 
 		return this._waitForStart;
@@ -136,7 +144,7 @@ export class Resumable
 
 	stopped()
 	{
-		if ( this._waitForStop ) {
+		if ( this._waitForStopResolver ) {
 			this._waitForStopResolver();
 		}
 		this._currentState = State.STOPPED;
@@ -156,10 +164,10 @@ export class Resumable
 		}
 
 		if ( running ) {
-			return this.stop( { cb: () => { this.start( cb ) } }, true );
+			return this.stop( { cb: () => this.start( cb ) }, true );
 		}
 		else {
-			return this.start( { cb: () => { this.stop( cb ) } }, true );
+			return this.start( { cb: () => this.stop( cb ) }, true );
 		}
 	}
 }

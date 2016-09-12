@@ -27,9 +27,9 @@ export interface IClientOSInfo
 
 export abstract class Logger
 {
-	private static _logLines:string[] = [];
+	private static _logLines: string[] = [];
 	private static _hijacked = false;
-	private static _file: fs.WriteStream;
+	private static _file?: fs.WriteStream;
 	private static _filePath: string;
 	private static _flushInterval: NodeJS.Timer;
 
@@ -39,31 +39,38 @@ export abstract class Logger
 			if ( this._file ) {
 				this._file.close();
 			}
-			this._file = null;
+			this._file = undefined;
+
 			await Common.fsUnlink( this._filePath );
-			let str = this._logLines.join( '\n' ) + '\n';
+
+			const str = this._logLines.join( '\n' ) + '\n';
 			await Common.fsWriteFile( this._filePath, str );
+
 			CONSOLE_LOG.apply( console, [ 'Flushing log file of length ' + this._logLines.join( '\n' ).length + ' with ' + this._logLines.length + ' rows' ] );
+
 			this._file = fs.createWriteStream( this._filePath, {
 				flags: 'a',
 				encoding: 'utf8',
 			} );
 		}
 		catch ( err ) {
-			CONSOLE_LOG.apply( console, [ 'Babel sucks: ' + err.message + '\n' + err.stack ] );
+			CONSOLE_LOG.apply( console, [ 'Error while flushing log: ' + err.message + '\n' + err.stack ] );
 		}
 	}
 
 	private static _log( ...args: any[] )
 	{
 		CONSOLE_LOG.apply( console, args );
-		let str = util.format.apply( console, args ).split( '\n' );
-		for ( let strVal of str ) {
+
+		const str = util.format.apply( console, args ).split( '\n' );
+		for ( const strVal of str ) {
 			this._logLines.push( strVal );
 		}
+
 		if ( this._file ) {
 			this._file.write( str + '\n' );
 		}
+
 		if ( this._logLines.length > LOG_LINES ) {
 			this._logLines = _.clone( this._logLines.slice( this._logLines.length - LOG_LINES ) );
 		}
@@ -72,13 +79,16 @@ export abstract class Logger
 	private static _logErr( ...args: any[] )
 	{
 		CONSOLE_ERR.apply( console, args );
-		let str = util.format.apply( console, args ).split( '\n' );
-		for ( let strVal of str ) {
+
+		const str = util.format.apply( console, args ).split( '\n' );
+		for ( const strVal of str ) {
 			this._logLines.push( strVal );
 		}
+
 		if ( this._file ) {
 			this._file.write( str + '\n' );
 		}
+
 		if ( this._logLines.length > LOG_LINES ) {
 			this._logLines = this._logLines.slice( this._logLines.length - LOG_LINES );
 		}
@@ -92,24 +102,19 @@ export abstract class Logger
 
 		this._filePath = file || 'client.log';
 		if ( await Common.fsExists( this._filePath ) ) {
-			try {
-				let readLines = await Common.fsReadFile( this._filePath, 'utf8' );
-				console.log( typeof readLines );
-				this._logLines = readLines.split( '\n' );
-				if ( this._logLines.length > LOG_LINES ) {
-					this._logLines = this._logLines.slice( this._logLines.length - LOG_LINES );
-				}
-			}
-			catch ( err ) {
-				console.log( 'Seroiusly babel gtfo: ' + err.message + '\n' + err.stack );
+			const readLines = await Common.fsReadFile( this._filePath, 'utf8' );
+			this._logLines = readLines.split( '\n' );
+			if ( this._logLines.length > LOG_LINES ) {
+				this._logLines = this._logLines.slice( this._logLines.length - LOG_LINES );
 			}
 		}
+
 		this._file = fs.createWriteStream( this._filePath, {
 			flags: 'a',
 			encoding: 'utf8',
 		} );
-		let flushFunc: ( ...args:any[] ) => void = this._flushFile.bind( this );
-		this._flushInterval = setInterval( flushFunc, 10000 );
+
+		this._flushInterval = setInterval( () => this._flushFile(), 10000 );
 
 		console.log = this._log.bind( this );
 		console.info = this._log.bind( this );
@@ -126,9 +131,11 @@ export abstract class Logger
 		}
 
 		clearInterval( this._flushInterval );
+
 		if ( this._file ) {
 			this._file.close();
 		}
+
 		await Common.fsWriteFile( this._filePath, this._logLines.join( '\n' ) );
 
 		console.log = CONSOLE_LOG;

@@ -1,9 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
 import * as childProcess from 'child_process';
-import * as os from 'os';
 import * as _ from 'lodash';
 import Common from '../common';
 import { WrapperFinder } from './pid-finder';
@@ -11,10 +9,10 @@ import { VoodooQueue } from '../queue';
 
 let plist = require( 'plist' );
 let shellEscape = require( 'shell-escape' );
-let spawnShellEscape = function( cmd: string )
-{
-	return '"' + cmd.replace( /(["\s'$`\\])/g, '\\$1' ) + '"';
-};
+// let spawnShellEscape = function( cmd: string )
+// {
+// 	return '"' + cmd.replace( /(["\s'$`\\])/g, '\\$1' ) + '"';
+// };
 
 let GameWrapper = require( 'client-game-wrapper' );
 

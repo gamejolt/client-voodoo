@@ -1,50 +1,53 @@
 import * as fs from 'fs';
-let Bluebird = require( 'bluebird' );
+import * as Bluebird from 'bluebird';
+import * as _mkdirp from 'mkdirp';
 
-let mkdirp: ( path: string, mode?: string ) => Promise<boolean> = Bluebird.promisify( require( 'mkdirp' ) );
-let fsUnlink: ( path: string ) => Promise<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
-let fsExists = function( path: string ): Promise<boolean>
+const mkdirp: ( path: string, mode?: string ) => PromiseLike<boolean> = Bluebird.promisify( _mkdirp );
+const fsUnlink: ( path: string | Buffer ) => PromiseLike<NodeJS.ErrnoException> = Bluebird.promisify( fs.unlink );
+
+function fsExists( path: string ): Promise<boolean>
 {
 	return new Promise<boolean>( function( resolve )
 	{
 		fs.exists( path, resolve );
 	} );
-};
-let fsReadFile: ( path: string, encoding?: string ) => Promise<string> = Bluebird.promisify( fs.readFile );
-let fsWriteFile: ( path: string, data: string ) => Promise<string> = Bluebird.promisify( fs.writeFile );
-let chmod:( path: string, mode: string | number ) => Promise<void> = Bluebird.promisify( fs.chmod );
-let fsStat: ( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
-let fsCopy = async function( from: string, to: string )
+}
+
+const fsReadFile: ( path: string, encoding?: string ) => PromiseLike<string> = Bluebird.promisify( fs.readFile );
+const fsWriteFile: ( path: string, data: string ) => PromiseLike<string> = Bluebird.promisify( fs.writeFile );
+const chmod: ( path: string, mode: string | number ) => PromiseLike<void> = Bluebird.promisify( fs.chmod );
+const fsStat: ( path: string ) => PromiseLike<fs.Stats> = Bluebird.promisify( fs.stat );
+
+async function fsCopy( from: string, to: string )
 {
 	return new Promise<boolean>( ( resolve, reject ) =>
 	{
-		let destStream = fs.createWriteStream( to );
+		const destStream = fs.createWriteStream( to );
+
 		destStream
 			.on( 'finish', resolve )
 			.on( 'error', reject );
 
 		fs.createReadStream( from ).pipe( destStream );
 	} );
-};
-let fsReadDir: ( path: string ) => Promise<string[]> = Bluebird.promisify( fs.readdir );
-let fsReadDirRecursively: ( path: string ) => Promise<string[]> = Bluebird.promisify( require( 'recursive-readdir' ) );
-
-let wait = function( millis: number ): Promise<void>
-{
-	return new Promise<void>( ( resolve ) =>
-	{
-		setTimeout( resolve, millis );
-	} );
 }
 
-let test = function( fn: Function, done?: Function )
+const fsReadDir: ( path: string ) => PromiseLike<string[]> = Bluebird.promisify( fs.readdir );
+const fsReadDirRecursively: ( path: string ) => PromiseLike<string[]> = Bluebird.promisify( require( 'recursive-readdir' ) );
+
+function wait( millis: number )
 {
-	let func = function( _done )
+	return new Promise<void>( ( resolve ) => setTimeout( resolve, millis ) );
+}
+
+function test( fn: Function, done?: Function )
+{
+	let func = function( _done: Function )
 	{
 		try {
 			let result = fn( _done );
 			if ( result && typeof result.then === 'function' && typeof result.catch === 'function' ) {
-				result.catch( ( err ) => _done( err ) );
+				result.catch( ( err: any ) => _done( err ) );
 			}
 		}
 		catch ( err ) {
@@ -57,19 +60,33 @@ let test = function( fn: Function, done?: Function )
 	}
 
 	return func;
-};
+}
+
+function makeCallbackPromise( resolve: Function, reject: Function )
+{
+	return ( err: any ) =>
+	{
+		if ( err ) {
+			reject( err );
+		}
+		else {
+			resolve( err );
+		}
+	};
+}
 
 export default {
-	mkdirp: mkdirp,
-	fsUnlink: fsUnlink,
-	fsExists: fsExists,
-	fsReadFile: fsReadFile,
-	fsWriteFile: fsWriteFile,
-	chmod: chmod,
-	fsStat: fsStat,
-	fsCopy: fsCopy,
-	fsReadDir: fsReadDir,
-	fsReadDirRecursively: fsReadDirRecursively,
-	test: test,
-	wait: wait,
+	mkdirp,
+	fsUnlink,
+	fsExists,
+	fsReadFile,
+	fsWriteFile,
+	chmod,
+	fsStat,
+	fsCopy,
+	fsReadDir,
+	fsReadDirRecursively,
+	test,
+	wait,
+	makeCallbackPromise,
 };

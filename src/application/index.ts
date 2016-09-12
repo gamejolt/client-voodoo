@@ -1,17 +1,18 @@
 const MUTEX_NAME = 'game-jolt-client';
+
 export abstract class Application
 {
-	private static mutex;
+	private static mutex: any | undefined = undefined;
 
 	static start()
 	{
-		let Mutex = require( 'windows-mutex' );
 		console.log( 'Acquiring le mutex' );
-		this.mutex = null;
+
+		const Mutex = require( 'windows-mutex' );
 		try {
 			this.mutex = new Mutex( MUTEX_NAME );
 		}
-		catch (e) {
+		catch ( e ) {
 			// noop
 		}
 
@@ -21,9 +22,10 @@ export abstract class Application
 	static stop()
 	{
 		console.log( 'Releasing le mutex' );
+
 		if ( this.mutex ) {
 			this.mutex.release();
-			this.mutex = null;
+			this.mutex = undefined;
 		}
 	}
 }

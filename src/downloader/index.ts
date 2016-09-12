@@ -1,7 +1,5 @@
 import * as fs from 'fs';
 import * as http from 'http';
-import * as url from 'url';
-import * as util from 'util';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
@@ -20,7 +18,7 @@ export abstract class Downloader
 {
 	static download( generateUrl: ( () => Promise<string> ) | string, to: string, options?: IDownloadOptions ): DownloadHandle
 	{
-		return new DownloadHandle( generateUrl, to, options );
+		return new DownloadHandle( generateUrl, to, options || {} );
 	}
 }
 
@@ -28,11 +26,12 @@ export interface IDownloadProgress
 {
 	progress: number;
 	timeLeft: number;
-	sample: StreamSpeed.ISampleData;
+	sample?: StreamSpeed.ISampleData;
 }
 
-function log( message ) {
-	console.log( 'Downloader: ' + message );
+function log( message: string )
+{
+	console.log( `Downloader: ${message}` );
 }
 
 export class DownloadHandle
@@ -43,17 +42,14 @@ export class DownloadHandle
 	private _emitter: EventEmitter;
 	private _resumable: Resumable.Resumable;
 
-	private _queuedStart: boolean;
-	private _queuedStop: boolean;
-
 	private _url: string;
 	private _totalSize: number;
 	private _totalDownloaded: number;
 
-	private _streamSpeed: StreamSpeed.StreamSpeed;
-	private _destStream: fs.WriteStream;
-	private _request: request.Request;
-	private _response: http.IncomingMessage;
+	private _streamSpeed?: StreamSpeed.StreamSpeed;
+	private _destStream?: fs.WriteStream;
+	private _request?: request.Request;
+	private _response?: http.IncomingMessage;
 
 	constructor( private _generateUrl: ( () => Promise<string> ) | string, private _to: string, private _options: IDownloadOptions )
 	{
@@ -103,19 +99,20 @@ export class DownloadHandle
 		return this._promise;
 	}
 
-	private async prepareFS()
+	private async prepareFs()
 	{
 		log( 'Preparing fs' );
+
 		// If the actual file already exists, we resume download.
 		if ( await Common.fsExists( this._to ) ) {
 
 			// Make sure the destination is a file.
-			let stat = await Common.fsStat( this._to );
+			const stat = await Common.fsStat( this._to );
 			if ( !stat.isFile() ) {
 				throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
 			}
 			else if ( this._options.overwrite ) {
-				let unlinked = await Common.fsUnlink( this._to );
+				const unlinked = await Common.fsUnlink( this._to );
 				if ( unlinked ) {
 					throw new Error( 'Can\'t download because destination cannot be overwritten.' );
 				}
@@ -125,9 +122,9 @@ export class DownloadHandle
 		}
 		// Otherwise, we validate the folder path.
 		else {
-			let toDir = path.dirname( this._to );
+			const toDir = path.dirname( this._to );
 			if ( await Common.fsExists( toDir ) ) {
-				let dirStat = await Common.fsStat( toDir );
+				const dirStat = await Common.fsStat( toDir );
 				if ( !dirStat.isDirectory() ) {
 					throw new Error( 'Can\'t download to destination because the path is invalid.' );
 				}
@@ -143,20 +140,20 @@ export class DownloadHandle
 	private async generateUrl()
 	{
 		log( 'Generating url' );
-		let _generateUrl:any = this._generateUrl;
-		if ( typeof _generateUrl === 'string' ) {
-			this._url = _generateUrl;
+
+		if ( typeof this._generateUrl === 'string' ) {
+			this._url = this._generateUrl;
 		}
 		else {
-			this._url = await _generateUrl();
+			this._url = await this._generateUrl();
 		}
 	}
 
 	private download()
 	{
 		log( 'Downloading from ' + this._url );
-		let hostUrl = url.parse( this._url );
-		let httpOptions: request.CoreOptions = {
+
+		const httpOptions: request.CoreOptions = {
 			headers: {
 				'Range': 'bytes=' + this._totalDownloaded.toString() + '-',
 			},
@@ -183,7 +180,7 @@ export class DownloadHandle
 						timeLeft: Math.round( ( this._totalSize - this._totalDownloaded ) / sample.currentAverage ),
 						sample: sample,
 					} ) )
-					.stream.on( 'error', ( err ) => this.onError( err ) );
+					.stream.on( 'error', ( err: Error ) => this.onError( err ) );
 
 				// Unsatisfiable request - most likely we've downloaded the whole thing already.
 				// TODO - send HEAD request to get content-length and compare.
@@ -209,22 +206,23 @@ export class DownloadHandle
 				}
 
 				if ( this._options.decompressStream ) {
-					this._request
+					this._request!
 						.pipe( this._streamSpeed.stream )
 						.pipe( this._options.decompressStream )
 						.pipe( this._destStream );
 				}
 				else {
-					this._request
+					this._request!
 						.pipe( this._streamSpeed.stream )
-						.pipe( this._destStream );
+						.pipe( this._destStream! );
 				}
 
-				this._destStream.on( 'finish', () => this.onFinished() );
-				this._destStream.on( 'error', ( err ) => this.onError( err ) );
+				this._destStream!.on( 'finish', () => this.onFinished() );
+				this._destStream!.on( 'error', ( err: Error ) => this.onError( err ) );
 
 				this._resumable.started();
 				this._emitter.emit( 'started' );
+
 				log( 'Resumable state: started' );
 			} )
 			.on( 'data', ( data ) =>
@@ -251,13 +249,14 @@ export class DownloadHandle
 	private async onStarting()
 	{
 		log( 'Resumable state: starting' );
+
 		try {
-			await this.prepareFS();
+			await this.prepareFs();
 			await this.generateUrl();
 			this.download();
 		}
 		catch ( err ) {
-			log( 'I hate you babel: ' + err.message + '\n' + err.stack );
+			log( 'Error while starting download: ' + err.message + '\n' + err.stack );
 			this.onError( err );
 		}
 	}
@@ -277,32 +276,38 @@ export class DownloadHandle
 	private onStopping()
 	{
 		log( 'Resumable state: stopping' );
+
 		if ( this._streamSpeed ) {
 			this._streamSpeed.stop();
-			this._streamSpeed = null;
+			this._streamSpeed = undefined;
 		}
 
 		if ( this._response ) {
 			this._response.removeAllListeners();
 		}
+
 		if ( this._destStream ) {
 			this._destStream.removeAllListeners();
 		}
+
 		if ( this._response ) {
 			this._response.unpipe( this._destStream );
-			this._response = null;
+			this._response = undefined;
 		}
+
 		if ( this._destStream ) {
 			this._destStream.close();
-			this._destStream = null;
+			this._destStream = undefined;
 		}
+
 		if ( this._request ) {
 			this._request.abort();
-			this._request = null;
+			this._request = undefined;
 		}
 
 		this._resumable.stopped();
 		this._emitter.emit( 'stopped' );
+
 		log( 'Resumable state: stopped' );
 	}
 
@@ -327,21 +332,24 @@ export class DownloadHandle
 		this._emitter.emit( 'progress', progress );
 	}
 
-	private onError( err: NodeJS.ErrnoException )
+	private onError( err: Error )
 	{
 		log( err.message + '\n' + err.stack );
+
 		if ( this._resumable.state === Resumable.State.STARTING ) {
 			log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
 			log( 'Resumable state: started' );
 		}
+
 		this._resumable.stop( { cb: this.onErrorStopping, args: [ err ], context: this }, true );
 	}
 
 	private onErrorStopping( err: NodeJS.ErrnoException )
 	{
 		log( 'Error' );
+
 		this.onStopping();
 		this._resumable.finished();
 		this._rejector( err );
@@ -350,12 +358,14 @@ export class DownloadHandle
 	private onFinished()
 	{
 		log( 'Finished' );
+
 		if ( this._resumable.state === Resumable.State.STARTING ) {
 			log( 'Forced to stop before started. Marking as started first. ' );
 			this._resumable.started();
 			this._emitter.emit( 'started' );
 			log( 'Resumable state: started' );
 		}
+
 		this.onStopping();
 		this._resumable.finished();
 		this._resolver();

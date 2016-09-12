@@ -1,6 +1,6 @@
 import * as path from 'path';
 import Common from '../common';
-let xdgBasedir = require( 'xdg-basedir' );
+import xdgBasedir = require( 'xdg-basedir' );
 let shellEscape = require( 'shell-escape' );
 
 export abstract class Shortcut
