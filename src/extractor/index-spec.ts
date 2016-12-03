@@ -8,7 +8,7 @@ import * as del from 'del';
 import { VoodooQueue } from '../queue';
 
 let gzip = require( 'gunzip-maybe' );
-let xz:Function = require( 'lzma-native' ).createDecompressor.bind( this, {
+let xz: Function = require( 'lzma-native' ).createDecompressor.bind( this, {
 	synchronous:  true,
 } );
 

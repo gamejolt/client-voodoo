@@ -1,7 +1,7 @@
 import { PatchHandle } from '../patcher';
-import { DownloadHandle, IDownloadProgress } from '../downloader';
+import { IDownloadProgress } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
-import { ExtractHandle, IExtractProgress } from '../extractor';
+import { IExtractProgress } from '../extractor';
 import * as _ from 'lodash';
 
 interface IQueueState
@@ -17,7 +17,7 @@ interface IQueueState
 		onPaused?: ( voodooQueue: boolean ) => any;
 		onResumed?: ( voodooQueue: boolean ) => any;
 		onCanceled?: Function;
-	}
+	};
 }
 
 export interface IQueueProfile
@@ -32,12 +32,12 @@ export abstract class VoodooQueue
 	private static _fastProfile: IQueueProfile = {
 		downloads: 3,
 		extractions: 3,
-	}
+	};
 
 	private static _slowProfile: IQueueProfile = {
 		downloads: 0,
 		extractions: 0,
-	}
+	};
 
 	private static _maxDownloads: number = VoodooQueue._fastProfile.downloads;
 	private static _maxExtractions: number = VoodooQueue._fastProfile.extractions;
@@ -61,7 +61,10 @@ export abstract class VoodooQueue
 	{
 		this.log( 'Restting ' + this._patches.size + ' patches' );
 		let patchesToReset: PatchHandle[] = [];
-		for ( let patch of this._patches.keys() ) {
+
+		let values: PatchHandle[] = [];
+		this._patches.forEach( ( key, patch ) => values.push( patch ) );
+		for ( let patch of values ) {
 			this.unmanage( patch, true );
 			patchesToReset.push( patch );
 		}
@@ -84,8 +87,8 @@ export abstract class VoodooQueue
 		this._patches.forEach( ( patchState, patch ) =>
 		{
 			if ( running !== patchState.queued &&
-				 ( typeof isDownloading !== 'boolean' ||
-				   isDownloading === patch.isDownloading() ) ) {
+				( typeof isDownloading !== 'boolean' ||
+				isDownloading === patch.isDownloading() ) ) {
 
 				patches.push( {
 					patch: patch,
@@ -406,9 +409,14 @@ export abstract class VoodooQueue
 			await new Promise( ( resolve ) => process.nextTick( resolve ) );
 			this.tick( true );
 		}
+		catch ( err ) {
+			return false;
+		}
 		finally {
 			this._settingDownloads = false;
 		}
+
+		return true;
 	}
 
 	static async setMaxExtractions( newMaxExtractions: number )
@@ -425,8 +433,13 @@ export abstract class VoodooQueue
 			await new Promise( ( resolve ) => process.nextTick( resolve ) );
 			this.tick( false );
 		}
+		catch ( err ) {
+			return false;
+		}
 		finally {
 			this._settingExtractions = false;
 		}
+
+		return true;
 	}
 }

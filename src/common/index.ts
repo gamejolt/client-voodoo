@@ -12,7 +12,7 @@ let fsExists = function( path: string ): Promise<boolean>
 };
 let fsReadFile: ( path: string, encoding?: string ) => Promise<string> = Bluebird.promisify( fs.readFile );
 let fsWriteFile: ( path: string, data: string ) => Promise<string> = Bluebird.promisify( fs.writeFile );
-let chmod:( path: string, mode: string | number ) => Promise<void> = Bluebird.promisify( fs.chmod );
+let chmod: ( path: string, mode: string | number ) => Promise<void> = Bluebird.promisify( fs.chmod );
 let fsStat: ( path: string ) => Promise<fs.Stats> = Bluebird.promisify( fs.stat );
 let fsCopy = async function( from: string, to: string )
 {
@@ -35,7 +35,7 @@ let wait = function( millis: number ): Promise<void>
 	{
 		setTimeout( resolve, millis );
 	} );
-}
+};
 
 let test = function( fn: Function, done?: Function )
 {

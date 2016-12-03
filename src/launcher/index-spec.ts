@@ -1,6 +1,5 @@
 import express = require( 'express' );
 import http = require( 'http' );
-import { Downloader } from '../downloader';
 import { Patcher, PatchHandle } from '../patcher';
 import { Launcher, IParsedWrapper } from './index';
 import { SampleUnit } from '../downloader/stream-speed';
@@ -17,7 +16,7 @@ describe( 'Launcher', function()
 		case 'win32':
 			url = 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/test-files/eggnoggplus-win.tar.xz';
 			os = 'windows';
-			launchOption = 'eggnoggplus-win/eggnoggplus.exe'
+			launchOption = 'eggnoggplus-win/eggnoggplus.exe';
 			break;
 
 		case 'linux':
@@ -206,7 +205,7 @@ describe( 'Launcher', function()
 			let jsonWrapper: IParsedWrapper = {
 				wrapperId: launchInstance.wrapperId,
 				wrapperPort: launchInstance.wrapperPort,
-			}
+			};
 
 			launchInstance = await Launcher.attach( { stringifiedWrapper: JSON.stringify( jsonWrapper ) } );
 			await new Promise( ( resolve ) =>

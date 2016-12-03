@@ -1,17 +1,4 @@
-import * as childProcess from 'child_process';
 import * as net from 'net';
-
-function log( message: string )
-{
-	console.log( 'Pid Finder: ' + message );
-}
-
-function debug( message: string )
-{
-	if ( process.env.NODE_ENV === 'development' ) {
-		console.log( 'Pid Finder: ' + message );
-	}
-}
 
 export abstract class WrapperFinder
 {

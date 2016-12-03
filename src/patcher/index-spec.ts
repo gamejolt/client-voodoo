@@ -1,7 +1,6 @@
 import express = require( 'express' );
 import { expect } from 'chai';
 import http = require( 'http' );
-import { Downloader } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
 import { Patcher } from './index';
 import path = require( 'path' );
@@ -46,7 +45,7 @@ describe( 'Patcher', function()
 			executable_path: 'GJGas.exe',
 		} ],
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
-	}
+	};
 
 	let testPatcher: GameJolt.IGamePackage = {
 		id: 1,
@@ -82,7 +81,7 @@ describe( 'Patcher', function()
 			executable_path: 'test',
 		} ],
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'patcher-test' ) ),
-	}
+	};
 
 	let wait = function( millis: number )
 	{
@@ -213,7 +212,7 @@ describe( 'Patcher', function()
 		expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fToUpdate' ), 'utf8' ) ).to.eq( 'update\n' );
 		expect( await Common.fsReadFile( path.join( testPatcher.install_dir, 'fToUpdatecase' ), 'utf8' ) ).to.eq( 'update\n' );
 
-		//expect( await Common.fsExists( path.join( testPatcher.install_dir, 'empty' ) ) ).to.eq( false, 'Old empty dir has been removed' );
+		// expect( await Common.fsExists( path.join( testPatcher.install_dir, 'empty' ) ) ).to.eq( false, 'Old empty dir has been removed' );
 		expect( await Common.fsExists( path.join( testPatcher.install_dir, 'newEmpty' ) ) ).to.eq( true, 'New empty dir has been created' );
 		done();
 	} ) );

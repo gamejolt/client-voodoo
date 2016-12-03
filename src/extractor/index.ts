@@ -55,8 +55,6 @@ export class ExtractHandle
 	private _totalSize: number;
 
 	private _emitter: EventEmitter;
-	private _running: boolean;
-	private _terminated: boolean;
 
 	constructor( private _from: string, private _to: string, private _options?: IExtractOptions )
 	{
@@ -103,12 +101,12 @@ export class ExtractHandle
 	{
 		log( 'Preparing fs' );
 		if ( !( await Common.fsExists( this._from ) ) ) {
-			throw new Error( 'Can\'t unpack to destination because the source does not exist' );
+			throw new Error( `Can't unpack to destination because the source does not exist` );
 		}
 
 		let srcStat = await Common.fsStat( this._from );
 		if ( !srcStat.isFile() ) {
-			throw new Error( 'Can\'t unpack to destination because the source is not a valid file' );
+			throw new Error( `Can't unpack to destination because the source is not a valid file` );
 		}
 
 		this._totalSize = srcStat.size;
@@ -118,7 +116,7 @@ export class ExtractHandle
 		if ( await Common.fsExists( this._to ) ) {
 			let destStat = await Common.fsStat( this._to );
 			if ( !destStat.isDirectory() ) {
-				throw new Error( 'Can\'t unpack to destination because its not a valid directory' );
+				throw new Error( `Can't unpack to destination because its not a valid directory` );
 			}
 
 			// Don't unpack to a non-empty directory.
@@ -127,19 +125,19 @@ export class ExtractHandle
 
 				// Allow unpacking to a non empty directory only if the overwrite option is set.
 				if ( !this._options.overwrite ) {
-					throw new Error( 'Can\'t unpack to destination because it isnt empty' );
+					throw new Error( `Can't unpack to destination because it isnt empty` );
 				}
 			}
 		}
 		// Create the folder path to unpack to.
 		else if ( !( await Common.mkdirp( this._to ) ) ) {
-			throw new Error( 'Couldn\'t create destination folder path' );
+			throw new Error( `Couldn't create destination folder path` );
 		}
 	}
 
 	private async unpack()
 	{
-		log( 'Unpacking from ' + this._from + ' to ' + this._to );
+		log( `Unpacking from ${this._from} to ${this._to}` );
 		return new Promise<void>( ( resolve, reject ) =>
 		{
 			this._readStream = fs.createReadStream( this._from );
@@ -224,7 +222,7 @@ export class ExtractHandle
 			}
 			catch ( err ) {
 				console.log( err );
-				log( 'I really hate you babel: ' + err.message + '\n' + JSON.stringify( err.stack ) );
+				log( `${err.message}\n${ JSON.stringify( err.stack ) }` );
 				this.onError( err );
 			}
 		}

@@ -1,7 +1,5 @@
 import * as fs from 'fs';
 import * as http from 'http';
-import * as url from 'url';
-import * as util from 'util';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
@@ -32,7 +30,7 @@ export interface IDownloadProgress
 }
 
 function log( message ) {
-	console.log( 'Downloader: ' + message );
+	console.log( `Downloader: ${message}` );
 }
 
 export class DownloadHandle
@@ -42,9 +40,6 @@ export class DownloadHandle
 	private _rejector: ( err: NodeJS.ErrnoException ) => void;
 	private _emitter: EventEmitter;
 	private _resumable: Resumable.Resumable;
-
-	private _queuedStart: boolean;
-	private _queuedStop: boolean;
 
 	private _url: string;
 	private _totalSize: number;
@@ -112,7 +107,7 @@ export class DownloadHandle
 			// Make sure the destination is a file.
 			let stat = await Common.fsStat( this._to );
 			if ( !stat.isFile() ) {
-				throw new Error( 'Can\'t resume downloading because the destination isn\'t a file.' );
+				throw new Error( `Can't resume downloading because the destination isn't a file.` );
 			}
 			else if ( this._options.overwrite ) {
 				await Common.fsUnlink( this._to );
@@ -126,12 +121,12 @@ export class DownloadHandle
 			if ( await Common.fsExists( toDir ) ) {
 				let dirStat = await Common.fsStat( toDir );
 				if ( !dirStat.isDirectory() ) {
-					throw new Error( 'Can\'t download to destination because the path is invalid.' );
+					throw new Error( `Can't download to destination because the path is invalid.` );
 				}
 			}
 			// Create the folder path.
 			else if ( !( await Common.mkdirp( toDir ) ) ) {
-				throw new Error( 'Couldn\'t create the destination folder path' );
+				throw new Error( `Couldn't create the destination folder path` );
 			}
 		}
 		this._options.overwrite = false;
@@ -140,7 +135,7 @@ export class DownloadHandle
 	private async generateUrl()
 	{
 		log( 'Generating url' );
-		let _generateUrl:any = this._generateUrl;
+		let _generateUrl: any = this._generateUrl;
 		if ( typeof _generateUrl === 'string' ) {
 			this._url = _generateUrl;
 		}
@@ -151,11 +146,10 @@ export class DownloadHandle
 
 	private download()
 	{
-		log( 'Downloading from ' + this._url );
-		let hostUrl = url.parse( this._url );
+		log( `Downloading from ${this._url}` );
 		let httpOptions: request.CoreOptions = {
 			headers: {
-				'Range': 'bytes=' + this._totalDownloaded.toString() + '-',
+				'Range': `bytes=${ this._totalDownloaded.toString() }-`,
 			},
 		};
 
@@ -191,7 +185,7 @@ export class DownloadHandle
 
 				// Expecting the partial response status code
 				if ( this._response.statusCode !== 206 ) {
-					return this.onError( new Error( 'Bad status code ' + this._response.statusCode ) );
+					return this.onError( new Error( `Bad status code ${this._response.statusCode}` ) );
 				}
 
 				if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
@@ -202,7 +196,7 @@ export class DownloadHandle
 					this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
 				}
 				catch ( err ) {
-					return this.onError( new Error( 'Invalid content-range header: ' + this._response.headers[ 'content-range' ] ) );
+					return this.onError( new Error( `Invalid content-range header: ${ this._response.headers[ 'content-range' ] }` ) );
 				}
 
 				if ( this._options.decompressStream ) {
@@ -254,7 +248,7 @@ export class DownloadHandle
 			this.download();
 		}
 		catch ( err ) {
-			log( 'I hate you babel: ' + err.message + '\n' + err.stack );
+			log( `${err.message}\n${err.stack}` );
 			this.onError( err );
 		}
 	}
