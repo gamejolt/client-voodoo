@@ -183,20 +183,20 @@ export class DownloadHandle
 					return;
 				}
 
-				// Expecting the partial response status code
-				if ( this._response.statusCode !== 206 ) {
+				// Expecting the partial response status code or a full one only if we haven't downloaded anything yet.
+				if ( !( this._response.statusCode == 206 || ( this._response.statusCode == 200 && this._totalDownloaded == 0 ) ) ) {
 					return this.onError( new Error( `Bad status code ${this._response.statusCode}` ) );
 				}
 
-				if ( !this._response.headers || !this._response.headers[ 'content-range' ] ) {
-					return this.onError( new Error( 'Missing or invalid content-range response header' ) );
+				if ( !this._response.headers || !this._response.headers[ 'content-length' ] ) {
+					return this.onError( new Error( 'Missing or invalid content-length response header' ) );
 				}
 
 				try {
-					this._totalSize = parseInt( this._response.headers[ 'content-range' ].split( '/' )[1] );
+					this._totalSize = this._totalDownloaded + parseInt( this._response.headers[ 'content-length' ] );
 				}
 				catch ( err ) {
-					return this.onError( new Error( `Invalid content-range header: ${ this._response.headers[ 'content-range' ] }` ) );
+					return this.onError( new Error( `Invalid content-length header: ${ this._response.headers[ 'content-length' ] }` ) );
 				}
 
 				if ( this._options.decompressStream ) {

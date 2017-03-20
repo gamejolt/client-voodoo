@@ -155,8 +155,8 @@ var Launcher = (function () {
     };
     return Launcher;
 }());
-exports.Launcher = Launcher;
 Launcher._runningInstances = new Map();
+exports.Launcher = Launcher;
 var LaunchHandle = (function () {
     function LaunchHandle(_localPackage, _os, _arch, options) {
         this._localPackage = _localPackage;

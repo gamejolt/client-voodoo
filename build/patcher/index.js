@@ -43,13 +43,13 @@ var extractor_1 = require("../extractor");
 var Resumable = require("../common/resumable");
 var queue_1 = require("../queue");
 var common_1 = require("../common");
+var PatchOperation;
 (function (PatchOperation) {
     PatchOperation[PatchOperation["STOPPED"] = 0] = "STOPPED";
     PatchOperation[PatchOperation["DOWNLOADING"] = 1] = "DOWNLOADING";
     PatchOperation[PatchOperation["PATCHING"] = 2] = "PATCHING";
     PatchOperation[PatchOperation["FINISHED"] = 3] = "FINISHED";
-})(exports.PatchOperation || (exports.PatchOperation = {}));
-var PatchOperation = exports.PatchOperation;
+})(PatchOperation = exports.PatchOperation || (exports.PatchOperation = {}));
 var Patcher = (function () {
     function Patcher() {
     }

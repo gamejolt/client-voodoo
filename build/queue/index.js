@@ -393,7 +393,6 @@ var VoodooQueue = (function () {
     };
     return VoodooQueue;
 }());
-exports.VoodooQueue = VoodooQueue;
 VoodooQueue._isFast = true;
 VoodooQueue._fastProfile = {
     downloads: 3,
@@ -408,4 +407,5 @@ VoodooQueue._maxExtractions = VoodooQueue._fastProfile.extractions;
 VoodooQueue._settingDownloads = false;
 VoodooQueue._settingExtractions = false;
 VoodooQueue._patches = new Map();
+exports.VoodooQueue = VoodooQueue;
 //# sourceMappingURL=index.js.map
