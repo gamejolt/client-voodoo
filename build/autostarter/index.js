@@ -205,8 +205,8 @@ var Autostarter = (function () {
     };
     return Autostarter;
 }());
+exports.Autostarter = Autostarter;
 Autostarter.winAutostarter = new WindowsAutostarter();
 Autostarter.linuxAutostarter = new LinuxAutostarter();
 Autostarter.macAutostarter = new MacAutostarter();
-exports.Autostarter = Autostarter;
 //# sourceMappingURL=index.js.map
