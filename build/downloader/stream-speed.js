@@ -1,6 +1,7 @@
 "use strict";
 var events_1 = require("events");
 var through2 = require("through2");
+var SampleUnit;
 (function (SampleUnit) {
     SampleUnit[SampleUnit["Bps"] = 0] = "Bps";
     SampleUnit[SampleUnit["KBps"] = 1] = "KBps";
@@ -11,8 +12,7 @@ var through2 = require("through2");
     SampleUnit[SampleUnit["EBps"] = 6] = "EBps";
     SampleUnit[SampleUnit["ZBps"] = 7] = "ZBps";
     SampleUnit[SampleUnit["YBps"] = 8] = "YBps";
-})(exports.SampleUnit || (exports.SampleUnit = {}));
-var SampleUnit = exports.SampleUnit;
+})(SampleUnit = exports.SampleUnit || (exports.SampleUnit = {}));
 var StreamSpeed = (function () {
     function StreamSpeed(options) {
         var _this = this;

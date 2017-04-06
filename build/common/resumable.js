@@ -1,12 +1,12 @@
 "use strict";
+var State;
 (function (State) {
     State[State["STARTED"] = 0] = "STARTED";
     State[State["STARTING"] = 1] = "STARTING";
     State[State["STOPPED"] = 2] = "STOPPED";
     State[State["STOPPING"] = 3] = "STOPPING";
     State[State["FINISHED"] = 4] = "FINISHED";
-})(exports.State || (exports.State = {}));
-var State = exports.State;
+})(State = exports.State || (exports.State = {}));
 var Resumable = (function () {
     function Resumable() {
         this._currentState = State.STOPPED;
