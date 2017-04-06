@@ -1,6 +1,4 @@
-import * as fs from 'fs';
 import * as _ from 'lodash';
-import * as tar from 'tar-fs';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 
@@ -86,8 +84,6 @@ function difference( arr1: string[], arr2: string[], caseInsensitive?: boolean )
 export class PatchHandle
 {
 	private _state: PatchOperation;
-	private _url: string;
-	private _wasStopped: boolean;
 	private _to: string;
 	private _tempFile: string;
 	private _archiveListFile: string;
@@ -103,12 +99,6 @@ export class PatchHandle
 	private _emitter: EventEmitter;
 	private _resumable: Resumable.Resumable;
 	private _firstRun: boolean;
-
-	private _emittedDownloading: boolean;
-	private _emittedPatching: boolean;
-	private _waitForStartPromise: Promise<void>;
-	private _waitForStartResolver: () => void;
-	private _waitForStartRejector: ( err: NodeJS.ErrnoException ) => void;
 
 	constructor( private _generateUrl: ( () => Promise<string> ) | string, private _localPackage: GameJolt.IGamePackage, private _options?: IPatcherOptions )
 	{
@@ -231,7 +221,7 @@ export class PatchHandle
 			{
 				return './' + path.relative( this._to, file ).replace( /\\/g, '/' );
 			} );
-		log( 'Current files: ' + JSON.stringify( currentFiles ) );
+		log( `Current files: ${ JSON.stringify( currentFiles ) }` );
 
 		// If the patch file already exists, make sure its valid.
 		if ( await Common.fsExists( this._patchListFile ) ) {
@@ -239,11 +229,11 @@ export class PatchHandle
 			// Make sure the destination is a file.
 			let stat = await Common.fsStat( this._patchListFile );
 			if ( !stat.isFile() ) {
-				throw new Error( 'Can\'t patch because the patch file isn\'t a file.' );
+				throw new Error( `Can't patch because the patch file isn\'t a file.` );
 			}
 
-			createdByOldBuild = ( await Common.fsReadFile( this._patchListFile, 'utf8' ) ).split( "\n" );
-			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
+			createdByOldBuild = ( await Common.fsReadFile( this._patchListFile, 'utf8' ) ).split( '\n' );
+			log( `Created by old build files: ${ JSON.stringify( createdByOldBuild ) }` );
 		}
 		else {
 
@@ -255,9 +245,9 @@ export class PatchHandle
 				// Make sure the destination is a file.
 				let stat = await Common.fsStat( this._archiveListFile );
 				if ( !stat.isFile() ) {
-					throw new Error( 'Can\'t patch because the archive file list isn\'t a file.' );
+					throw new Error( `Can't patch because the archive file list isn't a file.` );
 				}
-				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( "\n" );
+				oldBuildFiles = ( await Common.fsReadFile( this._archiveListFile, 'utf8' ) ).split( '\n' );
 			}
 			// Otherwise, we validate the folder path.
 			else {
@@ -265,24 +255,24 @@ export class PatchHandle
 				if ( await Common.fsExists( archiveListFileDir ) ) {
 					let dirStat = await Common.fsStat( archiveListFileDir );
 					if ( !dirStat.isDirectory() ) {
-						throw new Error( 'Can\'t patch because the path to the archive file list is invalid.' );
+						throw new Error( `Can't patch because the path to the archive file list is invalid.` );
 					}
 				}
 				// Create the folder path.
 				else if ( !( await Common.mkdirp( archiveListFileDir ) ) ) {
-					throw new Error( 'Couldn\'t create the patch archive file list folder path' );
+					throw new Error( `Couldn't create the patch archive file list folder path` );
 				}
 				oldBuildFiles = currentFiles;
 			}
 
-			log( 'Old build files: ' + JSON.stringify( oldBuildFiles ) );
+			log( `Old build files: ${ JSON.stringify( oldBuildFiles ) }` );
 
 			// Files that the old build created are files in the file system that are not listed in the old build files
 			// In Windows we need to compare the files case insensitively.
 			createdByOldBuild = difference( currentFiles, oldBuildFiles, process.platform !== 'linux' );
-			log( 'Created by old build files: ' + JSON.stringify( createdByOldBuild ) );
+			log( `Created by old build files: ${ JSON.stringify( createdByOldBuild ) }` );
 
-			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( "\n" ) );
+			await Common.fsWriteFile( this._patchListFile, createdByOldBuild.join( '\n' ) );
 		}
 
 		return {
@@ -294,25 +284,20 @@ export class PatchHandle
 	private async finalizePatch( prepareResult: IPatchPrepareResult, extractResult: IExtractResult )
 	{
 		let newBuildFiles = extractResult.files;
-		log( 'New build files: ' + JSON.stringify( newBuildFiles ) );
+		log( `New build files: ${ JSON.stringify( newBuildFiles ) }` );
 
 		// Files that need to be removed are files in fs that dont exist in the new build and were not created dynamically by the old build
 		// In Windows we need to compare the files case insensitively.
 		let filesToRemove = difference( prepareResult.currentFiles, newBuildFiles.concat( prepareResult.createdByOldBuild ), process.platform !== 'linux' );
-		log( 'Files to remove: ' + JSON.stringify( filesToRemove ) );
+		log( `Files to remove: ${ JSON.stringify( filesToRemove ) }` );
 
 		// TODO: use del lib
-		let unlinks = await Promise.all( filesToRemove.map( ( file ) =>
+		await Promise.all( filesToRemove.map( ( file ) =>
 		{
-			return Common.fsUnlink( path.resolve( this._to, file ) ).then( function( err )
-			{
-				if ( err ) {
-					throw err;
-				}
-			} );
+			return Common.fsUnlink( path.resolve( this._to, file ) );
 		} ) );
 
-		await Common.fsWriteFile( this._archiveListFile, newBuildFiles.join( "\n" ) );
+		await Common.fsWriteFile( this._archiveListFile, newBuildFiles.join( '\n' ) );
 		await Common.fsUnlink( this._patchListFile );
 	}
 
@@ -364,7 +349,7 @@ export class PatchHandle
 				this.onFinished();
 			}
 			catch ( err ) {
-				log( 'I really really hate you babel: ' + err.message + '\n' + err.stack );
+				log( `${err.message}\n${err.stack}` );
 				this.onError( err );
 			}
 		}
@@ -436,8 +421,8 @@ export class PatchHandle
 		} );
 
 		if ( this._state === PatchOperation.STOPPED || this._state === PatchOperation.FINISHED ||
-			 ( this._state === PatchOperation.DOWNLOADING && this._downloadHandle.state === Resumable.State.STOPPED ) ||
-			 ( this._state === PatchOperation.PATCHING && this._extractHandle.state === Resumable.State.STOPPED ) ) {
+			( this._state === PatchOperation.DOWNLOADING && this._downloadHandle.state === Resumable.State.STOPPED ) ||
+			( this._state === PatchOperation.PATCHING && this._extractHandle.state === Resumable.State.STOPPED ) ) {
 			this._emitter.emit( 'canceled', options && options.voodooQueue );
 			log( 'Resumable state: stopped' );
 			return;
@@ -462,8 +447,7 @@ export class PatchHandle
 	{
 		let func = function( progress: IDownloadProgress )
 		{
-			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
-			progress.timeLeft
+			progress.sample = StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
 			fn( progress );
 		};
 
@@ -498,8 +482,7 @@ export class PatchHandle
 	{
 		let func = function( progress: IDownloadProgress )
 		{
-			progress.sample =  StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
-			progress.timeLeft
+			progress.sample = StreamSpeed.StreamSpeed.convertSample( progress.sample, unit );
 			fn( progress );
 		};
 

@@ -31,19 +31,19 @@ export abstract class Shortcut
 		let desktopFile = path.join( xdgBasedir.data, 'applications', 'game-jolt-client.desktop' );
 
 		let desktopContents =
-			'[Desktop Entry]\n'
-		  + 'Version=1.0\n'
-		  + 'Type=Application\n'
-		  + 'Name=Game Jolt Client\n'
-		  + 'GenericName=Game Client\n'
-		  + 'Comment=The power of Game Jolt website in your desktop\n'
-		  + 'Exec=' + shellEscape( [ program ] ) + '\n'
-		  + 'Terminal=false\n'
-		  + 'Icon=' + icon + '\n'
-		  + 'Categories=Game;\n'
-		  + 'Keywords=Play;Games;GJ;GameJolt;Indie;\n'
-		  + 'Hidden=false\n'
-		  + 'Name[en_US]=Game Jolt Client\n';
+`[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Game Jolt Client
+GenericName=Game Client
+Comment=The power of Game Jolt website in your desktop
+Exec=${ shellEscape( [ program ] ) }
+Terminal=false
+Icon=${icon}
+Categories=Game;
+Keywords=Play;Games;GJ;GameJolt;Indie;
+Hidden=false
+Name[en_US]=Game Jolt Client`;
 
 		await Common.fsWriteFile( desktopFile, desktopContents );
 		return Common.chmod( desktopFile,  '0755' );

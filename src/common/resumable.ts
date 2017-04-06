@@ -9,9 +9,9 @@ export enum State
 
 export interface ICallback
 {
-	cb: Function,
-	args?: any[],
-	context?: any,
+	cb: Function;
+	args?: any[];
+	context?: any;
 }
 
 export class Resumable
@@ -40,12 +40,12 @@ export class Resumable
 		return this._currentState;
 	}
 
-	start( cb: ICallback, force?: boolean )
+	start( cb: ICallback, force?: boolean ): Promise<void>
 	{
 		this._wantsStart = true;
 		if ( this._currentState === State.STARTING || this. _currentState === State.STARTED ) {
 			this._stopCbs.clear();
-			return;
+			return undefined;
 		}
 
 		this._startCbs.add( cb );
@@ -64,7 +64,10 @@ export class Resumable
 				this._waitForStopResolver = null;
 
 				let cbCount = this._startCbs.size;
-				for ( let _cb of this._startCbs.values() ) {
+
+				let values: ICallback[] = [];
+				this._startCbs.forEach( ( _cb ) => values.push( _cb ) );
+				for ( let _cb of values ) {
 					this._startCbs.delete( _cb );
 					_cb.cb.apply( _cb.context || this, _cb.args );
 
@@ -91,12 +94,12 @@ export class Resumable
 		this._currentState = State.STARTED;
 	}
 
-	stop( cb: ICallback, force?: boolean )
+	stop( cb: ICallback, force?: boolean ): Promise<void>
 	{
 		this._wantsStart = false;
 		if ( this._currentState === State.STOPPING || this. _currentState === State.STOPPED ) {
 			this._startCbs.clear();
-			return;
+			return undefined;
 		}
 
 		this._stopCbs.add( cb );
@@ -115,7 +118,9 @@ export class Resumable
 				this._waitForStartResolver = null;
 
 				let cbCount = this._stopCbs.size;
-				for ( let _cb of this._stopCbs.values() ) {
+				let values: ICallback[] = [];
+				this._stopCbs.forEach( ( _cb ) => values.push( _cb ) );
+				for ( let _cb of values ) {
 					this._stopCbs.delete( _cb );
 					_cb.cb.apply( _cb.context || this, _cb.args );
 
@@ -156,10 +161,10 @@ export class Resumable
 		}
 
 		if ( running ) {
-			return this.stop( { cb: () => { this.start( cb ) } }, true );
+			return this.stop( { cb: () => this.start( cb ) }, true );
 		}
 		else {
-			return this.start( { cb: () => { this.stop( cb ) } }, true );
+			return this.start( { cb: () => this.stop( cb ) }, true );
 		}
 	}
 }

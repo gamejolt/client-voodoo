@@ -1,5 +1,3 @@
-/// <reference path="../../../typings/node/node.d.ts" />
-
 declare module "tar-stream"
 {
 	import * as stream from 'stream';

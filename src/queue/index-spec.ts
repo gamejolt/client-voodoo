@@ -1,15 +1,12 @@
 import { expect } from 'chai';
 import express = require( 'express' );
 import http = require( 'http' );
-import { Downloader } from '../downloader';
 import { SampleUnit } from '../downloader/stream-speed';
 import { Patcher, IPatcherOptions, PatchOperation } from '../patcher';
 import { VoodooQueue } from './index';
 import path = require( 'path' );
 import Common from '../common';
 import * as del from 'del';
-
-import { EventEmitter } from 'events';
 
 describe( 'Voodoo queue', function()
 {
@@ -49,7 +46,7 @@ describe( 'Voodoo queue', function()
 			executable_path: 'GJGas.exe',
 		} ],
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
-	}
+	};
 
 	let localPackage2: GameJolt.IGamePackage = {
 		id: 1,
@@ -85,7 +82,8 @@ describe( 'Voodoo queue', function()
 			executable_path: 'GJGas.exe',
 		} ],
 		install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-2' ) ),
-	}
+	};
+
 	let patchUrl = 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz';
 
 	let wait = function( millis: number )
@@ -230,7 +228,7 @@ describe( 'Voodoo queue', function()
 						}
 					}, done ) );
 			}, done ) )
-			.onPatching( () => { firstFinishedDownloading = true } );
+			.onPatching( () => { firstFinishedDownloading = true; } );
 		await patch.promise;
 	} ) );
 
@@ -319,8 +317,8 @@ describe( 'Voodoo queue', function()
 		await VoodooQueue.setMaxExtractions( 0 );
 
 		let patch = getPatch( null, {
-			 overwrite: false,
-			 decompressInDownload: false,
+			overwrite: false,
+			decompressInDownload: false,
 		} );
 		patch
 			.onPaused( Common.test( async () =>
@@ -361,8 +359,8 @@ describe( 'Voodoo queue', function()
 		await Common.fsCopy( path.join( 'test-files', '.gj-bigTempDownload.tar.xz' ), path.join( localPackage1.install_dir, '.gj-tempDownload' ) );
 
 		let patch = getPatch( null, {
-			 overwrite: false,
-			 decompressInDownload: false,
+			overwrite: false,
+			decompressInDownload: false,
 		} );
 
 		patch
@@ -452,8 +450,8 @@ describe( 'Voodoo queue', function()
 		await VoodooQueue.setMaxExtractions( 0 );
 
 		let patch = getPatch( null, {
-			 overwrite: false,
-			 decompressInDownload: false,
+			overwrite: false,
+			decompressInDownload: false,
 		} );
 		patch
 			.onPaused( Common.test( async () =>

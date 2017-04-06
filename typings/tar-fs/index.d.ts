@@ -1,6 +1,3 @@
-/// <reference path="../../../typings/node/node.d.ts" />
-/// <reference path="../tar-stream/tar-stream.d.ts" />
-
 declare module "tar-fs"
 {
 	import * as stream from 'stream';

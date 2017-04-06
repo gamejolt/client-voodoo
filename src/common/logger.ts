@@ -27,7 +27,7 @@ export interface IClientOSInfo
 
 export abstract class Logger
 {
-	private static _logLines:string[] = [];
+	private static _logLines: string[] = [];
 	private static _hijacked = false;
 	private static _file: fs.WriteStream;
 	private static _filePath: string;
@@ -43,14 +43,15 @@ export abstract class Logger
 			await Common.fsUnlink( this._filePath );
 			let str = this._logLines.join( '\n' ) + '\n';
 			await Common.fsWriteFile( this._filePath, str );
-			CONSOLE_LOG.apply( console, [ 'Flushing log file of length ' + this._logLines.join( '\n' ).length + ' with ' + this._logLines.length + ' rows' ] );
+			let logLineLength = this._logLines.join( '\n' ).length, logLineCount = this._logLines.length;
+			CONSOLE_LOG.apply( console, [ `Flushing log file of length ${logLineLength} with ${logLineCount} rows` ] );
 			this._file = fs.createWriteStream( this._filePath, {
 				flags: 'a',
 				encoding: 'utf8',
 			} );
 		}
 		catch ( err ) {
-			CONSOLE_LOG.apply( console, [ 'Babel sucks: ' + err.message + '\n' + err.stack ] );
+			CONSOLE_LOG.apply( console, [ `${err.message }\n${err.stack}` ] );
 		}
 	}
 
@@ -101,14 +102,14 @@ export abstract class Logger
 				}
 			}
 			catch ( err ) {
-				console.log( 'Seroiusly babel gtfo: ' + err.message + '\n' + err.stack );
+				console.log( `${err.message}\n${err.stack}` );
 			}
 		}
 		this._file = fs.createWriteStream( this._filePath, {
 			flags: 'a',
 			encoding: 'utf8',
 		} );
-		let flushFunc: ( ...args:any[] ) => void = this._flushFile.bind( this );
+		let flushFunc: ( ...args: any[] ) => void = this._flushFile.bind( this );
 		this._flushInterval = setInterval( flushFunc, 10000 );
 
 		console.log = this._log.bind( this );

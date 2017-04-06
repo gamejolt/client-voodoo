@@ -119,5 +119,4 @@ Robert Sedgewick, and Jon L. Bentley.
 //   return buf.toString('hex');
 // };
 // module.exports = BitReader;
-"use strict";
 //# sourceMappingURL=bit-reader.js.map

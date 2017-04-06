@@ -2,4 +2,3 @@
 /test-files
 /build/**/*.js.map
 /build/**/*-spec.js
-/typings

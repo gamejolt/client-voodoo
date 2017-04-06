@@ -1,5 +1,3 @@
-/// <reference path="../../../typings/node/node.d.ts" />
-
 declare module 'client-game-wrapper'
 {
 	import * as cp from 'child_process';

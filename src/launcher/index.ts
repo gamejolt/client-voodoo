@@ -1,9 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
 import * as childProcess from 'child_process';
-import * as os from 'os';
 import * as _ from 'lodash';
 import Common from '../common';
 import { WrapperFinder } from './pid-finder';
@@ -13,10 +11,6 @@ import * as GameWrapper from 'client-game-wrapper';
 
 let plist = require( 'plist' );
 let shellEscape = require( 'shell-escape' );
-let spawnShellEscape = function( cmd: string )
-{
-	return '"' + cmd.replace( /(["\s'$`\\])/g, '\\$1' ) + '"';
-};
 
 export interface ILaunchOptions
 {
@@ -38,7 +32,7 @@ export interface IParsedWrapper
 }
 
 function log( message ) {
-	console.log( 'Launcher: ' + message );
+	console.log( `Launcher: ${message}` );
 }
 
 export abstract class Launcher
@@ -54,7 +48,6 @@ export abstract class Launcher
 	static async attach( options: IAttachOptions )
 	{
 		try {
-			let wrapper: IParsedWrapper;
 			let instance: LaunchInstanceHandle;
 
 			if ( options.instance ) {
@@ -90,7 +83,7 @@ export abstract class Launcher
 
 			if ( !success ) {
 				// Here is where it throws
-				instance.abort( new Error( 'Couldn\'t attach to launch instance' ) );
+				instance.abort( new Error( `Couldn't attach to launch instance` ) );
 			}
 
 			if ( !this._runningInstances.has( instance.wrapperId ) ) {
@@ -109,7 +102,7 @@ export abstract class Launcher
 			return instance;
 		}
 		catch ( err ) {
-			log( 'Got error: ' + err.message + "\n" + err.stack );
+			log( `Got error: ${err.message}\n${err.stack}` );
 			throw err;
 		}
 	}
@@ -204,7 +197,7 @@ export class LaunchHandle
 	{
 		let launchOption = this.findLaunchOption();
 		if ( !launchOption ) {
-			throw new Error( 'Can\'t find valid launch options for the given os/arch' );
+			throw new Error( `Can't find valid launch options for the given os/arch` );
 		}
 
 		this._executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
@@ -212,7 +205,7 @@ export class LaunchHandle
 
 		// If the destination already exists, make sure its valid.
 		if ( !(await Common.fsExists( this._file ) ) ) {
-			throw new Error( 'Can\'t launch because the file doesn\'t exist.' );
+			throw new Error( `Can't launch because the file doesn't exist.` );
 		}
 
 		// Make sure the destination is a file
@@ -231,14 +224,14 @@ export class LaunchHandle
 				return this.startMac( stat, isJava );
 
 			default:
-				throw new Error( 'What potato are you running on? Detected platform: ' + process.platform );
+				throw new Error( `What potato are you running on? Detected platform: ${process.platform}` );
 		}
 	}
 
 	private async startWindows( stat: fs.Stats, isJava: boolean )
 	{
 		if ( !stat.isFile() ) {
-			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
+			throw new Error( `Can't launch because the file isn't valid.` );
 		}
 
 		await this.ensureExecutable( this._file );
@@ -257,7 +250,7 @@ export class LaunchHandle
 		await this.ensureCredentials();
 
 		let wrapperId = this._localPackage.id.toString();
-		let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+		GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
 			env: this.options.env,
@@ -272,7 +265,7 @@ export class LaunchHandle
 	private async startLinux( stat: fs.Stats, isJava: boolean )
 	{
 		if ( !stat.isFile() ) {
-			throw new Error( 'Can\'t launch because the file isn\'t valid.' );
+			throw new Error( `Can't launch because the file isn't valid.` );
 		}
 
 		await this.ensureExecutable( this._file );
@@ -291,7 +284,7 @@ export class LaunchHandle
 		await this.ensureCredentials();
 
 		let wrapperId = this._localPackage.id.toString();
-		let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+		GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
 			env: this.options.env,
@@ -305,7 +298,6 @@ export class LaunchHandle
 
 	private async startMac( stat: fs.Stats, isJava: boolean )
 	{
-		let pid;
 		if ( stat.isFile() ) {
 
 			await this.ensureExecutable( this._file );
@@ -324,7 +316,7 @@ export class LaunchHandle
 			await this.ensureCredentials();
 
 			let wrapperId = this._localPackage.id.toString();
-			let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, args, {
+			GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 				cwd: path.dirname( this._file ),
 				detached: true,
 				env: this.options.env,
@@ -337,17 +329,17 @@ export class LaunchHandle
 		}
 		else {
 			if ( !this._file.toLowerCase().endsWith( '.app' ) && !this._file.toLowerCase().endsWith( '.app/' ) ) {
-				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Expecting .app folder' );
+				throw new Error( `That doesn't look like a valid Mac OS X bundle. Expecting .app folder` );
 			}
 
 			let plistPath = path.join( this._file, 'Contents', 'Info.plist' );
 			if ( !( await Common.fsExists( plistPath ) ) ) {
-				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Missing Info.plist file.' );
+				throw new Error( `That doesn't look like a valid Mac OS X bundle. Missing Info.plist file.` );
 			}
 
 			let plistStat = await Common.fsStat( plistPath );
 			if ( !plistStat.isFile() ) {
-				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Info.plist isn\'t a valid file.' );
+				throw new Error( `That doesn't look like a valid Mac OS X bundle. Info.plist isn't a valid file.` );
 			}
 
 			let plistContents = await Common.fsReadFile( plistPath, 'utf8' );
@@ -381,17 +373,17 @@ export class LaunchHandle
 			}
 
 			if ( !parsedPlist ) {
-				throw new Error( 'That doesn\'t look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.' );
+				throw new Error( `That doesn't look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.` );
 			}
 
 			let macosPath = path.join( this._file, 'Contents', 'MacOS' );
 			if ( !( await Common.fsExists( macosPath ) ) ) {
-				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. Missing MacOS directory.' );
+				throw new Error( `That doesn't look like a valid Mac OS X bundle. Missing MacOS directory.` );
 			}
 
 			let macosStat = await Common.fsStat( macosPath );
 			if ( !macosStat.isDirectory() ) {
-				throw new Error( 'That doesn\'t look like a valid Mac OS X bundle. MacOS isn\'t a valid directory.' );
+				throw new Error( `That doesn't look like a valid Mac OS X bundle. MacOS isn't a valid directory.` );
 			}
 
 			let baseName = path.basename( this._file );
@@ -418,7 +410,7 @@ export class LaunchHandle
 			await this.ensureCredentials();
 
 			let wrapperId = this._localPackage.id.toString();
-			let wrapperPort = GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._executablePath, [], {
+			GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._file, [], {
 				cwd: path.dirname( this._file ),
 				detached: true,
 				env: this.options.env,

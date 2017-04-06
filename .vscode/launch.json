@@ -5,20 +5,20 @@
 			"name": "Launch",
 			"type": "node",
 			"request": "launch",
-			"program": "src/index.ts",
+			"program": "${workspaceRoot}/src/index.ts",
 			"stopOnEntry": false,
 			"args": [],
-			"cwd": ".",
-			"runtimeExecutable": "${env.HOME}/.nvm/versions/node/v4.2.1/bin/node",
+			"cwd": "${workspaceRoot}",
+			"runtimeExecutable": "${NVM_BIN}/node",
 			"runtimeArgs": [
 				"--nolazy"
 			],
 			"env": {
 				"NODE_ENV": "development"
 			},
-			"externalConsole": false,
+			"console": "internalConsole",
 			"sourceMaps": true,
-			"outDir": "./build"
+			"outDir": "${workspaceRoot}/build"
 		},
 		{
 			"name": "Attach",
@@ -26,7 +26,7 @@
 			"request": "attach",
 			"port": 5858,
 			"sourceMaps": true,
-			"outDir": "./build"
+			"outDir": "${workspaceRoot}/build"
 		}
 	]
 }
