@@ -190,7 +190,7 @@ export class LaunchHandle
 		if ( !this._credentials ) {
 			return Promise.resolve( null );
 		}
-		return Common.fsWriteFile( path.join( this._localPackage.install_dir, '.gj-credentials' ), `0.1.0\n${this._credentials.username}\n${this._credentials.user_token}\n` );
+		return Common.fsWriteFile( path.join( this._localPackage.install_dir, '.gj-credentials' ), `0.2.0\n${this._credentials.username}\n${this._credentials.user_token}\n` );
 	}
 
 	private async start()
@@ -283,6 +283,7 @@ export class LaunchHandle
 		await Application.ensurePidDir();
 		await this.ensureCredentials();
 
+		console.log( 'Preparing to launch. PID DIR: ' + Application.PID_DIR );
 		let wrapperId = this._localPackage.id.toString();
 		GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 			cwd: path.dirname( this._file ),
