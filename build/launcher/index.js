@@ -46,9 +46,10 @@ var _ = require("lodash");
 var common_1 = require("../common");
 var pid_finder_1 = require("./pid-finder");
 var queue_1 = require("../queue");
+var application_1 = require("../application");
+var GameWrapper = require("client-game-wrapper");
 var plist = require('plist');
 var shellEscape = require('shell-escape');
-var GameWrapper = require('client-game-wrapper');
 function log(message) {
     console.log("Launcher: " + message);
 }
@@ -56,8 +57,8 @@ var Launcher = (function () {
     function Launcher() {
     }
     // Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
-    Launcher.launch = function (localPackage, os, arch, options) {
-        return new LaunchHandle(localPackage, os, arch, options);
+    Launcher.launch = function (localPackage, os, arch, credentials, options) {
+        return new LaunchHandle(localPackage, os, arch, credentials, options);
     };
     Launcher.attach = function (options) {
         return __awaiter(this, void 0, void 0, function () {
@@ -73,11 +74,11 @@ var Launcher = (function () {
                         }
                         else if (options.stringifiedWrapper) {
                             parsedWrapper = JSON.parse(options.stringifiedWrapper);
-                            instance_1 = new LaunchInstanceHandle(parsedWrapper.wrapperId, parsedWrapper.wrapperPort, options.pollInterval);
+                            instance_1 = new LaunchInstanceHandle(parsedWrapper.wrapperId, options.pollInterval);
                             log("Attaching new instance from stringified wrapper: id - " + instance_1.wrapperId + ", port - " + instance_1.wrapperPort + ", poll interval - " + options.pollInterval);
                         }
-                        else if (options.wrapperId && options.wrapperPort) {
-                            instance_1 = new LaunchInstanceHandle(options.wrapperId, options.wrapperPort, options.pollInterval);
+                        else if (options.wrapperId) {
+                            instance_1 = new LaunchInstanceHandle(options.wrapperId, options.pollInterval);
                             log("Attaching new instance: id - " + instance_1.wrapperId + ", port - " + instance_1.wrapperPort + ", poll interval - " + options.pollInterval);
                         }
                         else {
@@ -158,10 +159,11 @@ var Launcher = (function () {
 exports.Launcher = Launcher;
 Launcher._runningInstances = new Map();
 var LaunchHandle = (function () {
-    function LaunchHandle(_localPackage, _os, _arch, options) {
+    function LaunchHandle(_localPackage, _os, _arch, _credentials, options) {
         this._localPackage = _localPackage;
         this._os = _os;
         this._arch = _arch;
+        this._credentials = _credentials;
         this.options = options;
         this.options = _.defaultsDeep(this.options || {}, {
             pollInterval: 1000,
@@ -217,9 +219,15 @@ var LaunchHandle = (function () {
         // Ensure that the main launcher file is executable.
         return common_1.default.chmod(file, '0755');
     };
+    LaunchHandle.prototype.ensureCredentials = function () {
+        if (!this._credentials) {
+            return Promise.resolve(null);
+        }
+        return common_1.default.fsWriteFile(path.join(this._localPackage.install_dir, '.gj-credentials'), "0.2.0\n" + this._credentials.username + "\n" + this._credentials.user_token + "\n");
+    };
     LaunchHandle.prototype.start = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var launchOption, executablePath, stat, isJava;
+            var launchOption, stat, isJava;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -227,9 +235,8 @@ var LaunchHandle = (function () {
                         if (!launchOption) {
                             throw new Error("Can't find valid launch options for the given os/arch");
                         }
-                        executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
-                        executablePath = executablePath.replace(/\//, path.sep);
-                        this._file = path.join(this._localPackage.install_dir, executablePath);
+                        this._executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
+                        this._file = path.join(this._localPackage.install_dir, this._executablePath);
                         return [4 /*yield*/, common_1.default.fsExists(this._file)];
                     case 1:
                         // If the destination already exists, make sure its valid.
@@ -257,7 +264,7 @@ var LaunchHandle = (function () {
     };
     LaunchHandle.prototype.startWindows = function (stat, isJava) {
         return __awaiter(this, void 0, void 0, function () {
-            var cmd, args, wrapperId, wrapperPort;
+            var cmd, args, wrapperId;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -275,15 +282,20 @@ var LaunchHandle = (function () {
                             cmd = this._file;
                             args = [];
                         }
+                        return [4 /*yield*/, application_1.Application.ensurePidDir()];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, this.ensureCredentials()];
+                    case 3:
+                        _a.sent();
                         wrapperId = this._localPackage.id.toString();
-                        wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
+                        GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
                             cwd: path.dirname(this._file),
                             detached: true,
                             env: this.options.env,
                         });
                         return [2 /*return*/, Launcher.attach({
                                 wrapperId: wrapperId,
-                                wrapperPort: wrapperPort,
                                 pollInterval: this.options.pollInterval,
                             })];
                 }
@@ -292,7 +304,7 @@ var LaunchHandle = (function () {
     };
     LaunchHandle.prototype.startLinux = function (stat, isJava) {
         return __awaiter(this, void 0, void 0, function () {
-            var cmd, args, wrapperId, wrapperPort;
+            var cmd, args, wrapperId;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -310,15 +322,21 @@ var LaunchHandle = (function () {
                             cmd = this._file;
                             args = [];
                         }
+                        return [4 /*yield*/, application_1.Application.ensurePidDir()];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, this.ensureCredentials()];
+                    case 3:
+                        _a.sent();
+                        console.log('Preparing to launch. PID DIR: ' + application_1.Application.PID_DIR);
                         wrapperId = this._localPackage.id.toString();
-                        wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
+                        GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
                             cwd: path.dirname(this._file),
                             detached: true,
                             env: this.options.env,
                         });
                         return [2 /*return*/, Launcher.attach({
                                 wrapperId: wrapperId,
-                                wrapperPort: wrapperPort,
                                 pollInterval: this.options.pollInterval,
                             })];
                 }
@@ -327,12 +345,12 @@ var LaunchHandle = (function () {
     };
     LaunchHandle.prototype.startMac = function (stat, isJava) {
         return __awaiter(this, void 0, void 0, function () {
-            var cmd, args, wrapperId, wrapperPort, plistPath_1, plistStat, plistContents, parsedPlist, err_3, macosPath, macosStat, baseName, executableName, executableFile, wrapperId, wrapperPort;
+            var cmd, args, wrapperId, plistPath_1, plistStat, plistContents, parsedPlist, err_3, macosPath, macosStat, baseName, executableName, wrapperId;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         if (!stat.isFile())
-                            return [3 /*break*/, 2];
+                            return [3 /*break*/, 4];
                         return [4 /*yield*/, this.ensureExecutable(this._file)];
                     case 1:
                         _a.sent();
@@ -345,44 +363,49 @@ var LaunchHandle = (function () {
                             cmd = this._file;
                             args = [];
                         }
+                        return [4 /*yield*/, application_1.Application.ensurePidDir()];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, this.ensureCredentials()];
+                    case 3:
+                        _a.sent();
                         wrapperId = this._localPackage.id.toString();
-                        wrapperPort = GameWrapper.start(wrapperId, this._file, args, {
+                        GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
                             cwd: path.dirname(this._file),
                             detached: true,
                             env: this.options.env,
                         });
                         return [2 /*return*/, Launcher.attach({
                                 wrapperId: wrapperId,
-                                wrapperPort: wrapperPort,
                                 pollInterval: this.options.pollInterval,
                             })];
-                    case 2:
+                    case 4:
                         if (!this._file.toLowerCase().endsWith('.app') && !this._file.toLowerCase().endsWith('.app/')) {
                             throw new Error("That doesn't look like a valid Mac OS X bundle. Expecting .app folder");
                         }
                         plistPath_1 = path.join(this._file, 'Contents', 'Info.plist');
                         return [4 /*yield*/, common_1.default.fsExists(plistPath_1)];
-                    case 3:
+                    case 5:
                         if (!(_a.sent())) {
                             throw new Error("That doesn't look like a valid Mac OS X bundle. Missing Info.plist file.");
                         }
                         return [4 /*yield*/, common_1.default.fsStat(plistPath_1)];
-                    case 4:
+                    case 6:
                         plistStat = _a.sent();
                         if (!plistStat.isFile()) {
                             throw new Error("That doesn't look like a valid Mac OS X bundle. Info.plist isn't a valid file.");
                         }
                         return [4 /*yield*/, common_1.default.fsReadFile(plistPath_1, 'utf8')];
-                    case 5:
+                    case 7:
                         plistContents = _a.sent();
                         parsedPlist = void 0;
-                        _a.label = 6;
-                    case 6:
-                        _a.trys.push([6, 7, , 9]);
+                        _a.label = 8;
+                    case 8:
+                        _a.trys.push([8, 9, , 11]);
                         // First try parsing normally.
                         parsedPlist = plist.parse(plistContents);
-                        return [3 /*break*/, 9];
-                    case 7:
+                        return [3 /*break*/, 11];
+                    case 9:
                         err_3 = _a.sent();
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 childProcess.exec(shellEscape(['plutil', '-convert', 'xml1', '-o', '-', plistPath_1]), function (err, stdout, stderr) {
@@ -396,43 +419,71 @@ var LaunchHandle = (function () {
                                     return resolve(stdout.toString('utf8'));
                                 });
                             })];
-                    case 8:
+                    case 10:
                         // If failed, it may be a plist in binary format (http://www.forensicswiki.org/wiki/Converting_Binary_Plists)
                         // This makes sure to convert it to xml before parsing.
                         plistContents = _a.sent();
                         parsedPlist = plist.parse(plistContents);
-                        return [3 /*break*/, 9];
-                    case 9:
+                        return [3 /*break*/, 11];
+                    case 11:
                         if (!parsedPlist) {
                             throw new Error("That doesn't look like a valid  Mac OS X bundle. Info.plist is not a valid plist file.");
                         }
                         macosPath = path.join(this._file, 'Contents', 'MacOS');
                         return [4 /*yield*/, common_1.default.fsExists(macosPath)];
-                    case 10:
+                    case 12:
                         if (!(_a.sent())) {
                             throw new Error("That doesn't look like a valid Mac OS X bundle. Missing MacOS directory.");
                         }
                         return [4 /*yield*/, common_1.default.fsStat(macosPath)];
-                    case 11:
+                    case 13:
                         macosStat = _a.sent();
                         if (!macosStat.isDirectory()) {
                             throw new Error("That doesn't look like a valid Mac OS X bundle. MacOS isn't a valid directory.");
                         }
                         baseName = path.basename(this._file);
                         executableName = parsedPlist.CFBundleExecutable || baseName.substr(0, baseName.length - '.app'.length);
-                        executableFile = path.join(macosPath, executableName);
-                        return [4 /*yield*/, this.ensureExecutable(executableFile)];
-                    case 12:
+                        this._executablePath = path.join(this._executablePath, 'Contents', 'MacOS', executableName);
+                        this._file = path.join(this._localPackage.install_dir, this._executablePath);
+                        return [4 /*yield*/, this.ensureExecutable(this._file)];
+                    case 14:
+                        _a.sent();
+                        // Kept commented in case we lost our mind and we want to use gatekeeper
+                        // let gatekeeper = await new Promise( ( resolve, reject ) =>
+                        // {
+                        // 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
+                        // 	{
+                        // 		if ( err || ( stderr && stderr.length ) ) {
+                        // 			return reject( err );
+                        // 		}
+                        // 		resolve();
+                        // 	} );
+                        // } );
+                        return [4 /*yield*/, application_1.Application.ensurePidDir()];
+                    case 15:
+                        // Kept commented in case we lost our mind and we want to use gatekeeper
+                        // let gatekeeper = await new Promise( ( resolve, reject ) =>
+                        // {
+                        // 	childProcess.exec( shellEscape( [ 'spctl', '--add', this._file ] ), ( err: Error, stdout: Buffer, stderr: Buffer ) =>
+                        // 	{
+                        // 		if ( err || ( stderr && stderr.length ) ) {
+                        // 			return reject( err );
+                        // 		}
+                        // 		resolve();
+                        // 	} );
+                        // } );
+                        _a.sent();
+                        return [4 /*yield*/, this.ensureCredentials()];
+                    case 16:
                         _a.sent();
                         wrapperId = this._localPackage.id.toString();
-                        wrapperPort = GameWrapper.start(wrapperId, executableFile, [], {
-                            cwd: macosPath,
+                        GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, this._file, [], {
+                            cwd: path.dirname(this._file),
                             detached: true,
                             env: this.options.env,
                         });
                         return [2 /*return*/, Launcher.attach({
                                 wrapperId: wrapperId,
-                                wrapperPort: wrapperPort,
                                 pollInterval: this.options.pollInterval,
                             })];
                 }
@@ -444,10 +495,9 @@ var LaunchHandle = (function () {
 exports.LaunchHandle = LaunchHandle;
 var LaunchInstanceHandle = (function (_super) {
     __extends(LaunchInstanceHandle, _super);
-    function LaunchInstanceHandle(_wrapperId, _wrapperPort, pollInterval) {
+    function LaunchInstanceHandle(_wrapperId, pollInterval) {
         var _this = _super.call(this) || this;
         _this._wrapperId = _wrapperId;
-        _this._wrapperPort = _wrapperPort;
         _this._interval = setInterval(function () { return _this.tick(); }, pollInterval || 1000);
         _this._stable = false;
         return _this;
@@ -456,7 +506,6 @@ var LaunchInstanceHandle = (function (_super) {
         get: function () {
             return {
                 wrapperId: this._wrapperId,
-                wrapperPort: this._wrapperPort,
             };
         },
         enumerable: true,
@@ -478,9 +527,10 @@ var LaunchInstanceHandle = (function (_super) {
     });
     LaunchInstanceHandle.prototype.tick = function () {
         var _this = this;
-        return pid_finder_1.WrapperFinder.find(this._wrapperId, this._wrapperPort)
-            .then(function () {
+        return pid_finder_1.WrapperFinder.find(this._wrapperId)
+            .then(function (port) {
             _this._stable = true;
+            _this._wrapperPort = port;
             return true;
         })
             .catch(function (err) {
@@ -488,7 +538,6 @@ var LaunchInstanceHandle = (function (_super) {
                 clearInterval(_this._interval);
                 console.error(err);
                 _this.emit('end', err);
-                throw err;
             }
             return false;
         });
