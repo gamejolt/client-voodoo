@@ -6,11 +6,11 @@ import * as _ from 'lodash';
 import Common from '../common';
 import { WrapperFinder } from './pid-finder';
 import { VoodooQueue } from '../queue';
+import { Application } from '../application';
+import * as GameWrapper from 'client-game-wrapper';
 
 let plist = require( 'plist' );
 let shellEscape = require( 'shell-escape' );
-
-let GameWrapper = require( 'client-game-wrapper' );
 
 export interface ILaunchOptions
 {
@@ -23,14 +23,12 @@ export interface IAttachOptions
 	instance?: LaunchInstanceHandle;
 	stringifiedWrapper?: string;
 	wrapperId?: string;
-	wrapperPort?: number;
 	pollInterval?: number;
 }
 
 export interface IParsedWrapper
 {
 	wrapperId: string;
-	wrapperPort: number;
 }
 
 function log( message ) {
@@ -42,9 +40,9 @@ export abstract class Launcher
 	private static _runningInstances: Map<string, LaunchInstanceHandle> = new Map<string, LaunchInstanceHandle>();
 
 	// Its a package, but strict mode doesnt like me using its reserved keywords. so uhh.. localPackage it is.
-	static launch( localPackage: GameJolt.IGamePackage, os: string, arch: string, options?: ILaunchOptions ): LaunchHandle
+	static launch( localPackage: GameJolt.IGamePackage, os: string, arch: string, credentials: GameJolt.IGameCredentials, options?: ILaunchOptions ): LaunchHandle
 	{
-		return new LaunchHandle( localPackage, os, arch, options );
+		return new LaunchHandle( localPackage, os, arch, credentials, options );
 	}
 
 	static async attach( options: IAttachOptions )
@@ -58,11 +56,11 @@ export abstract class Launcher
 			}
 			else if ( options.stringifiedWrapper ) {
 				let parsedWrapper: IParsedWrapper = JSON.parse( options.stringifiedWrapper );
-				instance = new LaunchInstanceHandle( parsedWrapper.wrapperId, parsedWrapper.wrapperPort, options.pollInterval );
+				instance = new LaunchInstanceHandle( parsedWrapper.wrapperId, options.pollInterval );
 				log( `Attaching new instance from stringified wrapper: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
 			}
-			else if ( options.wrapperId && options.wrapperPort ) {
-				instance = new LaunchInstanceHandle( options.wrapperId, options.wrapperPort, options.pollInterval );
+			else if ( options.wrapperId ) {
+				instance = new LaunchInstanceHandle( options.wrapperId, options.pollInterval );
 				log( `Attaching new instance: id - ${instance.wrapperId}, port - ${instance.wrapperPort}, poll interval - ${options.pollInterval}` );
 			}
 			else {
@@ -129,8 +127,9 @@ export class LaunchHandle
 {
 	private _promise: Promise<LaunchInstanceHandle>;
 	private _file: string;
+	private _executablePath: string;
 
-	constructor( private _localPackage: GameJolt.IGamePackage, private _os: string, private _arch: string, private options?: ILaunchOptions )
+	constructor( private _localPackage: GameJolt.IGamePackage, private _os: string, private _arch: string, private _credentials: GameJolt.IGameCredentials, private options?: ILaunchOptions )
 	{
 		this.options = _.defaultsDeep<ILaunchOptions, ILaunchOptions>( this.options || {}, {
 			pollInterval: 1000,
@@ -186,6 +185,14 @@ export class LaunchHandle
 		return Common.chmod( file, '0755' );
 	}
 
+	private ensureCredentials()
+	{
+		if ( !this._credentials ) {
+			return Promise.resolve( null );
+		}
+		return Common.fsWriteFile( path.join( this._localPackage.install_dir, '.gj-credentials' ), `0.2.0\n${this._credentials.username}\n${this._credentials.user_token}\n` );
+	}
+
 	private async start()
 	{
 		let launchOption = this.findLaunchOption();
@@ -193,9 +200,8 @@ export class LaunchHandle
 			throw new Error( `Can't find valid launch options for the given os/arch` );
 		}
 
-		var executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
-		executablePath = executablePath.replace( /\//, path.sep );
-		this._file = path.join( this._localPackage.install_dir, executablePath );
+		this._executablePath = launchOption.executable_path ? launchOption.executable_path : this._localPackage.file.filename;
+		this._file = path.join( this._localPackage.install_dir, this._executablePath );
 
 		// If the destination already exists, make sure its valid.
 		if ( !(await Common.fsExists( this._file ) ) ) {
@@ -240,8 +246,11 @@ export class LaunchHandle
 			args = [];
 		}
 
+		await Application.ensurePidDir();
+		await this.ensureCredentials();
+
 		let wrapperId = this._localPackage.id.toString();
-		let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
+		GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
 			env: this.options.env,
@@ -249,7 +258,6 @@ export class LaunchHandle
 
 		return Launcher.attach( {
 			wrapperId: wrapperId,
-			wrapperPort: wrapperPort,
 			pollInterval: this.options.pollInterval,
 		} );
 	}
@@ -272,8 +280,12 @@ export class LaunchHandle
 			args = [];
 		}
 
+		await Application.ensurePidDir();
+		await this.ensureCredentials();
+
+		console.log( 'Preparing to launch. PID DIR: ' + Application.PID_DIR );
 		let wrapperId = this._localPackage.id.toString();
-		let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
+		GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 			cwd: path.dirname( this._file ),
 			detached: true,
 			env: this.options.env,
@@ -281,7 +293,6 @@ export class LaunchHandle
 
 		return Launcher.attach( {
 			wrapperId: wrapperId,
-			wrapperPort: wrapperPort,
 			pollInterval: this.options.pollInterval,
 		} );
 	}
@@ -302,8 +313,11 @@ export class LaunchHandle
 				args = [];
 			}
 
+			await Application.ensurePidDir();
+			await this.ensureCredentials();
+
 			let wrapperId = this._localPackage.id.toString();
-			let wrapperPort = GameWrapper.start( wrapperId, this._file, args, {
+			GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
 				cwd: path.dirname( this._file ),
 				detached: true,
 				env: this.options.env,
@@ -311,7 +325,6 @@ export class LaunchHandle
 
 			return Launcher.attach( {
 				wrapperId: wrapperId,
-				wrapperPort: wrapperPort,
 				pollInterval: this.options.pollInterval,
 			} );
 		}
@@ -377,8 +390,9 @@ export class LaunchHandle
 			let baseName = path.basename( this._file );
 			let executableName = parsedPlist.CFBundleExecutable || baseName.substr( 0, baseName.length - '.app'.length );
 
-			let executableFile = path.join( macosPath, executableName );
-			await this.ensureExecutable( executableFile );
+			this._executablePath = path.join( this._executablePath, 'Contents', 'MacOS', executableName );
+			this._file = path.join( this._localPackage.install_dir, this._executablePath );
+			await this.ensureExecutable( this._file );
 
 			// Kept commented in case we lost our mind and we want to use gatekeeper
 			// let gatekeeper = await new Promise( ( resolve, reject ) =>
@@ -393,16 +407,18 @@ export class LaunchHandle
 			// 	} );
 			// } );
 
+			await Application.ensurePidDir();
+			await this.ensureCredentials();
+
 			let wrapperId = this._localPackage.id.toString();
-			let wrapperPort = GameWrapper.start( wrapperId, executableFile, [], {
-				cwd: macosPath,
+			GameWrapper.start( wrapperId, Application.PID_DIR, this._localPackage.install_dir, this._file, [], {
+				cwd: path.dirname( this._file ),
 				detached: true,
 				env: this.options.env,
 			} );
 
 			return Launcher.attach( {
 				wrapperId: wrapperId,
-				wrapperPort: wrapperPort,
 				pollInterval: this.options.pollInterval,
 			} );
 		}
@@ -412,9 +428,10 @@ export class LaunchHandle
 export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 {
 	private _interval: NodeJS.Timer;
+	private _wrapperPort: number;
 	private _stable: boolean;
 
-	constructor( private _wrapperId: string, private _wrapperPort: number, pollInterval?: number )
+	constructor( private _wrapperId: string, pollInterval?: number )
 	{
 		super();
 		this._interval = setInterval( () => this.tick(), pollInterval || 1000 );
@@ -425,7 +442,6 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 	{
 		return {
 			wrapperId: this._wrapperId,
-			wrapperPort: this._wrapperPort,
 		};
 	}
 
@@ -441,10 +457,11 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 
 	tick(): Promise<boolean>
 	{
-		return WrapperFinder.find( this._wrapperId, this._wrapperPort )
-			.then( () =>
+		return WrapperFinder.find( this._wrapperId )
+			.then( ( port ) =>
 			{
 				this._stable = true;
+				this._wrapperPort = port;
 				return true;
 			} )
 			.catch( ( err ) =>
@@ -453,7 +470,7 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 					clearInterval( this._interval );
 					console.error( err );
 					this.emit( 'end', err );
-					throw err;
+					//throw err;
 				}
 				return false;
 			} );

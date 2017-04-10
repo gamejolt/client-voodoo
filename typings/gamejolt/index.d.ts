@@ -47,11 +47,17 @@ declare namespace GameJolt
 		filename: string;
 		filesize: number;
 	}
-	
+
 	export interface IGameBuildLaunchOptions
 	{
 		id: number;
 		os: string; // 'windows, windows_64, mac, mac_64, linux, linux_64, other
 		executable_path: string;
+	}
+
+	export interface IGameCredentials
+	{
+		username: string;
+		user_token: string;
 	}
 }
