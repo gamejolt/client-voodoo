@@ -82,7 +82,7 @@ var Logger = (function () {
     Logger._log = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
+            args[_i - 0] = arguments[_i];
         }
         CONSOLE_LOG.apply(console, args);
         var str = util.format.apply(console, args).split('\n');
@@ -100,7 +100,7 @@ var Logger = (function () {
     Logger._logErr = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
+            args[_i - 0] = arguments[_i];
         }
         CONSOLE_ERR.apply(console, args);
         var str = util.format.apply(console, args).split('\n');
@@ -203,7 +203,7 @@ var Logger = (function () {
     };
     return Logger;
 }());
+exports.Logger = Logger;
 Logger._logLines = [];
 Logger._hijacked = false;
-exports.Logger = Logger;
 //# sourceMappingURL=logger.js.map

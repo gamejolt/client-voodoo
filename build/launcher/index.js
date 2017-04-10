@@ -156,8 +156,8 @@ var Launcher = (function () {
     };
     return Launcher;
 }());
-Launcher._runningInstances = new Map();
 exports.Launcher = Launcher;
+Launcher._runningInstances = new Map();
 var LaunchHandle = (function () {
     function LaunchHandle(_localPackage, _os, _arch, _credentials, options) {
         this._localPackage = _localPackage;
@@ -223,7 +223,7 @@ var LaunchHandle = (function () {
         if (!this._credentials) {
             return Promise.resolve(null);
         }
-        return common_1.default.fsWriteFile(path.join(this._localPackage.install_dir, '.gj-credentials'), "0.1.0\n" + this._credentials.username + "\n" + this._credentials.user_token + "\n");
+        return common_1.default.fsWriteFile(path.join(this._localPackage.install_dir, '.gj-credentials'), "0.2.0\n" + this._credentials.username + "\n" + this._credentials.user_token + "\n");
     };
     LaunchHandle.prototype.start = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -328,6 +328,7 @@ var LaunchHandle = (function () {
                         return [4 /*yield*/, this.ensureCredentials()];
                     case 3:
                         _a.sent();
+                        console.log('Preparing to launch. PID DIR: ' + application_1.Application.PID_DIR);
                         wrapperId = this._localPackage.id.toString();
                         GameWrapper.start(wrapperId, application_1.Application.PID_DIR, this._localPackage.install_dir, cmd, args, {
                             cwd: path.dirname(this._file),
