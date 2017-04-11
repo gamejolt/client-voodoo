@@ -223,7 +223,7 @@ var LaunchHandle = (function () {
         if (!this._credentials) {
             return Promise.resolve(null);
         }
-        return common_1.default.fsWriteFile(path.join(this._localPackage.install_dir, '.gj-credentials'), "0.2.0\n" + this._credentials.username + "\n" + this._credentials.user_token + "\n");
+        return common_1.default.fsWriteFile(path.join(this._localPackage.install_dir, '.gj-credentials'), "0.2.1\n" + this._credentials.username + "\n" + this._credentials.user_token + "\n");
     };
     LaunchHandle.prototype.start = function () {
         return __awaiter(this, void 0, void 0, function () {
