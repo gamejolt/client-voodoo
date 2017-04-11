@@ -22,6 +22,7 @@ export abstract class WrapperFinder
 								case 'v0.0.1':
 								case 'v0.1.0':
 								case 'v0.2.0':
+								case 'v0.2.1':
 									if ( parsedData[2] === id ) {
 										resolve( parseInt( port ) );
 									}

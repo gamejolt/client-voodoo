@@ -190,7 +190,7 @@ export class LaunchHandle
 		if ( !this._credentials ) {
 			return Promise.resolve( null );
 		}
-		return Common.fsWriteFile( path.join( this._localPackage.install_dir, '.gj-credentials' ), `0.2.0\n${this._credentials.username}\n${this._credentials.user_token}\n` );
+		return Common.fsWriteFile( path.join( this._localPackage.install_dir, '.gj-credentials' ), `0.2.1\n${this._credentials.username}\n${this._credentials.user_token}\n` );
 	}
 
 	private async start()
