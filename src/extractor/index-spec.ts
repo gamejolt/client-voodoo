@@ -8,9 +8,9 @@ import * as del from 'del';
 import { VoodooQueue } from '../queue';
 
 let gzip = require( 'gunzip-maybe' );
-let xz: Function = require( 'lzma-native' ).createDecompressor.bind( this, {
-	synchronous:  true,
-} );
+// let xz: Function = require( 'lzma-native' ).createDecompressor.bind( this, {
+// 	synchronous:  true,
+// } );
 
 describe( 'Extractor', function()
 {
@@ -90,7 +90,7 @@ describe( 'Extractor', function()
 	{
 		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
 			overwrite: true,
-			decompressStream: xz(),
+			// decompressStream: xz(),
 		} );
 
 		handle

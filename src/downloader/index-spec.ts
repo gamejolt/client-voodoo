@@ -7,7 +7,7 @@ import * as del from 'del';
 import Common from '../common';
 
 let gzip = require( 'gunzip-maybe' );
-let xz = require( 'lzma-native' ).createDecompressor;
+// let xz = require( 'lzma-native' ).createDecompressor;
 
 describe( 'Downloader', function()
 {
@@ -179,7 +179,7 @@ describe( 'Downloader', function()
 	{
 		let handle = Downloader.download( 'https://s3-us-west-2.amazonaws.com/ylivay-gj-test-oregon/data/games/0/0/52250/files/566973cb4684c/GJGas.exe.tar.xz', downloadFile, {
 			overwrite: true,
-			decompressStream: xz(),
+			// decompressStream: xz(),
 		} );
 
 		handle

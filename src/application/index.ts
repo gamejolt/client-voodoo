@@ -1,10 +1,10 @@
 import Common from '../common';
 
-const MUTEX_NAME = 'game-jolt-client';
+// const MUTEX_NAME = 'game-jolt-client';
 
 export abstract class Application
 {
-	private static mutex;
+	// private static mutex;
 	private static _pidDir: string;
 
 	static get PID_DIR(): string
@@ -28,15 +28,16 @@ export abstract class Application
 
 	static start()
 	{
-		let Mutex = require( 'windows-mutex' );
 		console.log( 'Acquiring le mutex' );
-		this.mutex = null;
-		try {
-			this.mutex = new Mutex( MUTEX_NAME );
-		}
-		catch (e) {
-			// noop
-		}
+
+		// let Mutex = require( 'windows-mutex' );
+		// this.mutex = null;
+		// try {
+		// 	this.mutex = new Mutex( MUTEX_NAME );
+		// }
+		// catch (e) {
+		// 	// noop
+		// }
 
 		process.on( 'exit', () => this.stop() );
 	}
@@ -44,9 +45,10 @@ export abstract class Application
 	static stop()
 	{
 		console.log( 'Releasing le mutex' );
-		if ( this.mutex ) {
-			this.mutex.release();
-			this.mutex = null;
-		}
+
+		// if ( this.mutex ) {
+		// 	this.mutex.release();
+		// 	this.mutex = null;
+		// }
 	}
 }

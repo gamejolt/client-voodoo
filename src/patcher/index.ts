@@ -176,7 +176,7 @@ export class PatchHandle
 
 		switch ( this._localPackage.build.archive_type ) {
 			case 'tar.xz':
-				return require( 'lzma-native' ).createDecompressor();
+				return null; // require( 'lzma-native' ).createDecompressor();
 
 			case 'tar.gz':
 				return require( 'gunzip-maybe' )();
