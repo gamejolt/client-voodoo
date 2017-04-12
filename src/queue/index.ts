@@ -4,7 +4,7 @@ import { SampleUnit } from '../downloader/stream-speed';
 import { IExtractProgress } from '../extractor';
 import * as _ from 'lodash';
 
-interface IQueueState
+export interface IQueueState
 {
 	queued: boolean;
 	timeLeft: number;
