@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "bluebird": "3.4.6",
-    "client-game-wrapper": "0.2.1",
+    "client-game-wrapper": "0.2.2",
     "del": "2.2.2",
     "gunzip-maybe": "1.2.1",
     "lodash": "4.17.2",
