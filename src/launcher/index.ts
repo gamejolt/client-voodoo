@@ -470,7 +470,7 @@ export class LaunchInstanceHandle extends EventEmitter implements IParsedWrapper
 					clearInterval( this._interval );
 					console.error( err );
 					this.emit( 'end', err );
-					//throw err;
+					// throw err;
 				}
 				return false;
 			} );
