@@ -1,32 +1,55 @@
 {
 	"version": "0.2.0",
 	"configurations": [
-		{
-			"name": "Launch",
-			"type": "node",
-			"request": "launch",
-			"program": "${workspaceRoot}/src/index.ts",
-			"stopOnEntry": false,
-			"args": [],
-			"cwd": "${workspaceRoot}",
-			"runtimeExecutable": "${NVM_BIN}/node",
-			"runtimeArgs": [
-				"--nolazy"
-			],
-			"env": {
-				"NODE_ENV": "development"
-			},
-			"console": "internalConsole",
-			"sourceMaps": true,
-			"outDir": "${workspaceRoot}/build"
-		},
-		{
-			"name": "Attach",
-			"type": "node",
-			"request": "attach",
-			"port": 5858,
-			"sourceMaps": true,
-			"outDir": "${workspaceRoot}/build"
-		}
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run Tests",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "program": "${workspaceRoot}/node_modules/.bin/mocha",
+      "args": [
+        "-u", "tdd",
+        "--timeout", "999999",
+        "--colors",
+        "--reporter", "list",
+        "${workspaceRoot}/build/**/patcher.test.js"
+        // "--grep", "first one"
+      ],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/build/**/*.js"
+      ],
+      "preLaunchTask": "build",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run Tests w/ Coverage",
+      "program": "${workspaceRoot}/node_modules/.bin/nyc",
+      "args": [
+        "--reporter=html",
+        "${workspaceRoot}/node_modules/.bin/mocha",
+        "--compilers", "ts:ts-node/register",
+        "--require", "source-map-support/register",
+        "--full-trace",
+        "-u", "tdd",
+        "--timeout", "999999",
+        "--no-colors",
+        "src/**/*.test.ts"
+      ],
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build",
+      "program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
+      "args": [
+        "build"
+      ]
+    }
 	]
 }
