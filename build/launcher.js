@@ -37,10 +37,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var Runner = require("./runner");
 var util = require("./util");
-var Launch = (function () {
-    function Launch() {
+var Launcher = (function () {
+    function Launcher() {
     }
-    Launch.launch = function (localPackage) {
+    Launcher.launch = function (localPackage) {
         var executableArgs = [];
         for (var _i = 1; _i < arguments.length; _i++) {
             executableArgs[_i - 1] = arguments[_i];
@@ -70,16 +70,16 @@ var Launch = (function () {
             });
         });
     };
-    Launch.launchReattach = function (port, pid) {
+    Launcher.launchReattach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/, new LaunchInstance(new Runner.Instance(port, pid))];
             });
         });
     };
-    return Launch;
+    return Launcher;
 }());
-exports.Launch = Launch;
+exports.Launcher = Launcher;
 var LaunchInstance = (function () {
     function LaunchInstance(runner) {
         this.runner = runner;
