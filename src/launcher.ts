@@ -1,7 +1,7 @@
 import * as Runner from './runner';
 import * as util from './util';
 
-export abstract class Launch
+export abstract class Launcher
 {
 	static async launch( localPackage: GameJolt.IGamePackage, ...executableArgs: string[] )
 	{
