@@ -1,6 +1,12 @@
 import { Controller, Events } from './controller';
 import * as util from './util';
 import { ControllerWrapper } from './controller-wrapper';
+import { Launcher as OldLauncher } from './old-launcher';
+
+export interface IParsedWrapper
+{
+	wrapperId: string;
+}
 
 export abstract class Launcher
 {
@@ -9,7 +15,6 @@ export abstract class Launcher
 	{
 		const dir = localPackage.install_dir;
 		const port = await util.findFreePort();
-		console.log( 'port: ' + port );
 		const gameUid = localPackage.id + '-' + localPackage.build.id;
 		const args: string[] = [
 			'--port', port.toString(),
@@ -19,14 +24,46 @@ export abstract class Launcher
 		];
 		args.push( ...executableArgs );
 
-		return new LaunchInstance( await Controller.launchNew( args ) );
+		const controller = await Controller.launchNew( args );
+		return new Promise<LaunchInstance>( ( resolve, reject ) =>
+		{
+			// tslint:disable-next-line:no-unused-expression
+			new LaunchInstance( controller, ( err, inst ) =>
+			{
+				if ( err ) {
+					return reject( err );
+				}
+				resolve( inst );
+			} );
+		} );
 	}
 
-	// TODO(ylivay): Should return a promise of the launch instance on
-	// successful attach, otherwise a promise rejection.
-	static async attach( port: number, pid: number )
+	static async attach( runningPid: string | IParsedWrapper )
 	{
-		return new LaunchInstance( new Controller( port, pid ) );
+		if ( typeof runningPid !== 'string' ) {
+			return OldLauncher.attach( runningPid.wrapperId );
+		}
+
+		const pidParts = runningPid.split( ':', 2 );
+		if ( pidParts.length !== 2 || pidParts[0] !== '1' ) {
+			throw new Error( 'Invalid or unsupported running pid: ' + runningPid );
+		}
+
+		const parsedPid = JSON.parse( pidParts[1] );
+		const controller = new Controller( parsedPid.port, parsedPid.pid );
+		controller.connect();
+
+		return new Promise<LaunchInstance>( ( resolve, reject ) =>
+		{
+			// tslint:disable-next-line:no-unused-expression
+			new LaunchInstance( controller, ( err, inst ) =>
+			{
+				if ( err ) {
+					return reject( err );
+				}
+				resolve( inst );
+			} );
+		} );
 	}
 }
 
@@ -36,7 +73,9 @@ type LaunchEvents = {
 
 class LaunchInstance extends ControllerWrapper<LaunchEvents & Events>
 {
-	constructor( controller: Controller )
+	private _pid: number;
+
+	constructor( controller: Controller, onReady: ( err: Error | null, instance: LaunchInstance ) => void )
 	{
 		super( controller );
 		this
@@ -48,6 +87,19 @@ class LaunchInstance extends ControllerWrapper<LaunchEvents & Events>
 			{
 				this.controller.emit( 'gameOver' );
 			} );
+
+		this.controller.sendGetState( false, 2000 )
+			.then( ( state ) =>
+			{
+				this._pid = state.pid;
+				onReady( null, this );
+			} )
+			.catch( ( err ) => onReady( err, this ) );
+	}
+
+	get pid()
+	{
+		return '1:' + JSON.stringify( { port: this.controller.port, pid: this._pid } );
 	}
 
 	kill()

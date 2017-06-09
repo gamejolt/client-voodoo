@@ -49,8 +49,7 @@ enum State
 	Starting = 0,
 	Downloading = 1,
 	Patching = 2,
-	Finishing = 3,
-	Finished = 4,
+	Finished = 3,
 }
 
 type PatchEvents = {
@@ -104,10 +103,8 @@ class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 
 			case data.PatcherState.PrepareExtract:
 			case data.PatcherState.Extract:
-				return State.Patching;
-
 			case data.PatcherState.Cleanup:
-				return State.Finishing;
+				return State.Patching;
 
 			case data.PatcherState.Finished:
 				return State.Finished;
@@ -129,7 +126,7 @@ class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 
 	isPatching()
 	{
-		return this._state === State.Patching || this._state === State.Finishing;
+		return this._state === State.Patching;
 	}
 
 	isFinished()

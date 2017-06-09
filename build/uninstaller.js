@@ -52,15 +52,16 @@ var controller_wrapper_1 = require("./controller-wrapper");
 var Uninstaller = (function () {
     function Uninstaller() {
     }
-    Uninstaller.uninstall = function (dir) {
+    Uninstaller.uninstall = function (localPackage) {
         return __awaiter(this, void 0, void 0, function () {
-            var port, args, _a;
+            var dir, port, args, _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, util.findFreePort()];
+                    case 0:
+                        dir = localPackage.install_dir;
+                        return [4 /*yield*/, util.findFreePort()];
                     case 1:
                         port = _b.sent();
-                        console.log('port: ' + port);
                         args = [
                             '--port', port.toString(),
                             '--dir', dir,
@@ -115,7 +116,6 @@ var UninstallInstance = (function (_super) {
                     case 0: return [4 /*yield*/, this.controller.sendGetState(false)];
                     case 1:
                         state = _a.sent();
-                        console.log(state);
                         this._isPaused = state.isPaused;
                         this._state = this._getState(state.patcherState);
                         return [2 /*return*/];
@@ -148,38 +148,6 @@ var UninstallInstance = (function (_super) {
     };
     UninstallInstance.prototype.isRunning = function () {
         return !this._isPaused;
-    };
-    UninstallInstance.prototype.resume = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume()];
-                    case 1:
-                        result = _a.sent();
-                        if (result.success) {
-                            this._isPaused = false;
-                        }
-                        return [2 /*return*/, result];
-                }
-            });
-        });
-    };
-    UninstallInstance.prototype.pause = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume()];
-                    case 1:
-                        result = _a.sent();
-                        if (result.success) {
-                            this._isPaused = true;
-                        }
-                        return [2 /*return*/, result];
-                }
-            });
-        });
     };
     return UninstallInstance;
 }(controller_wrapper_1.ControllerWrapper));
