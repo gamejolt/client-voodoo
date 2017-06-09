@@ -1,4 +1,4 @@
-import * as config from 'config';
+// import * as config from 'config';
 import * as Runner from './runner';
 import * as util from './util';
 import * as data from './data';
@@ -11,7 +11,7 @@ export interface IPatchOptions
 
 export abstract class Patcher
 {
-	static readonly PLATFORM_URL = config.get( 'domain' ) + '/x/updater/check_for_updates';
+	static readonly PLATFORM_URL = 'https://gamejolt.com/x/updater/check-for-updates';
 
 	static async patch( localPackage: GameJolt.IGamePackage, options?: IPatchOptions )
 	{
@@ -26,7 +26,8 @@ export abstract class Patcher
 			'--game', gameUid,
 			'--platform-url', this.PLATFORM_URL,
 			'--paused',
-			'--no-loader' ];
+			'--no-loader',
+		];
 		if ( options.authToken ) {
 			args.push( '--auth-token', options.authToken );
 		}
