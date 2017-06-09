@@ -40,6 +40,7 @@ var util = require("./util");
 var Launcher = (function () {
     function Launcher() {
     }
+    // TODO(ylivay): Should set the credentials file for now.
     Launcher.launch = function (localPackage) {
         var executableArgs = [];
         for (var _i = 1; _i < arguments.length; _i++) {
@@ -70,7 +71,9 @@ var Launcher = (function () {
             });
         });
     };
-    Launcher.launchReattach = function (port, pid) {
+    // TODO(ylivay): Should return a promise of the launch instance on
+    // successful attach, otherwise a promise rejection.
+    Launcher.attach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/, new LaunchInstance(new Runner.Instance(port, pid))];

@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var config = require("config");
+// import * as config from 'config';
 var Runner = require("./runner");
 var util = require("./util");
 var data = require("./data");
@@ -61,7 +61,7 @@ var Patcher = (function () {
                             '--game', gameUid,
                             '--platform-url', this.PLATFORM_URL,
                             '--paused',
-                            '--no-loader'
+                            '--no-loader',
                         ];
                         if (options.authToken) {
                             args.push('--auth-token', options.authToken);
@@ -86,7 +86,7 @@ var Patcher = (function () {
     };
     return Patcher;
 }());
-Patcher.PLATFORM_URL = config.get('domain') + '/x/updater/check_for_updates';
+Patcher.PLATFORM_URL = 'https://gamejolt.com/x/updater/check-for-updates';
 exports.Patcher = Patcher;
 var State;
 (function (State) {
