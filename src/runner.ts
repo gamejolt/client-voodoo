@@ -47,7 +47,7 @@ class SentMessage
 		{
 			this.resolver = resolve;
 			this.rejector = reject;
-			if ( timeout && timeout != Infinity ) {
+			if ( timeout && timeout !== Infinity ) {
 				setTimeout( () =>
 				{
 					this._resolved = true;
@@ -78,27 +78,48 @@ class SentMessage
 type Events =
 {
 	'error': ( err: Error ) => void;
-	'gameLaunchBegin': ( dir: string, ...args: string[] ) => void; // called when a launch operation begins
-	'gameLaunchFinished': () => void; // called when the launch operation ends completely
-	'gameLaunchFailed': ( reason: string ) => void; // called when the game fails to launch
-	'gameCrashed': ( reason: string ) => void; // called when the game quit due to crash
-	'gameClosed': () => void; // called when the game quit normally
-	'gameKilled': () => void; // called when the runner attempts to kill a game. It'll most likely follow a gameCrashed event
-	'gameRelaunchBegin': ( dir: string, ...args: string[] ) => void; // called when a game is attempted to be launched again (right after a game is updated while its running)
-	'gameRelaunchFailed': ( reason: string ) => void;  // same as gameLaunchFailed only for relaunch
-	'updateAvailable': ( metadata: data.UpdateMetadata ) => void; // called when a new update is available to begin
-	'updateBegin': ( dir: string, metadata: data.UpdateMetadata ) => void; // called when an update begins (either an install or update during run)
-	'updateFinished': () => void; // called when an update finished successfully
-	'updateReady': () => void; // called when an update is ready to be applied (finished downloading and is waiting for extract)
-	'updateApply': ( ...args: string[] ) => void; // called when an update is applying (used to wait for game to quit or force kill it to resume updating)
-	'updateFailed': ( reason: string ) => void; // called when an update fails for whatever reason
-	'updatePaused': () => void; // called when an update is paused
-	'updateResumed': () => void; // called when an update is resumed
-	'updateCanceled': () => void; // called when an update is canceled
-	'uninstallBegin': ( dir: string ) => void; // called when an uninstall operation begins
-	'uninstallFailed': ( reason: string ) => void; // called when an uninstall operation failed for whatever reason
-	'uninstallFinished': () => void; // called when an uninstall operation finished successfully
-	'patcherState': ( state: data.PatcherState ) => void; // called when the patcher state changes
+	// called when a launch operation begins
+	'gameLaunchBegin': ( dir: string, ...args: string[] ) => void;
+	// called when the launch operation ends completely
+	'gameLaunchFinished': () => void;
+	// called when the game fails to launch
+	'gameLaunchFailed': ( reason: string ) => void;
+	// called when the game quit due to crash
+	'gameCrashed': ( reason: string ) => void;
+	// called when the game quit normally
+	'gameClosed': () => void;
+	// called when the runner attempts to kill a game. It'll most likely follow a gameCrashed event
+	'gameKilled': () => void;
+	// called when a game is attempted to be launched again (right after a game is updated while its running)
+	'gameRelaunchBegin': ( dir: string, ...args: string[] ) => void;
+	// same as gameLaunchFailed only for relaunch
+	'gameRelaunchFailed': ( reason: string ) => void;
+	// called when a new update is available to begin
+	'updateAvailable': ( metadata: data.UpdateMetadata ) => void;
+	// called when an update begins (either an install or update during run)
+	'updateBegin': ( dir: string, metadata: data.UpdateMetadata ) => void;
+	// called when an update finished successfully
+	'updateFinished': () => void;
+	// called when an update is ready to be applied (finished downloading and is waiting for extract)
+	'updateReady': () => void;
+	// called when an update is applying (used to wait for game to quit or force kill it to resume updating)
+	'updateApply': ( ...args: string[] ) => void;
+	// called when an update fails for whatever reason
+	'updateFailed': ( reason: string ) => void;
+	// called when an update is paused
+	'updatePaused': () => void;
+	// called when an update is resumed
+	'updateResumed': () => void;
+	// called when an update is canceled
+	'updateCanceled': () => void;
+	// called when an uninstall operation begins
+	'uninstallBegin': ( dir: string ) => void;
+	// called when an uninstall operation failed for whatever reason
+	'uninstallFailed': ( reason: string ) => void;
+	// called when an uninstall operation finished successfully
+	'uninstallFinished': () => void;
+	// called when the patcher state changes
+	'patcherState': ( state: data.PatcherState ) => void;
 };
 
 export class Instance extends TSEventEmitter<Events>
