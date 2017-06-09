@@ -5,10 +5,10 @@ import { ControllerWrapper } from './controller-wrapper';
 
 export abstract class Uninstaller
 {
-	static async uninstall( dir: string )
+	static async uninstall( localPackage: GameJolt.IGamePackage )
 	{
+		const dir = localPackage.install_dir;
 		const port = await util.findFreePort();
-		console.log( 'port: ' + port );
 		const args: string[] = [
 			'--port', port.toString(),
 			'--dir', dir,
@@ -65,7 +65,6 @@ class UninstallInstance extends ControllerWrapper<UninstallEvents & Events>
 	private async getState()
 	{
 		const state = await this.controller.sendGetState(false);
-		console.log( state );
 		this._isPaused = state.isPaused;
 
 		this._state = this._getState( state.patcherState );
