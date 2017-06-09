@@ -1,5 +1,5 @@
 import * as net from 'net';
-import * as Runner from './runner';
+import { Controller } from './controller';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as stream from 'stream';
@@ -9,7 +9,7 @@ const expect = chai.expect;
 
 const JSONStream = require( 'JSONStream' );
 
-describe( 'Runner', function()
+describe( 'Joltron Controller', function()
 {
 	const mochaAsync = ( fn: () => Promise<any> ) =>
 	{
@@ -83,7 +83,7 @@ describe( 'Runner', function()
 		} );
 	}
 
-	let nextMockId: number = 0;
+	let nextMockId = 0;
 	let currentMock: net.Server;
 	let currentConns: net.Socket[];
 
@@ -91,7 +91,7 @@ describe( 'Runner', function()
 
 	it( 'should attach to running instance', mochaAsync( async () =>
 	{
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 
 		let resolve: any = null;
 		const waitForConnect = new Promise( ( _resolve ) =>
@@ -122,7 +122,7 @@ describe( 'Runner', function()
 			connected = true;
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		expect( connected, 'socket connection' ).to.equal( true );
 		expect( inst.connected, 'runner connection status' ).to.equal( true );
@@ -136,7 +136,7 @@ describe( 'Runner', function()
 			connectCount++;
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		await inst.connect();
 		expect( connectCount, 'connection count' ).to.equal( 1 );
@@ -151,7 +151,7 @@ describe( 'Runner', function()
 			connectCount++;
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 
 		const conn1 = inst.connect();
 		const conn2 = inst.connect();
@@ -177,7 +177,7 @@ describe( 'Runner', function()
 			} );
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 
 		// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -205,7 +205,7 @@ describe( 'Runner', function()
 			} );
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 
 		// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -234,7 +234,7 @@ describe( 'Runner', function()
 			} );
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 
 		// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -260,7 +260,7 @@ describe( 'Runner', function()
 			wasConnected = true;
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		const conn1 = inst.connect();
 		const conn2 = inst.disconnect();
 		const [ result1, result2 ] = await wrapAll( [ conn1, conn2 ] );
@@ -279,7 +279,7 @@ describe( 'Runner', function()
 			connectionCount++;
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 
 		// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -309,7 +309,7 @@ describe( 'Runner', function()
 			} );
 		}, 2000 );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		expect( connected, 'socket connection' ).to.equal( true );
 		expect( inst.connected, 'runner connection status' ).to.equal( true );
@@ -331,7 +331,7 @@ describe( 'Runner', function()
 			}, 7000 );
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		const [ result ] = await wrapAll( [ inst.connect() ] );
 		expect( result.success, 'connection result' ).to.equal( false );
 		expect( connected, 'socket connection' ).to.equal( false );
@@ -348,7 +348,7 @@ describe( 'Runner', function()
 		{
 			const receive = Array.isArray( expectedData ) ? expectedData : [ expectedData ];
 			const expected = Array.isArray( expectedResult ) ? expectedResult : [ expectedResult ];
-			if ( receive.length != expected.length ) {
+			if ( receive.length !== expected.length ) {
 				return reject( new Error( 'Receive and expected result should be the same for mock runner' ) );
 			}
 			let currentReceive = 0;
@@ -360,7 +360,7 @@ describe( 'Runner', function()
 					{
 						expect( data, 'received json data' ).to.deep.equal( receive[ currentReceive ] );
 						const result = expected[ currentReceive ];
-						if ( ++currentReceive == receive.length ) {
+						if ( ++currentReceive === receive.length ) {
 							resolve( expectedResult );
 						}
 
@@ -388,7 +388,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendKillGame();
 		await mockPromise;
@@ -405,7 +405,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendPause();
 		await mockPromise;
@@ -422,7 +422,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendResume();
 		await mockPromise;
@@ -439,7 +439,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendCancel();
 		await mockPromise;
@@ -456,7 +456,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendGetState( true );
 		await mockPromise;
@@ -473,7 +473,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendGetState( false );
 		await mockPromise;
@@ -491,7 +491,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendCheckForUpdates( '1', '2' );
 		await mockPromise;
@@ -511,7 +511,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendCheckForUpdates( '1', '2', '3', '4' );
 		await mockPromise;
@@ -528,7 +528,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendUpdateAvailable( { test: true } );
 		await mockPromise;
@@ -543,7 +543,7 @@ describe( 'Runner', function()
 			payload: {},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendUpdateBegin();
 		await mockPromise;
@@ -561,7 +561,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		inst.sendUpdateApply( { var1: true, var2: false }, [ '1', '2', '3' ] );
 		await mockPromise;
@@ -582,7 +582,7 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 
 		let resolvedMock = false;
@@ -594,6 +594,7 @@ describe( 'Runner', function()
 			} ),
 			inst.sendUpdateBegin().then( ( value ) =>
 			{
+				// tslint:disable-next-line:no-unused-expression
 				expect( resolvedMock, 'mock resolve status' ).to.be.true;
 				return value;
 			} ),
@@ -629,7 +630,7 @@ describe( 'Runner', function()
 			},
 		} ] );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 
 		// The mock is expected to resolve right BEFORE sending the last message, and after sending the previous ones.
@@ -640,18 +641,22 @@ describe( 'Runner', function()
 			mockPromise.then( ( value ) =>
 			{
 				resolvedMock = true;
+				// tslint:disable-next-line:no-unused-expression
 				expect( resolvedResult1, 'result 1 resolved status' ).to.be.true;
 				return value;
 			} ),
 			inst.sendUpdateBegin().then( ( value ) =>
 			{
 				resolvedResult1 = true;
+				// tslint:disable-next-line:no-unused-expression
 				expect( resolvedMock, 'mock resolve status' ).to.be.false;
 				return value;
 			} ),
 			inst.sendUpdateApply({}, []).then( ( value ) =>
 			{
+				// tslint:disable-next-line:no-unused-expression
 				expect( resolvedMock, 'mock resolve status' ).to.be.true;
+				// tslint:disable-next-line:no-unused-expression
 				expect( resolvedResult1, 'result 1 resolved status' ).to.be.true;
 				return value;
 			} ),
@@ -675,20 +680,23 @@ describe( 'Runner', function()
 			},
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 
 		let connected = false;
 		let resolvedMock = false;
 		const promises = Promise.all( [
 			mockPromise.then( ( value ) =>
 			{
+				// tslint:disable-next-line:no-unused-expression
 				expect( connected, 'connection status' ).to.be.true;
+				// tslint:disable-next-line:no-unused-expression
 				expect( inst.connected, 'instance connection status' ).to.be.true;
 				resolvedMock = true;
 				return value;
 			} ),
 			inst.sendUpdateBegin().then( ( value ) =>
 			{
+				// tslint:disable-next-line:no-unused-expression
 				expect( resolvedMock, 'mock resolve status' ).to.be.true;
 				return value;
 			} ),
@@ -707,7 +715,7 @@ describe( 'Runner', function()
 
 	it( 'should fail sending a message if not connected past the delay', mochaAsync( async () =>
 	{
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		const race = Promise.race( [
 			inst.sendUpdateBegin( 1000 ).then(
 				( value ) => { throw new Error( 'Sending message somehow worked' ) },
@@ -724,7 +732,7 @@ describe( 'Runner', function()
 
 	it( 'should not fail sending a message if not limited by a timeout', mochaAsync( async () =>
 	{
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		const race = Promise.race( [
 			inst.sendUpdateBegin().then(
 				() => { throw new Error( 'send should not have finished' ) },
@@ -757,7 +765,7 @@ describe( 'Runner', function()
 			setTimeout( () => reject( new Error( 'Did not receive any data in time' ) ), 2000 );
 		} );
 
-		const inst = new Runner.Instance( 1337 );
+		const inst = new Controller( 1337 );
 		await inst.connect();
 		await mockPromise;
 

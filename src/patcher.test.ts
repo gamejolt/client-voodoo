@@ -2,6 +2,7 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { Patcher } from './patcher';
 import * as path from 'path';
+import { Launcher } from './launcher';
 
 chai.use( chaiAsPromised );
 // const expect = chai.expect;
@@ -66,13 +67,13 @@ describe( 'Patcher', function()
 			},
 			file: {
 				id: 1,
-				filename: 'GJGas.exe.tar.xz',
+				filename: 'eggnoggplus-linux.tar.xz',
 				filesize: 1,
 			},
 			launch_options: [ {
 				id: 1,
-				os: 'linux',
-				executable_path: 'GJGas.exe',
+				os: 'linux_64',
+				executable_path: 'eggnoggplus-linux/eggnoggplus',
 			} ],
 			install_dir: path.resolve( process.cwd(), path.join( 'test-files', 'games', 'game-test-1', 'build-1' ) ),
 		};
@@ -82,6 +83,9 @@ describe( 'Patcher', function()
 			runLater: true,
 		} );
 
-		await sleep( 100000 );
+		await sleep( 5000 );
+
+		await Launcher.launch(localPackage);
+		await sleep( 10000 );
 	} ) );
 } );

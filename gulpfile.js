@@ -5,13 +5,12 @@ const sequence = require( 'run-sequence' );
 const shell = require( 'gulp-shell' );
 const plugins = require( 'gulp-load-plugins' );
 const del = require( 'del' );
-const config = require( 'config' );
 const path = require( 'path' );
 
 // Load gulp plugins
 plugins();
 
-gulp.task( 'clean', function()
+gulp.task( 'clean-js', function()
 {
 	return del( './build/**/*' );
 } );
@@ -25,7 +24,8 @@ gulp.task( 'js', shell.task( [
 	'tsc',
 ] ) );
 
-const gameRunnerRepo = path.join( process.env.GOPATH, 'src', ...config.get( 'joltron-repo' ).split( '/' ) );
+const joltronRepo = 'github.com/gamejolt/joltron';
+const gameRunnerRepo = path.join( process.env.GOPATH, 'src', ...joltronRepo.split( '/' ) );
 function getExecutable()
 {
 	switch ( process.platform ) {
@@ -55,9 +55,9 @@ else {
 	] ) );
 }
 
-gulp.task( 'build', function( cb )
+gulp.task( 'build-js', function( cb )
 {
-	return sequence( 'clean', 'js', cb );
+	return sequence( 'clean-js', 'js', cb );
 } );
 
 gulp.task( 'build-joltron', function( cb )
@@ -65,8 +65,13 @@ gulp.task( 'build-joltron', function( cb )
 	return sequence( 'clean-joltron', 'go-joltron', cb );
 } );
 
-gulp.task( 'watch', [ 'build', 'build-joltron' ], function()
+gulp.task( 'build', function( cb )
 {
-	gulp.watch( [ './src/**/*', 'tsconfig.json' ], [ 'build' ] );
+	return sequence( 'build-js', 'build-joltron', cb );
+} );
+
+gulp.task( 'watch', [ 'build' ], function()
+{
+	gulp.watch( [ './src/**/*', 'tsconfig.json' ], [ 'build-js' ] );
 	gulp.watch( [ gameRunnerRepo + '/**/*.go' ], [ 'build-joltron' ] );
 } );

@@ -1,4 +1,4 @@
-import * as Runner from './runner';
+import { Controller } from './controller';
 import * as util from './util';
 import * as data from './data';
 
@@ -14,12 +14,12 @@ export abstract class Uninstaller
 			'uninstall'
 		];
 
-		return new UninstallInstance( await Runner.Instance.launchNew( args ) );
+		return new UninstallInstance( await Controller.launchNew( args ) );
 	}
 
 	static async uninstallReattach( port: number, pid: number )
 	{
-		return new UninstallInstance( new Runner.Instance( port, pid ) );
+		return new UninstallInstance( new Controller( port, pid ) );
 	}
 }
 
@@ -35,7 +35,7 @@ class UninstallInstance
 	private _state: State;
 	private _isPaused: boolean;
 
-	constructor( readonly runner: Runner.Instance )
+	constructor( readonly controller: Controller )
 	{
 		this._state = State.Starting;
 		this._isPaused = false;
@@ -46,7 +46,7 @@ class UninstallInstance
 	{
 		await this.getState();
 
-		this.runner
+		this.controller
 			.on( 'patcherState', ( state: number ) =>
 			{
 				console.log( state );
@@ -54,13 +54,13 @@ class UninstallInstance
 			} );
 
 		if ( this._isPaused ) {
-			await this.runner.sendResume();
+			await this.controller.sendResume();
 		}
 	}
 
 	private async getState()
 	{
-		const state = await this.runner.sendGetState(false);
+		const state = await this.controller.sendGetState(false);
 		console.log( state );
 		this._isPaused = state.isPaused;
 
@@ -92,7 +92,7 @@ class UninstallInstance
 
 	isFinished()
 	{
-		return this._state == State.Finished;
+		return this._state === State.Finished;
 	}
 
 	isRunning()
@@ -102,7 +102,7 @@ class UninstallInstance
 
 	async resume()
 	{
-		const result = await this.runner.sendResume();
+		const result = await this.controller.sendResume();
 		if ( result.success ) {
 			this._isPaused = false;
 		}
@@ -111,7 +111,7 @@ class UninstallInstance
 
 	async pause()
 	{
-		const result = await this.runner.sendResume();
+		const result = await this.controller.sendResume();
 		if ( result.success ) {
 			this._isPaused = true;
 		}

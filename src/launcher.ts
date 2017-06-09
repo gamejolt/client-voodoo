@@ -1,4 +1,4 @@
-import * as Runner from './runner';
+import { Controller } from './controller';
 import * as util from './util';
 
 export abstract class Launcher
@@ -14,29 +14,29 @@ export abstract class Launcher
 			'--port', port.toString(),
 			'--dir', dir,
 			'--game', gameUid,
-			'launch',
+			'run',
 		];
 		args.push( ...executableArgs );
 
-		return new LaunchInstance( await Runner.Instance.launchNew( args ) );
+		return new LaunchInstance( await Controller.launchNew( args ) );
 	}
 
 	// TODO(ylivay): Should return a promise of the launch instance on
 	// successful attach, otherwise a promise rejection.
 	static async attach( port: number, pid: number )
 	{
-		return new LaunchInstance( new Runner.Instance( port, pid ) );
+		return new LaunchInstance( new Controller( port, pid ) );
 	}
 }
 
 class LaunchInstance
 {
-	constructor( readonly runner: Runner.Instance )
+	constructor( readonly controller: Controller )
 	{
 	}
 
 	kill()
 	{
-		return this.runner.sendKillGame();
+		return this.controller.sendKillGame();
 	}
 }

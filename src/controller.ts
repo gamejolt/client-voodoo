@@ -122,7 +122,7 @@ type Events =
 	'patcherState': ( state: data.PatcherState ) => void;
 };
 
-export class Instance extends TSEventEmitter<Events>
+export class Controller extends TSEventEmitter<Events>
 {
 	readonly port: number;
 	private process: cp.ChildProcess | number; // process or pid
@@ -152,7 +152,7 @@ export class Instance extends TSEventEmitter<Events>
 			{
 				console.log( 'Received json: ' + JSON.stringify( data ) );
 
-				if ( data.msgId && this.sentMessage && data.msgId == this.sentMessage.msgId ) {
+				if ( data.msgId && this.sentMessage && data.msgId === this.sentMessage.msgId ) {
 					const payload = data.payload;
 					if ( !payload ) {
 						return this.sentMessage.reject( new Error( 'Missing `payload` field in response' + ' in ' + JSON.stringify( data ) ) );
@@ -306,13 +306,13 @@ export class Instance extends TSEventEmitter<Events>
 		fs.chmodSync( runnerExecutable, '0755' );
 
 		const portArg = args.indexOf( '--port' );
-		if ( portArg == -1 ) {
+		if ( portArg === -1 ) {
 			throw new Error( 'Can\'t launch a new instance without specifying a port number' );
 		}
-		const port = parseInt( args[ portArg + 1 ] );
+		const port = parseInt( args[ portArg + 1 ], 10 );
 
 		console.log( 'Spawning ' + runnerExecutable + ' "' + args.join( '" "' ) + '"' );
-		const runnerInstance = new Instance( port, cp.spawn( runnerExecutable, args, options ) );
+		const runnerInstance = new Controller( port, cp.spawn( runnerExecutable, args, options ) );
 		try {
 			await runnerInstance.connect();
 			return runnerInstance;
@@ -434,7 +434,7 @@ export class Instance extends TSEventEmitter<Events>
 
 		this.consumingQueue = true;
 
-		while ( this.sendQueue.length != 0 ) {
+		while ( this.sendQueue.length !== 0 ) {
 			this.sentMessage = this.sendQueue.shift();
 			if ( this.sentMessage.resolved ) {
 				this.sentMessage = null;
@@ -549,7 +549,7 @@ export class Instance extends TSEventEmitter<Events>
 		if ( this.process ) {
 			return new Promise( ( resolve, reject ) =>
 			{
-				if ( typeof this.process == 'number' ) {
+				if ( typeof this.process === 'number' ) {
 					ps.kill( this.process.toString(), ( err ) =>
 					{
 						if ( err ) {

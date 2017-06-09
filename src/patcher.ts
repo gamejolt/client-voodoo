@@ -1,7 +1,8 @@
 // import * as config from 'config';
-import * as Runner from './runner';
+import { Controller } from './controller';
 import * as util from './util';
 import * as data from './data';
+import * as config from './config';
 
 export interface IPatchOptions
 {
@@ -11,8 +12,6 @@ export interface IPatchOptions
 
 export abstract class Patcher
 {
-	static readonly PLATFORM_URL = 'https://gamejolt.com/x/updater/check-for-updates';
-
 	static async patch( localPackage: GameJolt.IGamePackage, options?: IPatchOptions )
 	{
 		options = options || {};
@@ -24,7 +23,7 @@ export abstract class Patcher
 			'--port', port.toString(),
 			'--dir', dir,
 			'--game', gameUid,
-			'--platform-url', this.PLATFORM_URL,
+			'--platform-url', config.domain + '/x/updater/check-for-updates',
 			'--paused',
 			'--no-loader',
 		];
@@ -36,12 +35,12 @@ export abstract class Patcher
 		}
 		args.push( 'install' );
 
-		return new PatchInstance( await Runner.Instance.launchNew( args ) );
+		return new PatchInstance( await Controller.launchNew( args ) );
 	}
 
 	static async patchReattach( port: number, pid: number )
 	{
-		return new PatchInstance( new Runner.Instance( port, pid ) );
+		return new PatchInstance( new Controller( port, pid ) );
 	}
 }
 
@@ -59,7 +58,7 @@ class PatchInstance
 	private _state: State;
 	private _isPaused: boolean;
 
-	constructor( readonly runner: Runner.Instance )
+	constructor( readonly controller: Controller )
 	{
 		this._state = State.Starting;
 		this._isPaused = false;
@@ -70,7 +69,7 @@ class PatchInstance
 	{
 		await this.getState();
 
-		this.runner
+		this.controller
 			.on( 'patcherState', ( state: number ) =>
 			{
 				console.log( state );
@@ -78,13 +77,13 @@ class PatchInstance
 			} );
 
 		if ( this._isPaused ) {
-			await this.runner.sendResume();
+			await this.controller.sendResume();
 		}
 	}
 
 	private async getState()
 	{
-		const state = await this.runner.sendGetState(false);
+		const state = await this.controller.sendGetState(false);
 		console.log( state );
 		this._isPaused = state.isPaused;
 
@@ -124,17 +123,17 @@ class PatchInstance
 
 	isDownloading()
 	{
-		return this._state == State.Starting || this._state == State.Downloading;
+		return this._state === State.Starting || this._state === State.Downloading;
 	}
 
 	isPatching()
 	{
-		return this._state == State.Patching || this._state == State.Finishing;
+		return this._state === State.Patching || this._state === State.Finishing;
 	}
 
 	isFinished()
 	{
-		return this._state == State.Finished;
+		return this._state === State.Finished;
 	}
 
 	isRunning()
@@ -144,7 +143,7 @@ class PatchInstance
 
 	async resume()
 	{
-		const result = await this.runner.sendResume();
+		const result = await this.controller.sendResume();
 		if ( result.success ) {
 			this._isPaused = false;
 		}
@@ -153,7 +152,7 @@ class PatchInstance
 
 	async pause()
 	{
-		const result = await this.runner.sendResume();
+		const result = await this.controller.sendResume();
 		if ( result.success ) {
 			this._isPaused = true;
 		}
@@ -162,7 +161,7 @@ class PatchInstance
 
 	async cancel()
 	{
-		const result = await this.runner.sendResume();
+		const result = await this.controller.sendResume();
 		return result;
 	}
 }
