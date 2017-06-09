@@ -196,7 +196,7 @@ var PatchInstance = (function (_super) {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume()];
+                    case 0: return [4 /*yield*/, this.controller.sendPause()];
                     case 1:
                         result = _a.sent();
                         if (result.success) {
@@ -212,7 +212,7 @@ var PatchInstance = (function (_super) {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume()];
+                    case 0: return [4 /*yield*/, this.controller.sendCancel()];
                     case 1:
                         result = _a.sent();
                         return [2 /*return*/, result];

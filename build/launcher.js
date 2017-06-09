@@ -93,16 +93,21 @@ var Launcher = (function () {
     };
     Launcher.attach = function (runningPid) {
         return __awaiter(this, void 0, void 0, function () {
-            var pidParts, parsedPid, controller;
+            var index, pidVersion, pidStr, parsedPid, controller;
             return __generator(this, function (_a) {
                 if (typeof runningPid !== 'string') {
                     return [2 /*return*/, old_launcher_1.Launcher.attach(runningPid.wrapperId)];
                 }
-                pidParts = runningPid.split(':', 2);
-                if (pidParts.length !== 2 || pidParts[0] !== '1') {
+                index = runningPid.indexOf(':');
+                if (index === -1) {
                     throw new Error('Invalid or unsupported running pid: ' + runningPid);
                 }
-                parsedPid = JSON.parse(pidParts[1]);
+                pidVersion = parseInt(runningPid.substring(0, index), 10);
+                pidStr = runningPid.substring(index + 1);
+                if (pidVersion !== 1) {
+                    throw new Error('Invalid or unsupported running pid: ' + runningPid);
+                }
+                parsedPid = JSON.parse(pidStr);
                 controller = new controller_1.Controller(parsedPid.port, parsedPid.pid);
                 controller.connect();
                 return [2 /*return*/, new Promise(function (resolve, reject) {
