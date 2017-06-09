@@ -44,12 +44,18 @@ export abstract class Launcher
 			return OldLauncher.attach( runningPid.wrapperId );
 		}
 
-		const pidParts = runningPid.split( ':', 2 );
-		if ( pidParts.length !== 2 || pidParts[0] !== '1' ) {
+		const index = runningPid.indexOf( ':' );
+		if ( index === -1 ) {
 			throw new Error( 'Invalid or unsupported running pid: ' + runningPid );
 		}
 
-		const parsedPid = JSON.parse( pidParts[1] );
+		const pidVersion = parseInt( runningPid.substring( 0, index ), 10 );
+		const pidStr = runningPid.substring( index + 1 );
+		if ( pidVersion !== 1 ) {
+			throw new Error( 'Invalid or unsupported running pid: ' + runningPid );
+		}
+
+		const parsedPid = JSON.parse( pidStr );
 		const controller = new Controller( parsedPid.port, parsedPid.pid );
 		controller.connect();
 
