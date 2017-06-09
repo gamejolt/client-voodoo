@@ -102,22 +102,4 @@ class UninstallInstance extends ControllerWrapper<UninstallEvents & Events>
 	{
 		return !this._isPaused;
 	}
-
-	async resume()
-	{
-		const result = await this.controller.sendResume();
-		if ( result.success ) {
-			this._isPaused = false;
-		}
-		return result;
-	}
-
-	async pause()
-	{
-		const result = await this.controller.sendResume();
-		if ( result.success ) {
-			this._isPaused = true;
-		}
-		return result;
-	}
 }
