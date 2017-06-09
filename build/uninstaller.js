@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -38,6 +48,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var controller_1 = require("./controller");
 var util = require("./util");
 var data = require("./data");
+var controller_wrapper_1 = require("./controller-wrapper");
 var Uninstaller = (function () {
     function Uninstaller() {
     }
@@ -78,36 +89,24 @@ var State;
     State[State["Uninstalling"] = 1] = "Uninstalling";
     State[State["Finished"] = 2] = "Finished";
 })(State || (State = {}));
-var UninstallInstance = (function () {
+var UninstallInstance = (function (_super) {
+    __extends(UninstallInstance, _super);
     function UninstallInstance(controller) {
-        this.controller = controller;
-        this._state = State.Starting;
-        this._isPaused = false;
-        this.start();
-    }
-    UninstallInstance.prototype.start = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getState()];
-                    case 1:
-                        _a.sent();
-                        this.controller
-                            .on('patcherState', function (state) {
-                            console.log(state);
-                            _this._state = _this._getState(state);
-                        });
-                        if (!this._isPaused) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this.controller.sendResume()];
-                    case 2:
-                        _a.sent();
-                        _a.label = 3;
-                    case 3: return [2 /*return*/];
-                }
-            });
+        var _this = _super.call(this, controller) || this;
+        _this.on('patcherState', function (state) {
+            _this._state = _this._getState(state);
+            _this.controller.emit('state', _this._state);
         });
-    };
+        _this._state = State.Starting;
+        _this._isPaused = false;
+        _this.getState()
+            .then(function () {
+            if (_this._isPaused) {
+                _this.controller.sendResume();
+            }
+        });
+        return _this;
+    }
     UninstallInstance.prototype.getState = function () {
         return __awaiter(this, void 0, void 0, function () {
             var state;
@@ -183,5 +182,5 @@ var UninstallInstance = (function () {
         });
     };
     return UninstallInstance;
-}());
+}(controller_wrapper_1.ControllerWrapper));
 //# sourceMappingURL=uninstaller.js.map

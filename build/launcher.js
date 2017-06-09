@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -37,6 +47,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var controller_1 = require("./controller");
 var util = require("./util");
+var controller_wrapper_1 = require("./controller-wrapper");
 var Launcher = (function () {
     function Launcher() {
     }
@@ -83,13 +94,22 @@ var Launcher = (function () {
     return Launcher;
 }());
 exports.Launcher = Launcher;
-var LaunchInstance = (function () {
+var LaunchInstance = (function (_super) {
+    __extends(LaunchInstance, _super);
     function LaunchInstance(controller) {
-        this.controller = controller;
+        var _this = _super.call(this, controller) || this;
+        _this
+            .on('gameClosed', function () {
+            _this.controller.emit('gameOver');
+        })
+            .on('gameCrashed', function (err) {
+            _this.controller.emit('gameOver');
+        });
+        return _this;
     }
     LaunchInstance.prototype.kill = function () {
         return this.controller.sendKillGame();
     };
     return LaunchInstance;
-}());
+}(controller_wrapper_1.ControllerWrapper));
 //# sourceMappingURL=launcher.js.map

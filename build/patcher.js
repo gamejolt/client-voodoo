@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -40,6 +50,7 @@ var controller_1 = require("./controller");
 var util = require("./util");
 var data = require("./data");
 var config = require("./config");
+var controller_wrapper_1 = require("./controller-wrapper");
 var Patcher = (function () {
     function Patcher() {
     }
@@ -54,7 +65,6 @@ var Patcher = (function () {
                         return [4 /*yield*/, util.findFreePort()];
                     case 1:
                         port = _b.sent();
-                        console.log('port: ' + port);
                         gameUid = localPackage.id + '-' + localPackage.build.id;
                         args = [
                             '--port', port.toString(),
@@ -96,36 +106,24 @@ var State;
     State[State["Finishing"] = 3] = "Finishing";
     State[State["Finished"] = 4] = "Finished";
 })(State || (State = {}));
-var PatchInstance = (function () {
+var PatchInstance = (function (_super) {
+    __extends(PatchInstance, _super);
     function PatchInstance(controller) {
-        this.controller = controller;
-        this._state = State.Starting;
-        this._isPaused = false;
-        this.start();
-    }
-    PatchInstance.prototype.start = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getState()];
-                    case 1:
-                        _a.sent();
-                        this.controller
-                            .on('patcherState', function (state) {
-                            console.log(state);
-                            _this._state = _this._getState(state);
-                        });
-                        if (!this._isPaused) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this.controller.sendResume()];
-                    case 2:
-                        _a.sent();
-                        _a.label = 3;
-                    case 3: return [2 /*return*/];
-                }
-            });
+        var _this = _super.call(this, controller) || this;
+        _this.on('patcherState', function (state) {
+            _this._state = _this._getState(state);
+            _this.controller.emit('state', _this._state);
         });
-    };
+        _this._state = State.Starting;
+        _this._isPaused = false;
+        _this.getState()
+            .then(function () {
+            if (_this._isPaused) {
+                _this.controller.sendResume();
+            }
+        });
+        return _this;
+    }
     PatchInstance.prototype.getState = function () {
         return __awaiter(this, void 0, void 0, function () {
             var state;
@@ -134,7 +132,6 @@ var PatchInstance = (function () {
                     case 0: return [4 /*yield*/, this.controller.sendGetState(false)];
                     case 1:
                         state = _a.sent();
-                        console.log(state);
                         this._isPaused = state.isPaused;
                         this._state = this._getState(state.patcherState);
                         return [2 /*return*/];
@@ -226,5 +223,5 @@ var PatchInstance = (function () {
         });
     };
     return PatchInstance;
-}());
+}(controller_wrapper_1.ControllerWrapper));
 //# sourceMappingURL=patcher.js.map

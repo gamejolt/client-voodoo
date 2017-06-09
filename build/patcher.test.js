@@ -80,7 +80,7 @@ describe('Patcher', function () {
         return new Promise(function (resolve) { return setTimeout(resolve, ms); });
     }
     it('should do a patch', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
-        var localPackage;
+        var localPackage, launcher;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -130,7 +130,10 @@ describe('Patcher', function () {
                     _a.sent();
                     return [4 /*yield*/, launcher_1.Launcher.launch(localPackage)];
                 case 3:
-                    _a.sent();
+                    launcher = _a.sent();
+                    launcher.on('gameOver', function () {
+                        console.log('eyyy');
+                    });
                     return [4 /*yield*/, sleep(10000)];
                 case 4:
                     _a.sent();
