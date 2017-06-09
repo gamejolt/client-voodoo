@@ -82,7 +82,7 @@ var SentMessage = (function () {
         this.promise = new Promise(function (resolve, reject) {
             _this.resolver = resolve;
             _this.rejector = reject;
-            if (timeout && timeout != Infinity) {
+            if (timeout && timeout !== Infinity) {
                 setTimeout(function () {
                     _this._resolved = true;
                     reject(new Error('Message was not handled in time'));
@@ -107,9 +107,9 @@ var SentMessage = (function () {
     };
     return SentMessage;
 }());
-var Instance = (function (_super) {
-    __extends(Instance, _super);
-    function Instance(port, process) {
+var Controller = (function (_super) {
+    __extends(Controller, _super);
+    function Controller(port, process) {
         var _this = _super.call(this) || this;
         _this.port = port;
         if (process) {
@@ -123,7 +123,7 @@ var Instance = (function (_super) {
         incomingJson
             .on('data', function (data) {
             console.log('Received json: ' + JSON.stringify(data));
-            if (data.msgId && _this.sentMessage && data.msgId == _this.sentMessage.msgId) {
+            if (data.msgId && _this.sentMessage && data.msgId === _this.sentMessage.msgId) {
                 var payload_1 = data.payload;
                 if (!payload_1) {
                     return _this.sentMessage.reject(new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data)));
@@ -254,7 +254,7 @@ var Instance = (function (_super) {
         });
         return _this;
     }
-    Instance.launchNew = function (args, options) {
+    Controller.launchNew = function (args, options) {
         return __awaiter(this, void 0, void 0, function () {
             var runnerExecutable, portArg, port, runnerInstance, err_1;
             return __generator(this, function (_a) {
@@ -264,12 +264,12 @@ var Instance = (function (_super) {
                         // Ensure that the runner is executable.
                         fs.chmodSync(runnerExecutable, '0755');
                         portArg = args.indexOf('--port');
-                        if (portArg == -1) {
+                        if (portArg === -1) {
                             throw new Error('Can\'t launch a new instance without specifying a port number');
                         }
-                        port = parseInt(args[portArg + 1]);
+                        port = parseInt(args[portArg + 1], 10);
                         console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
-                        runnerInstance = new Instance(port, cp.spawn(runnerExecutable, args, options));
+                        runnerInstance = new Controller(port, cp.spawn(runnerExecutable, args, options));
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 5]);
@@ -288,14 +288,14 @@ var Instance = (function (_super) {
             });
         });
     };
-    Object.defineProperty(Instance.prototype, "connected", {
+    Object.defineProperty(Controller.prototype, "connected", {
         get: function () {
             return this.reconnector.connected;
         },
         enumerable: true,
         configurable: true
     });
-    Instance.prototype.connect = function () {
+    Controller.prototype.connect = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             if (_this.connectionLock) {
@@ -332,7 +332,7 @@ var Instance = (function (_super) {
             // }
         });
     };
-    Instance.prototype.disconnect = function () {
+    Controller.prototype.disconnect = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             if (_this.connectionLock) {
@@ -364,7 +364,7 @@ var Instance = (function (_super) {
                 .disconnect();
         });
     };
-    Instance.prototype.dispose = function () {
+    Controller.prototype.dispose = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -377,7 +377,7 @@ var Instance = (function (_super) {
             });
         });
     };
-    Instance.prototype.consumeSendQueue = function () {
+    Controller.prototype.consumeSendQueue = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             var err_2;
@@ -390,7 +390,7 @@ var Instance = (function (_super) {
                         this.consumingQueue = true;
                         _a.label = 1;
                     case 1:
-                        if (!(this.sendQueue.length != 0)) return [3 /*break*/, 7];
+                        if (!(this.sendQueue.length !== 0)) return [3 /*break*/, 7];
                         this.sentMessage = this.sendQueue.shift();
                         if (this.sentMessage.resolved) {
                             this.sentMessage = null;
@@ -431,7 +431,7 @@ var Instance = (function (_super) {
             });
         });
     };
-    Instance.prototype.send = function (type, data, timeout) {
+    Controller.prototype.send = function (type, data, timeout) {
         var msg = new SentMessage({
             type: type,
             msgId: (this.nextMessageId++).toString(),
@@ -443,25 +443,25 @@ var Instance = (function (_super) {
         }
         return msg.promise;
     };
-    Instance.prototype.sendControl = function (command, timeout) {
+    Controller.prototype.sendControl = function (command, timeout) {
         return this.send('control', { command: command }, timeout);
     };
-    Instance.prototype.sendKillGame = function (timeout) {
+    Controller.prototype.sendKillGame = function (timeout) {
         return this.sendControl('kill', timeout);
     };
-    Instance.prototype.sendPause = function (timeout) {
+    Controller.prototype.sendPause = function (timeout) {
         return this.sendControl('pause', timeout);
     };
-    Instance.prototype.sendResume = function (timeout) {
+    Controller.prototype.sendResume = function (timeout) {
         return this.sendControl('resume', timeout);
     };
-    Instance.prototype.sendCancel = function (timeout) {
+    Controller.prototype.sendCancel = function (timeout) {
         return this.sendControl('cancel', timeout);
     };
-    Instance.prototype.sendGetState = function (includePatchInfo, timeout) {
+    Controller.prototype.sendGetState = function (includePatchInfo, timeout) {
         return this.send('state', { includePatchInfo: includePatchInfo }, timeout);
     };
-    Instance.prototype.sendCheckForUpdates = function (gameUID, platformURL, authToken, metadata, timeout) {
+    Controller.prototype.sendCheckForUpdates = function (gameUID, platformURL, authToken, metadata, timeout) {
         var data = { gameUID: gameUID, platformURL: platformURL };
         if (authToken) {
             data.authToken = authToken;
@@ -472,20 +472,20 @@ var Instance = (function (_super) {
         return this.send('checkForUpdates', data, timeout);
     };
     // TODO: use types
-    Instance.prototype.sendUpdateAvailable = function (updateMetadata, timeout) {
+    Controller.prototype.sendUpdateAvailable = function (updateMetadata, timeout) {
         return this.send('updateAvailable', updateMetadata, timeout);
     };
-    Instance.prototype.sendUpdateBegin = function (timeout) {
+    Controller.prototype.sendUpdateBegin = function (timeout) {
         return this.send('updateBegin', {}, timeout);
     };
-    Instance.prototype.sendUpdateApply = function (env, args, timeout) {
+    Controller.prototype.sendUpdateApply = function (env, args, timeout) {
         return this.send('updateApply', { env: env, args: args }, timeout);
     };
-    Instance.prototype.kill = function () {
+    Controller.prototype.kill = function () {
         var _this = this;
         if (this.process) {
             return new Promise(function (resolve, reject) {
-                if (typeof _this.process == 'number') {
+                if (typeof _this.process === 'number') {
                     ps.kill(_this.process.toString(), function (err) {
                         if (err) {
                             reject(err);
@@ -503,7 +503,7 @@ var Instance = (function (_super) {
         }
         return Promise.resolve();
     };
-    return Instance;
+    return Controller;
 }(events_1.TSEventEmitter));
-exports.Instance = Instance;
-//# sourceMappingURL=runner.js.map
+exports.Controller = Controller;
+//# sourceMappingURL=controller.js.map

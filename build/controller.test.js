@@ -36,13 +36,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var net = require("net");
-var Runner = require("./runner");
+var controller_1 = require("./controller");
 var chai = require("chai");
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 var expect = chai.expect;
 var JSONStream = require('JSONStream');
-describe('Runner', function () {
+describe('Joltron Controller', function () {
     var _this = this;
     var mochaAsync = function (fn) {
         return function (done) { return __awaiter(_this, void 0, void 0, function () {
@@ -120,7 +120,7 @@ describe('Runner', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     resolve = null;
                     waitForConnect = new Promise(function (_resolve) {
                         resolve = _resolve;
@@ -161,7 +161,7 @@ describe('Runner', function () {
                     mockRunner(function (socket) {
                         connected = true;
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -183,7 +183,7 @@ describe('Runner', function () {
                     mockRunner(function (socket) {
                         connectCount++;
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -208,7 +208,7 @@ describe('Runner', function () {
                     mockRunner(function (socket) {
                         connectCount++;
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     conn1 = inst.connect();
                     conn2 = inst.connect();
                     return [4 /*yield*/, wrapAll([conn1, conn2])];
@@ -239,7 +239,7 @@ describe('Runner', function () {
                             connected = false;
                         });
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -278,7 +278,7 @@ describe('Runner', function () {
                             disconnectCount++;
                         });
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -320,7 +320,7 @@ describe('Runner', function () {
                             disconnectCount++;
                         });
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -358,7 +358,7 @@ describe('Runner', function () {
                     mockRunner(function (socket) {
                         wasConnected = true;
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     conn1 = inst.connect();
                     conn2 = inst.disconnect();
                     return [4 /*yield*/, wrapAll([conn1, conn2])];
@@ -384,7 +384,7 @@ describe('Runner', function () {
                     mockRunner(function (socket) {
                         connectionCount++;
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -424,7 +424,7 @@ describe('Runner', function () {
                             connected = true;
                         });
                     }, 2000);
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -451,7 +451,7 @@ describe('Runner', function () {
                             resolve();
                         }, 7000);
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, wrapAll([inst.connect()])];
                 case 1:
                     result = (_a.sent())[0];
@@ -474,7 +474,7 @@ describe('Runner', function () {
         return new Promise(function (resolve, reject) {
             var receive = Array.isArray(expectedData) ? expectedData : [expectedData];
             var expected = Array.isArray(expectedResult) ? expectedResult : [expectedResult];
-            if (receive.length != expected.length) {
+            if (receive.length !== expected.length) {
                 return reject(new Error('Receive and expected result should be the same for mock runner'));
             }
             var currentReceive = 0;
@@ -484,7 +484,7 @@ describe('Runner', function () {
                     .on('data', function (data) {
                     expect(data, 'received json data').to.deep.equal(receive[currentReceive]);
                     var result = expected[currentReceive];
-                    if (++currentReceive == receive.length) {
+                    if (++currentReceive === receive.length) {
                         resolve(expectedResult);
                     }
                     if (result) {
@@ -510,7 +510,7 @@ describe('Runner', function () {
                             command: 'kill',
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -537,7 +537,7 @@ describe('Runner', function () {
                             command: 'pause',
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -564,7 +564,7 @@ describe('Runner', function () {
                             command: 'resume',
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -591,7 +591,7 @@ describe('Runner', function () {
                             command: 'cancel',
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -618,7 +618,7 @@ describe('Runner', function () {
                             includePatchInfo: true,
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -645,7 +645,7 @@ describe('Runner', function () {
                             includePatchInfo: false,
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -673,7 +673,7 @@ describe('Runner', function () {
                             platformURL: '2',
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -703,7 +703,7 @@ describe('Runner', function () {
                             metadata: '4',
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -730,7 +730,7 @@ describe('Runner', function () {
                             test: true,
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -755,7 +755,7 @@ describe('Runner', function () {
                         msgId: '0',
                         payload: {},
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -783,7 +783,7 @@ describe('Runner', function () {
                             args: ['1', '2', '3'],
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -814,7 +814,7 @@ describe('Runner', function () {
                             success: true,
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -825,6 +825,7 @@ describe('Runner', function () {
                                 return value;
                             }),
                             inst.sendUpdateBegin().then(function (value) {
+                                // tslint:disable-next-line:no-unused-expression
                                 expect(resolvedMock, 'mock resolve status').to.be.true;
                                 return value;
                             }),
@@ -868,7 +869,7 @@ describe('Runner', function () {
                                 success: true,
                             },
                         }]);
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -877,16 +878,20 @@ describe('Runner', function () {
                     return [4 /*yield*/, Promise.all([
                             mockPromise.then(function (value) {
                                 resolvedMock = true;
+                                // tslint:disable-next-line:no-unused-expression
                                 expect(resolvedResult1, 'result 1 resolved status').to.be.true;
                                 return value;
                             }),
                             inst.sendUpdateBegin().then(function (value) {
                                 resolvedResult1 = true;
+                                // tslint:disable-next-line:no-unused-expression
                                 expect(resolvedMock, 'mock resolve status').to.be.false;
                                 return value;
                             }),
                             inst.sendUpdateApply({}, []).then(function (value) {
+                                // tslint:disable-next-line:no-unused-expression
                                 expect(resolvedMock, 'mock resolve status').to.be.true;
+                                // tslint:disable-next-line:no-unused-expression
                                 expect(resolvedResult1, 'result 1 resolved status').to.be.true;
                                 return value;
                             }),
@@ -918,17 +923,20 @@ describe('Runner', function () {
                             success: true,
                         },
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     connected = false;
                     resolvedMock = false;
                     promises = Promise.all([
                         mockPromise.then(function (value) {
+                            // tslint:disable-next-line:no-unused-expression
                             expect(connected, 'connection status').to.be.true;
+                            // tslint:disable-next-line:no-unused-expression
                             expect(inst.connected, 'instance connection status').to.be.true;
                             resolvedMock = true;
                             return value;
                         }),
                         inst.sendUpdateBegin().then(function (value) {
+                            // tslint:disable-next-line:no-unused-expression
                             expect(resolvedMock, 'mock resolve status').to.be.true;
                             return value;
                         }),
@@ -958,7 +966,7 @@ describe('Runner', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     race = Promise.race([
                         inst.sendUpdateBegin(1000).then(function (value) { throw new Error('Sending message somehow worked'); }, function (err) { return err; }),
                         sleep(2000).then(function () { throw new Error('Did not timeout in time'); }),
@@ -982,7 +990,7 @@ describe('Runner', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     race = Promise.race([
                         inst.sendUpdateBegin().then(function () { throw new Error('send should not have finished'); }, function () { throw new Error('send should not have finished'); }),
                         sleep(2000).then(function () { return 'success'; }),
@@ -1015,7 +1023,7 @@ describe('Runner', function () {
                         });
                         setTimeout(function () { return reject(new Error('Did not receive any data in time')); }, 2000);
                     });
-                    inst = new Runner.Instance(1337);
+                    inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -1036,4 +1044,4 @@ describe('Runner', function () {
         });
     }); }));
 });
-//# sourceMappingURL=runner.test.js.map
+//# sourceMappingURL=controller.test.js.map

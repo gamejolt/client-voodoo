@@ -39,6 +39,7 @@ var chai = require("chai");
 var chaiAsPromised = require("chai-as-promised");
 var patcher_1 = require("./patcher");
 var path = require("path");
+var launcher_1 = require("./launcher");
 chai.use(chaiAsPromised);
 // const expect = chai.expect;
 describe('Patcher', function () {
@@ -108,13 +109,13 @@ describe('Patcher', function () {
                         },
                         file: {
                             id: 1,
-                            filename: 'GJGas.exe.tar.xz',
+                            filename: 'eggnoggplus-linux.tar.xz',
                             filesize: 1,
                         },
                         launch_options: [{
                                 id: 1,
-                                os: 'linux',
-                                executable_path: 'GJGas.exe',
+                                os: 'linux_64',
+                                executable_path: 'eggnoggplus-linux/eggnoggplus',
                             }],
                         install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1')),
                     };
@@ -124,8 +125,14 @@ describe('Patcher', function () {
                         })];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, sleep(100000)];
+                    return [4 /*yield*/, sleep(5000)];
                 case 2:
+                    _a.sent();
+                    return [4 /*yield*/, launcher_1.Launcher.launch(localPackage)];
+                case 3:
+                    _a.sent();
+                    return [4 /*yield*/, sleep(10000)];
+                case 4:
                     _a.sent();
                     return [2 /*return*/];
             }

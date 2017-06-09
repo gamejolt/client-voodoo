@@ -6,4 +6,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./patcher"));
 __export(require("./launcher"));
 __export(require("./uninstaller"));
+__export(require("./config"));
 //# sourceMappingURL=index.js.map

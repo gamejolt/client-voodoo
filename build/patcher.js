@@ -36,9 +36,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // import * as config from 'config';
-var Runner = require("./runner");
+var controller_1 = require("./controller");
 var util = require("./util");
 var data = require("./data");
+var config = require("./config");
 var Patcher = (function () {
     function Patcher() {
     }
@@ -59,7 +60,7 @@ var Patcher = (function () {
                             '--port', port.toString(),
                             '--dir', dir,
                             '--game', gameUid,
-                            '--platform-url', this.PLATFORM_URL,
+                            '--platform-url', config.domain + '/x/updater/check-for-updates',
                             '--paused',
                             '--no-loader',
                         ];
@@ -71,7 +72,7 @@ var Patcher = (function () {
                         }
                         args.push('install');
                         _a = PatchInstance.bind;
-                        return [4 /*yield*/, Runner.Instance.launchNew(args)];
+                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
                     case 2: return [2 /*return*/, new (_a.apply(PatchInstance, [void 0, _b.sent()]))()];
                 }
             });
@@ -80,13 +81,12 @@ var Patcher = (function () {
     Patcher.patchReattach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, new PatchInstance(new Runner.Instance(port, pid))];
+                return [2 /*return*/, new PatchInstance(new controller_1.Controller(port, pid))];
             });
         });
     };
     return Patcher;
 }());
-Patcher.PLATFORM_URL = 'https://gamejolt.com/x/updater/check-for-updates';
 exports.Patcher = Patcher;
 var State;
 (function (State) {
@@ -97,8 +97,8 @@ var State;
     State[State["Finished"] = 4] = "Finished";
 })(State || (State = {}));
 var PatchInstance = (function () {
-    function PatchInstance(runner) {
-        this.runner = runner;
+    function PatchInstance(controller) {
+        this.controller = controller;
         this._state = State.Starting;
         this._isPaused = false;
         this.start();
@@ -111,13 +111,13 @@ var PatchInstance = (function () {
                     case 0: return [4 /*yield*/, this.getState()];
                     case 1:
                         _a.sent();
-                        this.runner
+                        this.controller
                             .on('patcherState', function (state) {
                             console.log(state);
                             _this._state = _this._getState(state);
                         });
                         if (!this._isPaused) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this.runner.sendResume()];
+                        return [4 /*yield*/, this.controller.sendResume()];
                     case 2:
                         _a.sent();
                         _a.label = 3;
@@ -131,7 +131,7 @@ var PatchInstance = (function () {
             var state;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.runner.sendGetState(false)];
+                    case 0: return [4 /*yield*/, this.controller.sendGetState(false)];
                     case 1:
                         state = _a.sent();
                         console.log(state);
@@ -169,13 +169,13 @@ var PatchInstance = (function () {
         configurable: true
     });
     PatchInstance.prototype.isDownloading = function () {
-        return this._state == State.Starting || this._state == State.Downloading;
+        return this._state === State.Starting || this._state === State.Downloading;
     };
     PatchInstance.prototype.isPatching = function () {
-        return this._state == State.Patching || this._state == State.Finishing;
+        return this._state === State.Patching || this._state === State.Finishing;
     };
     PatchInstance.prototype.isFinished = function () {
-        return this._state == State.Finished;
+        return this._state === State.Finished;
     };
     PatchInstance.prototype.isRunning = function () {
         return !this._isPaused;
@@ -185,7 +185,7 @@ var PatchInstance = (function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.runner.sendResume()];
+                    case 0: return [4 /*yield*/, this.controller.sendResume()];
                     case 1:
                         result = _a.sent();
                         if (result.success) {
@@ -201,7 +201,7 @@ var PatchInstance = (function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.runner.sendResume()];
+                    case 0: return [4 /*yield*/, this.controller.sendResume()];
                     case 1:
                         result = _a.sent();
                         if (result.success) {
@@ -217,7 +217,7 @@ var PatchInstance = (function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.runner.sendResume()];
+                    case 0: return [4 /*yield*/, this.controller.sendResume()];
                     case 1:
                         result = _a.sent();
                         return [2 /*return*/, result];

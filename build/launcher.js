@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var Runner = require("./runner");
+var controller_1 = require("./controller");
 var util = require("./util");
 var Launcher = (function () {
     function Launcher() {
@@ -61,11 +61,11 @@ var Launcher = (function () {
                             '--port', port.toString(),
                             '--dir', dir,
                             '--game', gameUid,
-                            'launch',
+                            'run',
                         ];
                         args.push.apply(args, executableArgs);
                         _a = LaunchInstance.bind;
-                        return [4 /*yield*/, Runner.Instance.launchNew(args)];
+                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
                     case 2: return [2 /*return*/, new (_a.apply(LaunchInstance, [void 0, _b.sent()]))()];
                 }
             });
@@ -76,7 +76,7 @@ var Launcher = (function () {
     Launcher.attach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, new LaunchInstance(new Runner.Instance(port, pid))];
+                return [2 /*return*/, new LaunchInstance(new controller_1.Controller(port, pid))];
             });
         });
     };
@@ -84,11 +84,11 @@ var Launcher = (function () {
 }());
 exports.Launcher = Launcher;
 var LaunchInstance = (function () {
-    function LaunchInstance(runner) {
-        this.runner = runner;
+    function LaunchInstance(controller) {
+        this.controller = controller;
     }
     LaunchInstance.prototype.kill = function () {
-        return this.runner.sendKillGame();
+        return this.controller.sendKillGame();
     };
     return LaunchInstance;
 }());
