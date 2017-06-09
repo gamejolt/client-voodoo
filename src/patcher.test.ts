@@ -85,7 +85,12 @@ describe( 'Patcher', function()
 
 		await sleep( 5000 );
 
-		await Launcher.launch(localPackage);
+		const launcher = await Launcher.launch(localPackage);
+		launcher.on( 'gameOver', () =>
+		{
+			console.log( 'eyyy' );
+		} );
+
 		await sleep( 10000 );
 	} ) );
 } );

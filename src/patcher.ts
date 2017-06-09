@@ -1,8 +1,9 @@
 // import * as config from 'config';
-import { Controller } from './controller';
+import { Controller, Events } from './controller';
 import * as util from './util';
 import * as data from './data';
 import * as config from './config';
+import { ControllerWrapper } from './controller-wrapper';
 
 export interface IPatchOptions
 {
@@ -17,7 +18,6 @@ export abstract class Patcher
 		options = options || {};
 		const dir = localPackage.install_dir;
 		const port = await util.findFreePort();
-		console.log( 'port: ' + port );
 		const gameUid = localPackage.id + '-' + localPackage.build.id;
 		const args: string[] = [
 			'--port', port.toString(),
@@ -53,38 +53,39 @@ enum State
 	Finished = 4,
 }
 
-class PatchInstance
+type PatchEvents = {
+	'state': ( state: State ) => void;
+}
+
+class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 {
 	private _state: State;
 	private _isPaused: boolean;
 
-	constructor( readonly controller: Controller )
+	constructor( controller: Controller )
 	{
+		super( controller );
+		this.on( 'patcherState', ( state: number ) =>
+		{
+			this._state = this._getState( state );
+			this.controller.emit( 'state', this._state );
+		} );
+
 		this._state = State.Starting;
 		this._isPaused = false;
-		this.start();
-	}
 
-	private async start()
-	{
-		await this.getState();
-
-		this.controller
-			.on( 'patcherState', ( state: number ) =>
+		this.getState()
+			.then( () =>
 			{
-				console.log( state );
-				this._state = this._getState( state );
+				if ( this._isPaused ) {
+					this.controller.sendResume();
+				}
 			} );
-
-		if ( this._isPaused ) {
-			await this.controller.sendResume();
-		}
 	}
 
 	private async getState()
 	{
 		const state = await this.controller.sendGetState(false);
-		console.log( state );
 		this._isPaused = state.isPaused;
 
 		this._state = this._getState( state.patcherState );

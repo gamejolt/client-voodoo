@@ -75,7 +75,7 @@ class SentMessage
 	}
 }
 
-type Events =
+export type Events =
 {
 	'error': ( err: Error ) => void;
 	// called when a launch operation begins

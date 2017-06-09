@@ -85,8 +85,6 @@ export interface Info {
 };
 
 export interface LaunchOptions {
-	os: 'windows' | 'mac' | 'linux';
-	arch: '32' | '64';
 	executable: string;
 };
 
@@ -120,6 +118,8 @@ export interface Manifest {
 	version: string;
 	gameInfo: Info;
 	launchOptions: LaunchOptions;
+	os: 'windows' | 'mac' | 'linux';
+	arch: '32' | '64';
 	isFirstInstall: boolean;
 
 	patchInfo?: PatchInfo;

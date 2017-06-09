@@ -1,5 +1,6 @@
-import { Controller } from './controller';
+import { Controller, Events } from './controller';
 import * as util from './util';
+import { ControllerWrapper } from './controller-wrapper';
 
 export abstract class Launcher
 {
@@ -29,10 +30,24 @@ export abstract class Launcher
 	}
 }
 
-class LaunchInstance
+type LaunchEvents = {
+	'gameOver': () => void;
+};
+
+class LaunchInstance extends ControllerWrapper<LaunchEvents & Events>
 {
-	constructor( readonly controller: Controller )
+	constructor( controller: Controller )
 	{
+		super( controller );
+		this
+			.on( 'gameClosed', () =>
+			{
+				this.controller.emit( 'gameOver' );
+			} )
+			.on( 'gameCrashed', ( err ) =>
+			{
+				this.controller.emit( 'gameOver' );
+			} );
 	}
 
 	kill()

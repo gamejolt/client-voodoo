@@ -1,6 +1,7 @@
-import { Controller } from './controller';
+import { Controller, Events } from './controller';
 import * as util from './util';
 import * as data from './data';
+import { ControllerWrapper } from './controller-wrapper';
 
 export abstract class Uninstaller
 {
@@ -30,32 +31,35 @@ enum State
 	Finished = 2,
 }
 
-class UninstallInstance
+type UninstallEvents = {
+	'state': ( state: State ) => void;
+}
+
+class UninstallInstance extends ControllerWrapper<UninstallEvents & Events>
 {
 	private _state: State;
 	private _isPaused: boolean;
 
-	constructor( readonly controller: Controller )
+	constructor( controller: Controller )
 	{
+		super( controller );
+
+		this.on( 'patcherState', ( state: number ) =>
+		{
+			this._state = this._getState( state );
+			this.controller.emit( 'state', this._state );
+		} );
+
 		this._state = State.Starting;
 		this._isPaused = false;
-		this.start();
-	}
 
-	private async start()
-	{
-		await this.getState();
-
-		this.controller
-			.on( 'patcherState', ( state: number ) =>
+		this.getState()
+			.then( () =>
 			{
-				console.log( state );
-				this._state = this._getState( state );
+				if ( this._isPaused ) {
+					this.controller.sendResume();
+				}
 			} );
-
-		if ( this._isPaused ) {
-			await this.controller.sendResume();
-		}
 	}
 
 	private async getState()
