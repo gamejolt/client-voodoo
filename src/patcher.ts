@@ -153,7 +153,7 @@ class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 
 	async pause()
 	{
-		const result = await this.controller.sendResume();
+		const result = await this.controller.sendPause();
 		if ( result.success ) {
 			this._isPaused = true;
 		}
@@ -162,7 +162,7 @@ class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 
 	async cancel()
 	{
-		const result = await this.controller.sendResume();
+		const result = await this.controller.sendCancel();
 		return result;
 	}
 }
