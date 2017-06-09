@@ -48,6 +48,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var controller_1 = require("./controller");
 var util = require("./util");
 var controller_wrapper_1 = require("./controller-wrapper");
+var old_launcher_1 = require("./old-launcher");
 var Launcher = (function () {
     function Launcher() {
     }
@@ -58,15 +59,14 @@ var Launcher = (function () {
             executableArgs[_i - 1] = arguments[_i];
         }
         return __awaiter(this, void 0, void 0, function () {
-            var dir, port, gameUid, args, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var dir, port, gameUid, args, controller;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         dir = localPackage.install_dir;
                         return [4 /*yield*/, util.findFreePort()];
                     case 1:
-                        port = _b.sent();
-                        console.log('port: ' + port);
+                        port = _a.sent();
                         gameUid = localPackage.id + '-' + localPackage.build.id;
                         args = [
                             '--port', port.toString(),
@@ -75,19 +75,45 @@ var Launcher = (function () {
                             'run',
                         ];
                         args.push.apply(args, executableArgs);
-                        _a = LaunchInstance.bind;
                         return [4 /*yield*/, controller_1.Controller.launchNew(args)];
-                    case 2: return [2 /*return*/, new (_a.apply(LaunchInstance, [void 0, _b.sent()]))()];
+                    case 2:
+                        controller = _a.sent();
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                                // tslint:disable-next-line:no-unused-expression
+                                new LaunchInstance(controller, function (err, inst) {
+                                    if (err) {
+                                        return reject(err);
+                                    }
+                                    resolve(inst);
+                                });
+                            })];
                 }
             });
         });
     };
-    // TODO(ylivay): Should return a promise of the launch instance on
-    // successful attach, otherwise a promise rejection.
-    Launcher.attach = function (port, pid) {
+    Launcher.attach = function (runningPid) {
         return __awaiter(this, void 0, void 0, function () {
+            var pidParts, parsedPid, controller;
             return __generator(this, function (_a) {
-                return [2 /*return*/, new LaunchInstance(new controller_1.Controller(port, pid))];
+                if (typeof runningPid !== 'string') {
+                    return [2 /*return*/, old_launcher_1.Launcher.attach(runningPid.wrapperId)];
+                }
+                pidParts = runningPid.split(':', 2);
+                if (pidParts.length !== 2 || pidParts[0] !== '1') {
+                    throw new Error('Invalid or unsupported running pid: ' + runningPid);
+                }
+                parsedPid = JSON.parse(pidParts[1]);
+                controller = new controller_1.Controller(parsedPid.port, parsedPid.pid);
+                controller.connect();
+                return [2 /*return*/, new Promise(function (resolve, reject) {
+                        // tslint:disable-next-line:no-unused-expression
+                        new LaunchInstance(controller, function (err, inst) {
+                            if (err) {
+                                return reject(err);
+                            }
+                            resolve(inst);
+                        });
+                    })];
             });
         });
     };
@@ -96,7 +122,7 @@ var Launcher = (function () {
 exports.Launcher = Launcher;
 var LaunchInstance = (function (_super) {
     __extends(LaunchInstance, _super);
-    function LaunchInstance(controller) {
+    function LaunchInstance(controller, onReady) {
         var _this = _super.call(this, controller) || this;
         _this
             .on('gameClosed', function () {
@@ -105,8 +131,21 @@ var LaunchInstance = (function (_super) {
             .on('gameCrashed', function (err) {
             _this.controller.emit('gameOver');
         });
+        _this.controller.sendGetState(false, 2000)
+            .then(function (state) {
+            _this._pid = state.pid;
+            onReady(null, _this);
+        })
+            .catch(function (err) { return onReady(err, _this); });
         return _this;
     }
+    Object.defineProperty(LaunchInstance.prototype, "pid", {
+        get: function () {
+            return '1:' + JSON.stringify({ port: this.controller.port, pid: this._pid });
+        },
+        enumerable: true,
+        configurable: true
+    });
     LaunchInstance.prototype.kill = function () {
         return this.controller.sendKillGame();
     };

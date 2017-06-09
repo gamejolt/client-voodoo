@@ -103,8 +103,7 @@ var State;
     State[State["Starting"] = 0] = "Starting";
     State[State["Downloading"] = 1] = "Downloading";
     State[State["Patching"] = 2] = "Patching";
-    State[State["Finishing"] = 3] = "Finishing";
-    State[State["Finished"] = 4] = "Finished";
+    State[State["Finished"] = 3] = "Finished";
 })(State || (State = {}));
 var PatchInstance = (function (_super) {
     __extends(PatchInstance, _super);
@@ -149,9 +148,8 @@ var PatchInstance = (function (_super) {
                 return State.Downloading;
             case data.PatcherState.PrepareExtract:
             case data.PatcherState.Extract:
-                return State.Patching;
             case data.PatcherState.Cleanup:
-                return State.Finishing;
+                return State.Patching;
             case data.PatcherState.Finished:
                 return State.Finished;
             default:
@@ -169,7 +167,7 @@ var PatchInstance = (function (_super) {
         return this._state === State.Starting || this._state === State.Downloading;
     };
     PatchInstance.prototype.isPatching = function () {
-        return this._state === State.Patching || this._state === State.Finishing;
+        return this._state === State.Patching;
     };
     PatchInstance.prototype.isFinished = function () {
         return this._state === State.Finished;
