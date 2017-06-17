@@ -25,7 +25,8 @@ export abstract class Patcher
 			'--dir', dir,
 			'--game', gameUid,
 			'--platform-url', config.domain + '/x/updater/check-for-updates',
-			'--paused',
+			'--wait-for-connection', '2',
+			'--symbiote',
 			'--no-loader',
 		];
 		if ( options.authToken ) {
@@ -46,7 +47,7 @@ export abstract class Patcher
 
 	private static manageInstanceInQueue( instance: PatchInstance )
 	{
-		// Queue.manage( instance );
+		Queue.manage( instance );
 		instance.on( 'resumed', () =>
 		{
 			Queue.manage( instance );
