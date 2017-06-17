@@ -34,32 +34,36 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var net = require("net");
-function findFreePort() {
-    return __awaiter(this, void 0, void 0, function () {
+var chai = require("chai");
+var chaiAsPromised = require("chai-as-promised");
+var util_1 = require("./util");
+var test_1 = require("./test");
+var autostarter_1 = require("./autostarter");
+chai.use(chaiAsPromised);
+// const expect = chai.expect;
+var clientPath = '/path/to/client';
+var runnerPath = '/path/to/client-runner';
+describe('Autostarter', function () {
+    var _this = this;
+    it('should work', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            return [2 /*return*/, new Promise(function (resolve, reject) {
-                    var port = 0;
-                    var server = net.createServer();
-                    server
-                        .on('listening', function () {
-                        port = server.address().port;
-                        server.close();
-                    })
-                        .on('close', function () {
-                        resolve(port);
-                    })
-                        .on('error', reject)
-                        .listen(0, '127.0.0.1');
-                })];
+            switch (_a.label) {
+                case 0:
+                    console.log('Setting');
+                    return [4 /*yield*/, autostarter_1.Autostarter.set(clientPath, ['--silent-start'], runnerPath)];
+                case 1:
+                    _a.sent();
+                    console.log('Waiting');
+                    return [4 /*yield*/, util_1.sleep(5000)];
+                case 2:
+                    _a.sent();
+                    console.log('Unsetting');
+                    return [4 /*yield*/, autostarter_1.Autostarter.unset()];
+                case 3:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
         });
-    });
-}
-exports.findFreePort = findFreePort;
-function sleep(ms) {
-    return new Promise(function (resolve) {
-        setTimeout(resolve, ms);
-    });
-}
-exports.sleep = sleep;
-//# sourceMappingURL=util.js.map
+    }); }));
+});
+//# sourceMappingURL=autostarter.test.js.map

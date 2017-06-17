@@ -4,12 +4,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
+    return { next: verb(0), "throw": verb(1), "return": verb(2) };
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -34,37 +34,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 var chai = require("chai");
 var chaiAsPromised = require("chai-as-promised");
 var patcher_1 = require("./patcher");
 var path = require("path");
 var launcher_1 = require("./launcher");
+var test_1 = require("./test");
 chai.use(chaiAsPromised);
 // const expect = chai.expect;
 describe('Patcher', function () {
-    var _this = this;
-    var mochaAsync = function (fn) {
-        return function (done) { return __awaiter(_this, void 0, void 0, function () {
-            var err_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, fn()];
-                    case 1:
-                        _a.sent();
-                        done();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        err_1 = _a.sent();
-                        done(err_1);
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); };
-    };
     // function wrapAll( promises: Promise<any>[] )
     // {
     // 	const result: Promise<{ success: boolean, value: any }>[] = [];
@@ -76,11 +54,9 @@ describe('Patcher', function () {
     // 	}
     // 	return Promise.all( result );
     // }
-    function sleep(ms) {
-        return new Promise(function (resolve) { return setTimeout(resolve, ms); });
-    }
-    it('should do a patch', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
-        var localPackage, launcher;
+    var _this = this;
+    it('should do a patch', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        var localPackage, patchInstance, launcher;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -120,21 +96,34 @@ describe('Patcher', function () {
                         install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1')),
                     };
                     console.log('test');
-                    return [4 /*yield*/, patcher_1.Patcher.patch(localPackage, {
-                            runLater: true,
-                        })];
+                    return [4 /*yield*/, patcher_1.Patcher.patch(localPackage, {})];
                 case 1:
-                    _a.sent();
-                    return [4 /*yield*/, sleep(5000)];
+                    patchInstance = _a.sent();
+                    return [4 /*yield*/, new Promise(function (resolve, reject) {
+                            patchInstance
+                                .on('done', function (err) {
+                                if (err) {
+                                    return reject(err);
+                                }
+                                resolve();
+                            })
+                                .on('fatal', function (err) {
+                                reject(err);
+                            });
+                        })];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, launcher_1.Launcher.launch(localPackage)];
+                    return [4 /*yield*/, launcher_1.Launcher.launch(localPackage, { username: 'test', user_token: '123' })];
                 case 3:
                     launcher = _a.sent();
-                    launcher.on('gameOver', function () {
-                        console.log('eyyy');
-                    });
-                    return [4 /*yield*/, sleep(10000)];
+                    return [4 /*yield*/, new Promise(function (resolve, reject) {
+                            launcher.on('gameOver', function (err) {
+                                if (err) {
+                                    return reject(err);
+                                }
+                                resolve();
+                            });
+                        })];
                 case 4:
                     _a.sent();
                     return [2 /*return*/];

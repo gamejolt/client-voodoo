@@ -1,25 +1,20 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
+    return { next: verb(0), "throw": verb(1), "return": verb(2) };
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -44,27 +39,27 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 // import * as config from 'config';
 var controller_1 = require("./controller");
 var util = require("./util");
 var data = require("./data");
 var config = require("./config");
 var controller_wrapper_1 = require("./controller-wrapper");
+var queue_1 = require("./queue");
 var Patcher = (function () {
     function Patcher() {
     }
     Patcher.patch = function (localPackage, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var dir, port, gameUid, args, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var dir, port, gameUid, args, _a, _b, _c, _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         options = options || {};
                         dir = localPackage.install_dir;
                         return [4 /*yield*/, util.findFreePort()];
                     case 1:
-                        port = _b.sent();
+                        port = _e.sent();
                         gameUid = localPackage.id + '-' + localPackage.build.id;
                         args = [
                             '--port', port.toString(),
@@ -81,9 +76,10 @@ var Patcher = (function () {
                             args.push('--launch');
                         }
                         args.push('install');
-                        _a = PatchInstance.bind;
+                        _a = this.manageInstanceInQueue;
+                        _c = PatchInstance.bind;
                         return [4 /*yield*/, controller_1.Controller.launchNew(args)];
-                    case 2: return [2 /*return*/, new (_a.apply(PatchInstance, [void 0, _b.sent()]))()];
+                    case 2: return [2 /*return*/, _a.apply(this, [new (_c.apply(PatchInstance, [void 0, _e.sent()]))()])];
                 }
             });
         });
@@ -91,9 +87,16 @@ var Patcher = (function () {
     Patcher.patchReattach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, new PatchInstance(new controller_1.Controller(port, pid))];
+                return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(new controller_1.Controller(port, pid)))];
             });
         });
+    };
+    Patcher.manageInstanceInQueue = function (instance) {
+        // Queue.manage( instance );
+        instance.on('resumed', function () {
+            queue_1.Queue.manage(instance);
+        });
+        return instance;
     };
     return Patcher;
 }());
@@ -104,14 +107,27 @@ var State;
     State[State["Downloading"] = 1] = "Downloading";
     State[State["Patching"] = 2] = "Patching";
     State[State["Finished"] = 3] = "Finished";
-})(State || (State = {}));
+})(State = exports.State || (exports.State = {}));
 var PatchInstance = (function (_super) {
     __extends(PatchInstance, _super);
     function PatchInstance(controller) {
         var _this = _super.call(this, controller) || this;
-        _this.on('patcherState', function (state) {
+        _this
+            .on('patcherState', function (state) {
+            console.log('patcher got state: ' + state);
             _this._state = _this._getState(state);
+            console.log('patcher emitting state: ' + _this._state);
             _this.controller.emit('state', _this._state);
+        })
+            .on('updateFailed', function (reason) {
+            // If the update was canceled the 'context canceled' will be emitted as the updateFailed reason.
+            if (reason === 'context canceled') {
+                return;
+            }
+            this.controller.emit('done', reason);
+        })
+            .on('updateFinished', function () {
+            this.emit('done');
         });
         _this._state = State.Starting;
         _this._isPaused = false;
@@ -175,12 +191,12 @@ var PatchInstance = (function (_super) {
     PatchInstance.prototype.isRunning = function () {
         return !this._isPaused;
     };
-    PatchInstance.prototype.resume = function () {
+    PatchInstance.prototype.resume = function (queue) {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume()];
+                    case 0: return [4 /*yield*/, this.controller.sendResume({ queue: !!queue })];
                     case 1:
                         result = _a.sent();
                         if (result.success) {
@@ -191,12 +207,12 @@ var PatchInstance = (function (_super) {
             });
         });
     };
-    PatchInstance.prototype.pause = function () {
+    PatchInstance.prototype.pause = function (queue) {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendPause()];
+                    case 0: return [4 /*yield*/, this.controller.sendPause({ queue: !!queue })];
                     case 1:
                         result = _a.sent();
                         if (result.success) {
@@ -222,4 +238,5 @@ var PatchInstance = (function (_super) {
     };
     return PatchInstance;
 }(controller_wrapper_1.ControllerWrapper));
+exports.PatchInstance = PatchInstance;
 //# sourceMappingURL=patcher.js.map

@@ -1,5 +1,4 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 ;
 ;
 ;
@@ -18,6 +17,7 @@ var PatcherState;
     PatcherState[PatcherState["Uninstall"] = 7] = "Uninstall";
     PatcherState[PatcherState["Finished"] = 8] = "Finished";
 })(PatcherState = exports.PatcherState || (exports.PatcherState = {}));
+;
 ;
 ;
 ;
