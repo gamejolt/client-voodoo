@@ -123,12 +123,12 @@ export abstract class Queue
 
 	static get faster(): IQueueProfile
 	{
-		return Object.assign( {}, this._fastProfile );
+		return { ...this._fastProfile };
 	}
 
 	static set faster( profile: IQueueProfile )
 	{
-		this._fastProfile = Object.assign( {}, profile );
+		this._fastProfile = { ...profile };
 		if ( this._isFast ) {
 			this.applyProfile( this._fastProfile );
 		}
@@ -143,12 +143,12 @@ export abstract class Queue
 
 	static get slower(): IQueueProfile
 	{
-		return Object.assign( {}, this._slowProfile );
+		return { ...this._slowProfile };
 	}
 
 	static set slower( profile: IQueueProfile )
 	{
-		this._slowProfile = Object.assign( {}, profile );
+		this._slowProfile = { ...profile };
 		if ( !this._isFast ) {
 			this.applyProfile( this._slowProfile );
 		}
