@@ -12,6 +12,7 @@ export abstract class Uninstaller
 		const args: string[] = [
 			'--port', port.toString(),
 			'--dir', dir,
+			'--paused',
 			'uninstall'
 		];
 

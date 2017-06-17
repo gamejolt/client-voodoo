@@ -78,6 +78,25 @@ export interface MsgResultResponse {
 	err?: string;
 };
 
+export interface MsgProgress {
+	type: 'download' | 'extract';
+	current: number;
+	total: number;
+	percent: number;
+	sample?: ProgressSample;
+};
+
+export interface ProgressSample {
+	sampleId: number;
+	bytesPerSec: number;
+	peak: number;
+	low: number;
+	average: number;
+	movingPeak: number;
+	movingLow: number;
+	movingAverage: number;
+}
+
 export interface Info {
 	dir: string;
 	uid: string;

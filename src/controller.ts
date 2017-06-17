@@ -29,21 +29,21 @@ export function getExecutable()
 	}
 }
 
-class SentMessage
+class SentMessage<T>
 {
 	readonly msg: string;
 	readonly msgId: string;
 	private _resolved: boolean;
 	private resolver: Function;
 	private rejector: Function;
-	readonly promise: Promise<any>;
+	readonly promise: Promise<T>;
 
 	constructor( msg: any, timeout?: number )
 	{
 		this.msg = JSON.stringify( msg );
 		this.msgId = msg.msgId;
 		this._resolved = false;
-		this.promise = new Promise<any>( ( resolve, reject ) =>
+		this.promise = new Promise<T>( ( resolve, reject ) =>
 		{
 			this.resolver = resolve;
 			this.rejector = reject;
@@ -77,6 +77,9 @@ class SentMessage
 
 export type Events =
 {
+	// called when an error happens which prevents future operations on the controller
+	'fatal': ( err: Error ) => void;
+	// called when an error happens which isn't severe enough to prevent future operations on the controller
 	'error': ( err: Error ) => void;
 	// called when a launch operation begins
 	'gameLaunchBegin': ( dir: string, ...args: string[] ) => void;
@@ -107,11 +110,11 @@ export type Events =
 	// called when an update fails for whatever reason
 	'updateFailed': ( reason: string ) => void;
 	// called when an update is paused
-	'updatePaused': () => void;
+	'paused': ( queue: boolean ) => void;
 	// called when an update is resumed
-	'updateResumed': () => void;
+	'resumed': ( unqueue: boolean ) => void;
 	// called when an update is canceled
-	'updateCanceled': () => void;
+	'canceled': () => void;
 	// called when an uninstall operation begins
 	'uninstallBegin': ( dir: string ) => void;
 	// called when an uninstall operation failed for whatever reason
@@ -120,6 +123,9 @@ export type Events =
 	'uninstallFinished': () => void;
 	// called when the patcher state changes
 	'patcherState': ( state: data.PatcherState ) => void;
+	// called periodically to report download/extract progress.
+	// At the moment it isn't called for binary diff progress.
+	'progress': ( progress: data.MsgProgress ) => void;
 };
 
 export class Controller extends TSEventEmitter<Events>
@@ -127,12 +133,17 @@ export class Controller extends TSEventEmitter<Events>
 	readonly port: number;
 	private process: cp.ChildProcess | number; // process or pid
 	private reconnector: any;
-	private connectionLock: boolean;
-	private conn: net.Socket;
-	private nextMessageId: number;
-	private sendQueue: SentMessage[];
-	private sentMessage: SentMessage | null;
-	private consumingQueue: boolean;
+	private connectionLock: boolean = null;
+	private conn: net.Socket | null = null;
+	private nextMessageId = 0;
+	private sendQueue: SentMessage<any>[] = [];
+	private sentMessage: SentMessage<any> | null = null;
+	private consumingQueue = false;
+
+	private expectingQueuePauseIds: string[] = [];
+	private expectingQueueResumeIds: string[]  = [];
+	private expectingQueuePause = 0;
+	private expectingQueueResume = 0;
 
 	constructor( port: number, process?: cp.ChildProcess | number )
 	{
@@ -141,10 +152,6 @@ export class Controller extends TSEventEmitter<Events>
 		if ( process ) {
 			this.process = process;
 		}
-		this.nextMessageId = 0;
-		this.sendQueue = [];
-		this.sentMessage = null;
-		this.consumingQueue = false;
 
 		const incomingJson: stream.Duplex = JSONStream.parse();
 		incomingJson
@@ -153,6 +160,19 @@ export class Controller extends TSEventEmitter<Events>
 				console.log( 'Received json: ' + JSON.stringify( data ) );
 
 				if ( data.msgId && this.sentMessage && data.msgId === this.sentMessage.msgId ) {
+
+					let idx = this.expectingQueuePauseIds.indexOf( this.sentMessage.msgId );
+					if ( idx !== -1 ) {
+						this.expectingQueuePauseIds.splice( idx );
+						this.expectingQueuePause++;
+					}
+
+					idx = this.expectingQueueResumeIds.indexOf( this.sentMessage.msgId );
+					if ( idx !== -1 ) {
+						this.expectingQueueResumeIds.splice( idx );
+						this.expectingQueueResume++;
+					}
+
 					const payload = data.payload;
 					if ( !payload ) {
 						return this.sentMessage.reject( new Error( 'Missing `payload` field in response' + ' in ' + JSON.stringify( data ) ) );
@@ -219,11 +239,19 @@ export class Controller extends TSEventEmitter<Events>
 								return this.emit( message, ...payload.args );
 							case 'updateFailed':
 								return this.emit( message, payload );
-							case 'updatePaused':
-								return this.emit( message );
-							case 'updateResumed':
-								return this.emit( message );
-							case 'updateCanceled':
+							case 'paused':
+								if ( this.expectingQueuePause > 0 ) {
+									this.expectingQueuePause--;
+									return this.emit( message, true );
+								}
+								return this.emit( message, false );
+							case 'resumed':
+								if ( this.expectingQueueResume > 0 ) {
+									this.expectingQueueResume--;
+									return this.emit( message, true );
+								}
+								return this.emit( message, false );
+							case 'canceled':
 								return this.emit( message );
 							case 'uninstallBegin':
 								return this.emit( message, payload );
@@ -237,14 +265,14 @@ export class Controller extends TSEventEmitter<Events>
 								return this.emit( 'error', new Error( 'Unexpected update `message` value: ' + message + ' in ' + JSON.stringify( data ) ) );
 						}
 					case 'progress':
-						break;
+						return this.emit( 'progress', payload );
 					default:
 						return this.emit( 'error', new Error( 'Unexpected `type` value: ' + type + ' in ' + JSON.stringify( data ) ) );
 				}
 			} )
 			.on( 'error', ( err ) =>
 			{
-				this.emit( 'error', err );
+				this.emit( 'fatal', err );
 				this.dispose();
 			} );
 
@@ -265,7 +293,6 @@ export class Controller extends TSEventEmitter<Events>
 
 			this.consumeSendQueue();
 		} );
-		this.connectionLock = false;
 
 		this.reconnector
 			.on( 'connect', ( conn ) =>
@@ -287,6 +314,17 @@ export class Controller extends TSEventEmitter<Events>
 				if ( err ) {
 					console.log( 'Received error: ' + err.message );
 				}
+
+				// We emit the 'fatal' event if the disconnect is unexpected.
+				// Disconnect is unexpected if reconnect is false (meaning we had a stable connection) and
+				// if we don't have a connection lock (meaning we are not currently connecting or disconnecting)
+				if ( this.reconnector.reconnect === false && this.connectionLock === false ) {
+					this.emit( 'fatal', err );
+				}
+			} )
+			.on( 'fail', ( err: Error ) =>
+			{
+				this.emit( 'fatal', err );
 			} )
 			.on( 'error', ( err: Error ) =>
 			{
@@ -295,11 +333,18 @@ export class Controller extends TSEventEmitter<Events>
 					this.sentMessage.reject( new Error( 'Connection got an error before receiving message response: ' + err.message ) );
 				}
 				console.log( 'Received error: ' + err.message );
+				this.emit( 'fatal', err );
 			} );
 	}
 
 	static async launchNew( args: string[], options?: cp.SpawnOptions )
 	{
+		options = options || {
+			detached: true,
+			env: process.env,
+			stdio: [ 'ignore', fs.openSync( 'joltron.log', 'a' ), fs.openSync( 'joltron.log', 'a' ) ],
+		};
+
 		let runnerExecutable = getExecutable();
 
 		// Ensure that the runner is executable.
@@ -312,7 +357,10 @@ export class Controller extends TSEventEmitter<Events>
 		const port = parseInt( args[ portArg + 1 ], 10 );
 
 		console.log( 'Spawning ' + runnerExecutable + ' "' + args.join( '" "' ) + '"' );
-		const runnerInstance = new Controller( port, cp.spawn( runnerExecutable, args, options ) );
+		const runnerProc = cp.spawn( runnerExecutable, args, options );
+		runnerProc.unref();
+
+		const runnerInstance = new Controller( port, runnerProc.pid );
 		try {
 			await runnerInstance.connect();
 			return runnerInstance;
@@ -469,21 +517,23 @@ export class Controller extends TSEventEmitter<Events>
 		this.consumingQueue = false;
 	}
 
-	private send<T>( type: string, data: Object, timeout?: number ): Promise<T>
+	private send<T>( type: string, data: Object, timeout?: number )
 	{
-		const msg = new SentMessage( {
+		const msgData = {
 			type: type,
 			msgId: ( this.nextMessageId++ ).toString(),
 			payload: data,
-		}, timeout );
+		};
+		console.log( 'Sending ' + JSON.stringify( msgData ) );
 
+		const msg = new SentMessage<T>( msgData, timeout );
 		this.sendQueue.push( msg );
 
 		if ( this.connected ) {
 			this.consumeSendQueue();
 		}
 
-		return msg.promise;
+		return msg;
 	}
 
 	private sendControl( command: string, timeout?: number )
@@ -493,27 +543,37 @@ export class Controller extends TSEventEmitter<Events>
 
 	sendKillGame( timeout?: number )
 	{
-		return this.sendControl( 'kill', timeout );
+		return this.sendControl( 'kill', timeout ).promise;
 	}
 
-	sendPause( timeout?: number )
+	async sendPause( options?: { queue?: boolean; timeout?: number; } )
 	{
-		return this.sendControl( 'pause', timeout );
+		options = options || {}
+		const msg = this.sendControl( 'pause', options.timeout );
+		if ( options.queue ) {
+			this.expectingQueuePauseIds.push( msg.msgId );
+		}
+		return msg.promise;
 	}
 
-	sendResume( timeout?: number )
+	async sendResume( options?: { queue?: boolean; timeout?: number; } )
 	{
-		return this.sendControl( 'resume', timeout );
+		options = options || {}
+		const msg = this.sendControl( 'resume', options.timeout );
+		if ( options.queue ) {
+			this.expectingQueueResumeIds.push( msg.msgId );
+		}
+		return msg.promise;
 	}
 
 	sendCancel( timeout?: number )
 	{
-		return this.sendControl( 'cancel', timeout );
+		return this.sendControl( 'cancel', timeout ).promise;
 	}
 
 	sendGetState( includePatchInfo: boolean, timeout?: number )
 	{
-		return this.send<data.MsgStateResponse>( 'state', { includePatchInfo }, timeout );
+		return this.send<data.MsgStateResponse>( 'state', { includePatchInfo }, timeout ).promise;
 	}
 
 	sendCheckForUpdates( gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number )
@@ -525,23 +585,22 @@ export class Controller extends TSEventEmitter<Events>
 		if ( metadata ) {
 			data.metadata = metadata;
 		}
-		return this.send( 'checkForUpdates', data, timeout );
+		return this.send( 'checkForUpdates', data, timeout ).promise;
 	}
 
-	// TODO: use types
-	sendUpdateAvailable( updateMetadata: any, timeout?: number )
+	sendUpdateAvailable( updateMetadata: data.UpdateMetadata, timeout?: number )
 	{
-		return this.send( 'updateAvailable', updateMetadata, timeout );
+		return this.send( 'updateAvailable', updateMetadata, timeout ).promise;
 	}
 
 	sendUpdateBegin( timeout?: number )
 	{
-		return this.send( 'updateBegin', {}, timeout );
+		return this.send( 'updateBegin', {}, timeout ).promise;
 	}
 
 	sendUpdateApply( env: Object, args: string[], timeout?: number )
 	{
-		return this.send( 'updateApply', { env, args }, timeout );
+		return this.send( 'updateApply', { env, args }, timeout ).promise;
 	}
 
 	kill()
@@ -550,7 +609,7 @@ export class Controller extends TSEventEmitter<Events>
 			return new Promise( ( resolve, reject ) =>
 			{
 				if ( typeof this.process === 'number' ) {
-					ps.kill( this.process.toString(), ( err ) =>
+					ps.kill( this.process, ( err ) =>
 					{
 						if ( err ) {
 							reject( err );

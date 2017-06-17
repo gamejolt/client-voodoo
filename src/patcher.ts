@@ -4,6 +4,7 @@ import * as util from './util';
 import * as data from './data';
 import * as config from './config';
 import { ControllerWrapper } from './controller-wrapper';
+import { Queue } from './queue';
 
 export interface IPatchOptions
 {
@@ -35,16 +36,26 @@ export abstract class Patcher
 		}
 		args.push( 'install' );
 
-		return new PatchInstance( await Controller.launchNew( args ) );
+		return this.manageInstanceInQueue( new PatchInstance( await Controller.launchNew( args ) ) );
 	}
 
 	static async patchReattach( port: number, pid: number )
 	{
-		return new PatchInstance( new Controller( port, pid ) );
+		return this.manageInstanceInQueue( new PatchInstance( new Controller( port, pid ) ) );
+	}
+
+	private static manageInstanceInQueue( instance: PatchInstance )
+	{
+		// Queue.manage( instance );
+		instance.on( 'resumed', () =>
+		{
+			Queue.manage( instance );
+		} );
+		return instance;
 	}
 }
 
-enum State
+export enum State
 {
 	Starting = 0,
 	Downloading = 1,
@@ -52,11 +63,12 @@ enum State
 	Finished = 3,
 }
 
-type PatchEvents = {
+export type PatchEvents = {
 	'state': ( state: State ) => void;
+	'done': ( errMessage?: string ) => void;
 }
 
-class PatchInstance extends ControllerWrapper<PatchEvents & Events>
+export class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 {
 	private _state: State;
 	private _isPaused: boolean;
@@ -64,11 +76,26 @@ class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 	constructor( controller: Controller )
 	{
 		super( controller );
-		this.on( 'patcherState', ( state: number ) =>
-		{
-			this._state = this._getState( state );
-			this.controller.emit( 'state', this._state );
-		} );
+		this
+			.on( 'patcherState', ( state: data.PatcherState ) =>
+			{
+				console.log( 'patcher got state: ' + state );
+				this._state = this._getState( state );
+				console.log( 'patcher emitting state: ' + this._state );
+				this.controller.emit( 'state', this._state );
+			} )
+			.on( 'updateFailed', function( reason )
+			{
+				// If the update was canceled the 'context canceled' will be emitted as the updateFailed reason.
+				if ( reason === 'context canceled' ) {
+					return;
+				}
+				this.controller.emit( 'done', reason );
+			} )
+			.on( 'updateFinished', function()
+			{
+				this.emit( 'done' );
+			} );
 
 		this._state = State.Starting;
 		this._isPaused = false;
@@ -139,18 +166,18 @@ class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 		return !this._isPaused;
 	}
 
-	async resume()
+	async resume( queue?: boolean )
 	{
-		const result = await this.controller.sendResume();
+		const result = await this.controller.sendResume( { queue: !!queue } );
 		if ( result.success ) {
 			this._isPaused = false;
 		}
 		return result;
 	}
 
-	async pause()
+	async pause( queue?: boolean )
 	{
-		const result = await this.controller.sendPause();
+		const result = await this.controller.sendPause( { queue: !!queue } );
 		if ( result.success ) {
 			this._isPaused = true;
 		}

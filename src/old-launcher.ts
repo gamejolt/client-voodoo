@@ -14,8 +14,8 @@ export class Launcher
 		await new Promise( ( resolve, reject ) =>
 		{
 			instance
-				.on( 'gameLaunched', () => resolve( true ) )
-				.on( 'gameOver', () => reject( new Error( 'Failed to connect to launch instance' ) ) );
+				.once( 'gameLaunched', () => resolve( true ) )
+				.once( 'gameOver', () => reject( new Error( 'Failed to connect to launch instance' ) ) );
 
 			setInterval( () => instance.abort(), 5000 );
 		} );
@@ -54,9 +54,13 @@ class LaunchInstance extends TSEventEmitter<LaunchEvents>
 		return WrapperFinder.find( this._wrapperId )
 			.then( ( port ) =>
 			{
+				const wasStable = this._stable;
 				this._stable = true;
 				this._wrapperPort = port;
-				this.emit( 'gameLaunched' );
+
+				if ( !wasStable ) {
+					this.emit( 'gameLaunched' );
+				}
 				return true;
 			} )
 			.catch( ( err ) =>

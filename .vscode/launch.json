@@ -14,7 +14,7 @@
         "--timeout", "999999",
         "--colors",
         "--reporter", "list",
-        "${workspaceRoot}/build/**/patcher.test.js"
+        "${workspaceRoot}/build/**/*.test.js"
         // "--grep", "first one"
       ],
       "sourceMaps": true,
@@ -28,6 +28,9 @@
       "type": "node",
       "request": "launch",
       "name": "Run Tests w/ Coverage",
+      "env": {
+        "NODE_ENV": "development"
+      },
       "program": "${workspaceRoot}/node_modules/.bin/nyc",
       "args": [
         "--reporter=html",

@@ -530,7 +530,7 @@ describe( 'Joltron Controller', function()
 
 		const inst = new Controller( 1337 );
 		await inst.connect();
-		inst.sendUpdateAvailable( { test: true } );
+		inst.sendUpdateAvailable( { test: true } as any );
 		await mockPromise;
 		await inst.dispose();
 	} ) );

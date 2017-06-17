@@ -3,26 +3,13 @@ import * as chaiAsPromised from 'chai-as-promised';
 import { Patcher } from './patcher';
 import * as path from 'path';
 import { Launcher } from './launcher';
+import { mochaAsync } from './test';
 
 chai.use( chaiAsPromised );
 // const expect = chai.expect;
 
 describe( 'Patcher', function()
 {
-	const mochaAsync = ( fn: () => Promise<any> ) =>
-	{
-		return async ( done ) =>
-		{
-			try {
-				await fn();
-				done();
-			}
-			catch ( err ) {
-				done( err );
-			}
-		};
-	};
-
 	// function wrapAll( promises: Promise<any>[] )
 	// {
 	// 	const result: Promise<{ success: boolean, value: any }>[] = [];
@@ -34,11 +21,6 @@ describe( 'Patcher', function()
 	// 	}
 	// 	return Promise.all( result );
 	// }
-
-	function sleep( ms: number )
-	{
-		return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
-	}
 
 	it( 'should do a patch', mochaAsync( async () =>
 	{
@@ -79,18 +61,36 @@ describe( 'Patcher', function()
 		};
 
 		console.log( 'test' );
-		await Patcher.patch( localPackage, {
-			runLater: true,
+		const patchInstance = await Patcher.patch( localPackage, {
+			// runLater: true,
 		} );
 
-		await sleep( 5000 );
-
-		const launcher = await Launcher.launch(localPackage);
-		launcher.on( 'gameOver', () =>
+		await new Promise( ( resolve, reject ) =>
 		{
-			console.log( 'eyyy' );
+			patchInstance
+				.on( 'done', ( err ) =>
+				{
+					if ( err ) {
+						return reject( err );
+					}
+					resolve();
+				} )
+				.on( 'fatal', ( err ) =>
+				{
+					reject( err );
+				} );
 		} );
 
-		await sleep( 10000 );
+		const launcher = await Launcher.launch( localPackage, { username: 'test', user_token: '123' } );
+		await new Promise( ( resolve, reject ) =>
+		{
+			launcher.on( 'gameOver', ( err ) =>
+			{
+				if ( err ) {
+					return reject( err );
+				}
+				resolve();
+			} );
+		} );
 	} ) );
 } );

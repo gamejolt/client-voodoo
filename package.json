@@ -12,7 +12,7 @@
     "url": "https://github.com/gamejolt/client-voodoo.git"
   },
   "scripts": {
-    "test": "mocha -u tdd --timeout 999999 --colors \"./build/src/**/*.test.js\"",
+    "test": "mocha -u tdd --timeout 999999 --colors \"./build/**/patcher.test.js\"",
     "cover": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --full-trace -u tdd --timeout 999999 --colors src/**/*.test.ts",
     "build": "tsc",
     "watch": "tsc -w"
@@ -37,11 +37,15 @@
   "devDependencies": {
     "@types/chai": "3.4.34",
     "@types/chai-as-promised": "0.0.30",
-    "@types/mkdirp": "^0.3.29",
+    "@types/mkdirp": "0.3.29",
     "@types/mocha": "2.2.41",
-    "@types/node": "^4.0.30",
+    "@types/mz": "0.0.31",
+    "@types/node": "4.2.11",
+    "@types/winreg": "1.2.30",
+    "@types/xdg-basedir": "2.0.0",
     "chai": "3.4.1",
     "chai-as-promised": "6.0.0",
+    "del": "2.2.2",
     "gulp": "3.9.1",
     "gulp-load-plugins": "1.5.0",
     "gulp-shell": "0.6.3",
@@ -50,13 +54,19 @@
     "run-sequence": "1.1.4",
     "source-map-support": "0.4.15",
     "ts-node": "3.0.4",
-    "typescript": "2.3.4"
+    "typescript": "2.1.4"
+  },
+  "optionalDependencies": {
+    "applescript": "1.0.0",
+    "ps-node": "0.1.6",
+    "winreg": "1.2.4",
+    "xdg-basedir": "2.0.0"
   },
   "dependencies": {
     "JSONStream": "1.3.1",
-    "del": "2.2.2",
-    "mkdirp": "^0.5.1",
-    "ps-node": "^0.1.6",
-    "reconnect-core": "1.3.0"
+    "mkdirp": "0.5.1",
+    "mz": "2.6.0",
+    "reconnect-core": "1.3.0",
+    "shell-escape": "0.2.0"
   }
 }

@@ -20,3 +20,11 @@ export async function findFreePort()
 			.listen( 0, '127.0.0.1' );
 	} );
 }
+
+export function sleep( ms: number )
+{
+	return new Promise( ( resolve ) =>
+	{
+		setTimeout( resolve, ms );
+	} );
+}
