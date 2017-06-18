@@ -66,7 +66,8 @@ var Patcher = (function () {
                             '--dir', dir,
                             '--game', gameUid,
                             '--platform-url', config.domain + '/x/updater/check-for-updates',
-                            '--paused',
+                            '--wait-for-connection', '2',
+                            '--symbiote',
                             '--no-loader',
                         ];
                         if (options.authToken) {
@@ -92,7 +93,7 @@ var Patcher = (function () {
         });
     };
     Patcher.manageInstanceInQueue = function (instance) {
-        // Queue.manage( instance );
+        queue_1.Queue.manage(instance);
         instance.on('resumed', function () {
             queue_1.Queue.manage(instance);
         });
@@ -124,10 +125,10 @@ var PatchInstance = (function (_super) {
             if (reason === 'context canceled') {
                 return;
             }
-            this.controller.emit('done', reason);
+            _this.controller.emit('done', reason);
         })
             .on('updateFinished', function () {
-            this.emit('done');
+            _this.controller.emit('done');
         });
         _this._state = State.Starting;
         _this._isPaused = false;

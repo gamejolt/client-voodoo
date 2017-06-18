@@ -85,7 +85,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 				console.log( 'patcher emitting state: ' + this._state );
 				this.controller.emit( 'state', this._state );
 			} )
-			.on( 'updateFailed', function( reason )
+			.on( 'updateFailed', ( reason ) =>
 			{
 				// If the update was canceled the 'context canceled' will be emitted as the updateFailed reason.
 				if ( reason === 'context canceled' ) {
@@ -93,9 +93,9 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events>
 				}
 				this.controller.emit( 'done', reason );
 			} )
-			.on( 'updateFinished', function()
+			.on( 'updateFinished', () =>
 			{
-				this.emit( 'done' );
+				this.controller.emit( 'done' );
 			} );
 
 		this._state = State.Starting;

@@ -59,7 +59,8 @@ var Uninstaller = (function () {
                         args = [
                             '--port', port.toString(),
                             '--dir', dir,
-                            '--paused',
+                            '--wait-for-connection', '2',
+                            '--symbiote',
                             'uninstall'
                         ];
                         _a = UninstallInstance.bind;
