@@ -51,6 +51,7 @@
     "gulp-shell": "0.6.3",
     "mocha": "2.3.4",
     "nyc": "10.3.2",
+    "prettier": "1.4.4",
     "run-sequence": "1.1.4",
     "source-map-support": "0.4.15",
     "ts-node": "3.0.4",
