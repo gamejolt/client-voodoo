@@ -1,4 +1,3 @@
-
 export interface UpdateMetadata {
 	gameUID: string;
 	url: string;
@@ -13,18 +12,18 @@ export interface UpdateMetadata {
 	diffMetadata?: DiffMetadata;
 
 	sideBySide?: boolean;
-};
+}
 
 export interface BuildMetadata {
 	files: { [path: string]: FileMetadata };
 	dirs: string[];
 	symlinks: { [path: string]: string };
-};
+}
 
 export interface FileMetadata {
 	size: number;
 	checksum: string;
-};
+}
 
 export interface DiffMetadata {
 	identical: { [path: string]: string[] };
@@ -33,7 +32,7 @@ export interface DiffMetadata {
 	removed: string[];
 	dirs: string[];
 	symlinks: { [path: string]: string };
-};
+}
 
 export interface SimilarFile {
 	chunkSize: number;
@@ -42,16 +41,15 @@ export interface SimilarFile {
 	patches: SimilarFilePart[];
 	tails: SimilarFilePart[];
 	diffSize: number;
-};
+}
 
 export interface SimilarFilePart {
 	file: string;
 	size: number;
 	checksum: string;
-};
+}
 
-export enum PatcherState
-{
+export enum PatcherState {
 	Start = 0,
 	Preparing = 1,
 	Download = 2,
@@ -71,12 +69,12 @@ export interface MsgStateResponse {
 	isPaused: boolean;
 	isRunning: boolean;
 	manifest: Manifest;
-};
+}
 
 export interface MsgResultResponse {
 	success: boolean;
 	err?: string;
-};
+}
 
 export interface MsgProgress {
 	type: 'download' | 'extract';
@@ -84,7 +82,7 @@ export interface MsgProgress {
 	total: number;
 	percent: number;
 	sample?: ProgressSample;
-};
+}
 
 export interface ProgressSample {
 	sampleId: number;
@@ -101,11 +99,11 @@ export interface Info {
 	dir: string;
 	uid: string;
 	archiveFiles?: string[];
-};
+}
 
 export interface LaunchOptions {
 	executable: string;
-};
+}
 
 export interface PatchInfo {
 	dir: string;
@@ -120,18 +118,18 @@ export interface PatchInfo {
 	oldBuildMetadata?: BuildMetadata;
 	newBuildMetadata?: BuildMetadata;
 	diffMetadata?: DiffMetadata;
-};
+}
 
 export interface RunningInfo {
 	port: number;
 	pid: number;
 	since: number;
-};
+}
 
 export interface PlayingInfo {
 	args?: string[];
 	since: number;
-};
+}
 
 export interface Manifest {
 	version: string;

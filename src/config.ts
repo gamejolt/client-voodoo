@@ -5,30 +5,25 @@ export let domain = process.env.NODE_ENV === 'development'
 	: 'https://gamejolt.com';
 
 let _pidDir = '';
-export function PID_DIR()
-{
+export function PID_DIR() {
 	return _pidDir;
-};
+}
 
-export function ensurePidDir()
-{
-	return new Promise( ( resolve, reject ) =>
-	{
-		mkdirp( _pidDir, ( err, made ) =>
-		{
-			if ( err ) {
-				return reject( err );
+export function ensurePidDir() {
+	return new Promise((resolve, reject) => {
+		mkdirp(_pidDir, (err, made) => {
+			if (err) {
+				return reject(err);
 			}
-			return resolve( made );
-		} );
-	} );
-};
+			return resolve(made);
+		});
+	});
+}
 
-export function setPidDir( pidDir: string )
-{
-	if ( !_pidDir ) {
+export function setPidDir(pidDir: string) {
+	if (!_pidDir) {
 		_pidDir = pidDir;
 		return true;
 	}
 	return false;
-};
+}

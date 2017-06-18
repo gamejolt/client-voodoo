@@ -19,7 +19,9 @@ var Logger = (function () {
             var str = this._logLines.join('\n') + '\n';
             fs.writeFileSync(this._filePath, str);
             var logLineLength = this._logLines.join('\n').length, logLineCount = this._logLines.length;
-            CONSOLE_LOG.apply(console, ["Flushing log file of length " + logLineLength + " with " + logLineCount + " rows"]);
+            CONSOLE_LOG.apply(console, [
+                "Flushing log file of length " + logLineLength + " with " + logLineCount + " rows",
+            ]);
             this._file = fs.createWriteStream(this._filePath, {
                 flags: 'a',
                 encoding: 'utf8',

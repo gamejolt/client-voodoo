@@ -62,11 +62,16 @@ var Patcher = (function () {
                         port = _e.sent();
                         gameUid = localPackage.id + '-' + localPackage.build.id;
                         args = [
-                            '--port', port.toString(),
-                            '--dir', dir,
-                            '--game', gameUid,
-                            '--platform-url', config.domain + '/x/updater/check-for-updates',
-                            '--wait-for-connection', '2',
+                            '--port',
+                            port.toString(),
+                            '--dir',
+                            dir,
+                            '--game',
+                            gameUid,
+                            '--platform-url',
+                            config.domain + '/x/updater/check-for-updates',
+                            '--wait-for-connection',
+                            '2',
                             '--symbiote',
                             '--no-loader',
                         ];
@@ -113,8 +118,7 @@ var PatchInstance = (function (_super) {
     __extends(PatchInstance, _super);
     function PatchInstance(controller) {
         var _this = _super.call(this, controller) || this;
-        _this
-            .on('patcherState', function (state) {
+        _this.on('patcherState', function (state) {
             console.log('patcher got state: ' + state);
             _this._state = _this._getState(state);
             console.log('patcher emitting state: ' + _this._state);
@@ -132,8 +136,7 @@ var PatchInstance = (function (_super) {
         });
         _this._state = State.Starting;
         _this._isPaused = false;
-        _this.getState()
-            .then(function () {
+        _this.getState().then(function () {
             if (_this._isPaused) {
                 _this.controller.sendResume();
             }

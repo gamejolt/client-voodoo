@@ -57,7 +57,9 @@ var Launcher = (function () {
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 instance
                                     .once('gameLaunched', function () { return resolve(true); })
-                                    .once('gameOver', function () { return reject(new Error('Failed to connect to launch instance')); });
+                                    .once('gameOver', function () {
+                                    return reject(new Error('Failed to connect to launch instance'));
+                                });
                                 setInterval(function () { return instance.abort(); }, 5000);
                             })];
                     case 1:

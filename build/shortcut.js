@@ -44,8 +44,7 @@ var Shortcut = (function () {
     Shortcut.create = function (program, icon) {
         var _this = this;
         if (process.platform === 'linux') {
-            return this.removeLinux()
-                .then(function () { return _this.createLinux(program, icon); });
+            return this.removeLinux().then(function () { return _this.createLinux(program, icon); });
         }
         else {
             throw new Error('Not supported');
@@ -78,10 +77,7 @@ var Shortcut = (function () {
     Shortcut.removeLinux = function () {
         var desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
         var oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
-        return Promise.all([
-            fs.unlink(desktopFile),
-            fs.unlink(oldDesktopFile),
-        ])
+        return Promise.all([fs.unlink(desktopFile), fs.unlink(oldDesktopFile)])
             .then(function () { return true; })
             .catch(function (err) { return false; });
     };

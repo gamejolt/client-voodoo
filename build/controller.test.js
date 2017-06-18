@@ -69,8 +69,12 @@ describe('Joltron Controller', function () {
         for (var _i = 0, promises_1 = promises; _i < promises_1.length; _i++) {
             var p = promises_1[_i];
             result.push(p
-                .then(function (value) { return { success: true, value: value }; })
-                .catch(function (err) { return { success: false, value: err }; }));
+                .then(function (value) {
+                return { success: true, value: value };
+            })
+                .catch(function (err) {
+                return { success: false, value: err };
+            }));
         }
         return Promise.all(result);
     }
@@ -88,7 +92,9 @@ describe('Joltron Controller', function () {
         });
         currentMock.mockId = mockId;
         currentMock
-            .on('error', function (err) { throw err; })
+            .on('error', function (err) {
+            throw err;
+        })
             .listen(1337, '127.0.0.1');
     }
     function disposeMockRunner() {
@@ -471,8 +477,12 @@ describe('Joltron Controller', function () {
     }); }));
     function getMockReaderPromise(expectedData, expectedResult) {
         return new Promise(function (resolve, reject) {
-            var receive = Array.isArray(expectedData) ? expectedData : [expectedData];
-            var expected = Array.isArray(expectedResult) ? expectedResult : [expectedResult];
+            var receive = Array.isArray(expectedData)
+                ? expectedData
+                : [expectedData];
+            var expected = Array.isArray(expectedResult)
+                ? expectedResult
+                : [expectedResult];
             if (receive.length !== expected.length) {
                 return reject(new Error('Receive and expected result should be the same for mock runner'));
             }
@@ -844,30 +854,36 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    mockPromise = getMockReaderPromise([{
+                    mockPromise = getMockReaderPromise([
+                        {
                             type: 'updateBegin',
                             msgId: '0',
                             payload: {},
-                        }, {
+                        },
+                        {
                             type: 'updateApply',
                             msgId: '1',
                             payload: {
                                 env: {},
                                 args: [],
                             },
-                        }], [{
+                        },
+                    ], [
+                        {
                             type: 'result',
                             msgId: '0',
                             payload: {
                                 success: true,
                             },
-                        }, {
+                        },
+                        {
                             type: 'result',
                             msgId: '1',
                             payload: {
                                 success: true,
                             },
-                        }]);
+                        },
+                    ]);
                     inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
@@ -967,8 +983,12 @@ describe('Joltron Controller', function () {
                 case 0:
                     inst = new controller_1.Controller(1337);
                     race = Promise.race([
-                        inst.sendUpdateBegin(1000).then(function (value) { throw new Error('Sending message somehow worked'); }, function (err) { return err; }),
-                        sleep(2000).then(function () { throw new Error('Did not timeout in time'); }),
+                        inst.sendUpdateBegin(1000).then(function (value) {
+                            throw new Error('Sending message somehow worked');
+                        }, function (err) { return err; }),
+                        sleep(2000).then(function () {
+                            throw new Error('Did not timeout in time');
+                        }),
                     ]);
                     return [4 /*yield*/, expect(race, 'send operation with timeout').to.eventually.be.an('Error')];
                 case 1:
@@ -991,7 +1011,11 @@ describe('Joltron Controller', function () {
                 case 0:
                     inst = new controller_1.Controller(1337);
                     race = Promise.race([
-                        inst.sendUpdateBegin().then(function () { throw new Error('send should not have finished'); }, function () { throw new Error('send should not have finished'); }),
+                        inst.sendUpdateBegin().then(function () {
+                            throw new Error('send should not have finished');
+                        }, function () {
+                            throw new Error('send should not have finished');
+                        }),
                         sleep(2000).then(function () { return 'success'; }),
                     ]);
                     return [4 /*yield*/, expect(race, 'send operation without timeout').to.eventually.equal('success')];

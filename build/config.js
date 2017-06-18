@@ -8,7 +8,6 @@ function PID_DIR() {
     return _pidDir;
 }
 exports.PID_DIR = PID_DIR;
-;
 function ensurePidDir() {
     return new Promise(function (resolve, reject) {
         mkdirp(_pidDir, function (err, made) {
@@ -20,7 +19,6 @@ function ensurePidDir() {
     });
 }
 exports.ensurePidDir = ensurePidDir;
-;
 function setPidDir(pidDir) {
     if (!_pidDir) {
         _pidDir = pidDir;
@@ -29,5 +27,4 @@ function setPidDir(pidDir) {
     return false;
 }
 exports.setPidDir = setPidDir;
-;
 //# sourceMappingURL=config.js.map

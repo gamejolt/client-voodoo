@@ -88,11 +88,13 @@ describe('Patcher', function () {
                             filename: 'eggnoggplus-linux.tar.xz',
                             filesize: 1,
                         },
-                        launch_options: [{
+                        launch_options: [
+                            {
                                 id: 1,
                                 os: 'linux_64',
                                 executable_path: 'eggnoggplus-linux/eggnoggplus',
-                            }],
+                            },
+                        ],
                         install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1')),
                     };
                     console.log('test');
@@ -113,7 +115,10 @@ describe('Patcher', function () {
                         })];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, launcher_1.Launcher.launch(localPackage, { username: 'test', user_token: '123' })];
+                    return [4 /*yield*/, launcher_1.Launcher.launch(localPackage, {
+                            username: 'test',
+                            user_token: '123',
+                        })];
                 case 3:
                     launcher = _a.sent();
                     return [4 /*yield*/, new Promise(function (resolve, reject) {

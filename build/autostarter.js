@@ -65,7 +65,9 @@ var WindowsAutostarter = (function () {
     };
     WindowsAutostarter.prototype.set = function (program, args) {
         return new Promise(function (resolve, reject) {
-            var autoStartCommand = "\"" + program + "\"" + ((args && args.length) ? " " + args.join(' ') : '');
+            var autoStartCommand = "\"" + program + "\"" + (args && args.length
+                ? " " + args.join(' ')
+                : '');
             WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, autoStartCommand, function (err) {
                 if (err) {
                     return reject(err);
@@ -120,7 +122,9 @@ var LinuxAutostarter = (function () {
                     case 1:
                         _a.sent();
                         desktopContents = "[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=" + shellEscape([runner]) + "\nTerminal=false\nCategories=Game;\nKeywords=Play;GJ;GameJolt;\nHidden=false\nName[en_US]=Game Jolt Client\nTX-GNOME-Autostart-enabled=true";
-                        return [4 /*yield*/, fs.writeFile(LinuxAutostarter.desktopFilePath, desktopContents, { mode: '0755' })];
+                        return [4 /*yield*/, fs.writeFile(LinuxAutostarter.desktopFilePath, desktopContents, {
+                                mode: '0755',
+                            })];
                     case 2:
                         _a.sent();
                         return [2 /*return*/];
@@ -173,7 +177,7 @@ var MacAutostarter = (function () {
     };
     MacAutostarter.prototype.isset = function () {
         return applescript('tell application "System Events" to get the name of every login item').then(function (loginItems) {
-            return (loginItems && loginItems.indexOf(autostartId) !== -1);
+            return loginItems && loginItems.indexOf(autostartId) !== -1;
         });
     };
     return MacAutostarter;
@@ -198,13 +202,13 @@ var Autostarter = (function () {
     });
     Autostarter.set = function (path, args, runner) {
         var _this = this;
-        return this.unset(path)
-            .then(function () { return _this.autostarter.set(path, args, runner); });
+        return this.unset(path).then(function () {
+            return _this.autostarter.set(path, args, runner);
+        });
     };
     Autostarter.unset = function (runner) {
         var _this = this;
-        return this.isset()
-            .then(function (isset) {
+        return this.isset().then(function (isset) {
             if (isset) {
                 return _this.autostarter.unset(runner);
             }

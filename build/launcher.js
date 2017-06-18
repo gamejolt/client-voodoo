@@ -73,10 +73,14 @@ var Launcher = (function () {
                         port = _a.sent();
                         gameUid = localPackage.id + '-' + localPackage.build.id;
                         args = [
-                            '--port', port.toString(),
-                            '--dir', dir,
-                            '--game', gameUid,
-                            '--wait-for-connection', '2',
+                            '--port',
+                            port.toString(),
+                            '--dir',
+                            dir,
+                            '--game',
+                            gameUid,
+                            '--wait-for-connection',
+                            '2',
                             'run',
                         ];
                         args.push.apply(args, executableArgs);
@@ -175,8 +179,7 @@ var LaunchInstance = (function (_super) {
     __extends(LaunchInstance, _super);
     function LaunchInstance(controller, onReady) {
         var _this = _super.call(this, controller) || this;
-        _this
-            .on('gameClosed', function () {
+        _this.on('gameClosed', function () {
             _this.controller.emit('gameOver');
         })
             .on('gameCrashed', function (err) {
@@ -188,7 +191,8 @@ var LaunchInstance = (function (_super) {
             .on('gameLaunchFailed', function (err) {
             _this.controller.emit('gameOver', err);
         });
-        _this.controller.sendGetState(false, 2000)
+        _this.controller
+            .sendGetState(false, 2000)
             .then(function (state) {
             _this._pid = state.pid;
             onReady(null, _this);
@@ -198,7 +202,7 @@ var LaunchInstance = (function (_super) {
     }
     Object.defineProperty(LaunchInstance.prototype, "pid", {
         get: function () {
-            return '1:' + JSON.stringify({ port: this.controller.port, pid: this._pid });
+            return ('1:' + JSON.stringify({ port: this.controller.port, pid: this._pid }));
         },
         enumerable: true,
         configurable: true

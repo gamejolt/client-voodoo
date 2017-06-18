@@ -78,7 +78,9 @@ var Queue = (function () {
     // }
     Queue.fetch = function (running, isDownloading) {
         // tslint:disable-next-line:max-line-length
-        this.log("Fetching " + (running ? 'running' : 'pending') + " " + (isDownloading ? 'downloading' : (isDownloading === false ? 'patching' : 'all')) + " tasks");
+        this.log("Fetching " + (running ? 'running' : 'pending') + " " + (isDownloading
+            ? 'downloading'
+            : isDownloading === false ? 'patching' : 'all') + " tasks");
         var patches = [];
         this._patches.forEach(function (patchState, patch) {
             if (running !== patchState.queued &&
@@ -87,7 +89,9 @@ var Queue = (function () {
                 patches.push({
                     patch: patch,
                     state: patchState,
-                    sort: (patchState.timeLeft || patchState.timeLeft === 0) ? patchState.timeLeft : Infinity,
+                    sort: patchState.timeLeft || patchState.timeLeft === 0
+                        ? patchState.timeLeft
+                        : Infinity,
                 });
             }
         });
@@ -145,7 +149,8 @@ var Queue = (function () {
         if (!state.managed) {
             return;
         }
-        state.timeLeft = (progress.total - progress.current) / progress.sample.movingAverage;
+        state.timeLeft =
+            (progress.total - progress.current) / progress.sample.movingAverage;
     };
     Queue.onState = function (patch, state, patchState) {
         return __awaiter(this, void 0, void 0, function () {
@@ -161,7 +166,8 @@ var Queue = (function () {
                         }
                         this.log('Received patch unpacking', patch);
                         concurrentPatches = this.fetch(true, false);
-                        if (!(this._maxExtractions >= 0 && concurrentPatches.length > this._maxExtractions))
+                        if (!(this._maxExtractions >= 0 &&
+                            concurrentPatches.length > this._maxExtractions))
                             return [3 /*break*/, 2];
                         return [4 /*yield*/, this.pausePatch(patch, state)];
                     case 1:
@@ -222,11 +228,18 @@ var Queue = (function () {
     };
     Queue.canResume = function (patch) {
         var isDownloading = patch.isDownloading();
-        var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
+        var operationLimit = isDownloading
+            ? this._maxDownloads
+            : this._maxExtractions;
         var concurrentPatches = this.fetch(true, isDownloading);
-        this.log("Checking if patch can resume a " + (isDownloading ? 'download' : 'patch') + " operation");
+        this.log("Checking if patch can resume a " + (isDownloading
+            ? 'download'
+            : 'patch') + " operation");
         // tslint:disable-next-line:max-line-length
-        this.log("Queue manager is currently handling: " + concurrentPatches.length + " concurrent operations and can handle: " + (operationLimit === -1 ? 'Infinite' : operationLimit) + " operations");
+        this.log("Queue manager is currently handling: " + concurrentPatches.length + " concurrent operations and can handle: " + (operationLimit ===
+            -1
+            ? 'Infinite'
+            : operationLimit) + " operations");
         return operationLimit < 0 || operationLimit > concurrentPatches.length;
     };
     Queue.manage = function (patch) {
@@ -332,11 +345,18 @@ var Queue = (function () {
         }
         var running = this.fetch(true, downloads);
         var pending = this.fetch(false, downloads);
-        this.log('Ticking ' + (downloads ? 'downloads' : 'extractions') + '. Running: ' + running.length + ', Pending: ' + pending.length);
+        this.log('Ticking ' +
+            (downloads ? 'downloads' : 'extractions') +
+            '. Running: ' +
+            running.length +
+            ', Pending: ' +
+            pending.length);
         var limit = downloads ? this._maxDownloads : this._maxExtractions;
         var patchesToResume = limit - running.length;
         if (limit < 0 || patchesToResume > 0) {
-            patchesToResume = limit < 0 ? pending.length : Math.min(patchesToResume, pending.length);
+            patchesToResume = limit < 0
+                ? pending.length
+                : Math.min(patchesToResume, pending.length);
             this.log('Resuming ' + patchesToResume + ' patches');
             for (var i = 0; i < patchesToResume; i += 1) {
                 this.resumePatch(pending[i].patch, pending[i].state);
@@ -372,7 +392,7 @@ var Queue = (function () {
                     case 0:
                         this.log('Setting max downloads to ' + newMaxDownloads);
                         if (this._settingDownloads) {
-                            this.log('Can\'t set max downloads now because theres a setting in progress');
+                            this.log("Can't set max downloads now because theres a setting in progress");
                             return [2 /*return*/, false];
                         }
                         this._settingDownloads = true;
@@ -412,7 +432,7 @@ var Queue = (function () {
                     case 0:
                         this.log('Setting max extraccions to ' + newMaxExtractions);
                         if (this._settingExtractions) {
-                            this.log('Can\'t set max extractions now because theres a setting in progress');
+                            this.log("Can't set max extractions now because theres a setting in progress");
                             return [2 /*return*/, false];
                         }
                         this._settingExtractions = true;

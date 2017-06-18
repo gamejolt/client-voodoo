@@ -57,11 +57,14 @@ var Uninstaller = (function () {
                     case 1:
                         port = _c.sent();
                         args = [
-                            '--port', port.toString(),
-                            '--dir', dir,
-                            '--wait-for-connection', '2',
+                            '--port',
+                            port.toString(),
+                            '--dir',
+                            dir,
+                            '--wait-for-connection',
+                            '2',
                             '--symbiote',
-                            'uninstall'
+                            'uninstall',
                         ];
                         _a = UninstallInstance.bind;
                         return [4 /*yield*/, controller_1.Controller.launchNew(args)];
@@ -96,8 +99,7 @@ var UninstallInstance = (function (_super) {
         });
         _this._state = State.Starting;
         _this._isPaused = false;
-        _this.getState()
-            .then(function () {
+        _this.getState().then(function () {
             if (_this._isPaused) {
                 _this.controller.sendResume();
             }

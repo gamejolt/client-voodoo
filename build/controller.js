@@ -123,7 +123,9 @@ var Controller = (function (_super) {
         incomingJson
             .on('data', function (data) {
             console.log('Received json: ' + JSON.stringify(data));
-            if (data.msgId && _this.sentMessage && data.msgId === _this.sentMessage.msgId) {
+            if (data.msgId &&
+                _this.sentMessage &&
+                data.msgId === _this.sentMessage.msgId) {
                 var idx = _this.expectingQueuePauseIds.indexOf(_this.sentMessage.msgId);
                 if (idx !== -1) {
                     _this.expectingQueuePauseIds.splice(idx);
@@ -136,11 +138,15 @@ var Controller = (function (_super) {
                 }
                 var payload_1 = data.payload;
                 if (!payload_1) {
-                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data)));
+                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' +
+                        ' in ' +
+                        JSON.stringify(data)));
                 }
                 var type_1 = data.type;
                 if (!type_1) {
-                    return _this.sentMessage.reject(new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data)));
+                    return _this.sentMessage.reject(new Error('Missing `type` field in response' +
+                        ' in ' +
+                        JSON.stringify(data)));
                 }
                 switch (type_1) {
                     case 'state':
@@ -151,7 +157,10 @@ var Controller = (function (_super) {
                         }
                         return _this.sentMessage.resolve(payload_1.err);
                     default:
-                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' + type_1 + ' in ' + JSON.stringify(data)));
+                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
+                            type_1 +
+                            ' in ' +
+                            JSON.stringify(data)));
                 }
             }
             var type = data.type;
@@ -160,7 +169,9 @@ var Controller = (function (_super) {
             }
             var payload = data.payload;
             if (!payload) {
-                return _this.emit('error', new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data)));
+                return _this.emit('error', new Error('Missing `payload` field in response' +
+                    ' in ' +
+                    JSON.stringify(data)));
             }
             switch (type) {
                 case 'update':
@@ -218,12 +229,18 @@ var Controller = (function (_super) {
                         case 'patcherState':
                             return _this.emit(message, payload);
                         default:
-                            return _this.emit('error', new Error('Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data)));
+                            return _this.emit('error', new Error('Unexpected update `message` value: ' +
+                                message +
+                                ' in ' +
+                                JSON.stringify(data)));
                     }
                 case 'progress':
                     return _this.emit('progress', payload);
                 default:
-                    return _this.emit('error', new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data)));
+                    return _this.emit('error', new Error('Unexpected `type` value: ' +
+                        type +
+                        ' in ' +
+                        JSON.stringify(data)));
             }
         })
             .on('error', function (err) {
@@ -257,14 +274,16 @@ var Controller = (function (_super) {
             if (_this.sentMessage) {
                 _this.sentMessage.reject(new Error('Disconnected before receiving message response'));
             }
-            console.log('Disconnected from runner' + (_this.reconnector.reconnect ? ', reconnecting...' : ''));
+            console.log('Disconnected from runner' +
+                (_this.reconnector.reconnect ? ', reconnecting...' : ''));
             if (err) {
                 console.log('Received error: ' + err.message);
             }
             // We emit the 'fatal' event if the disconnect is unexpected.
             // Disconnect is unexpected if reconnect is false (meaning we had a stable connection) and
             // if we don't have a connection lock (meaning we are not currently connecting or disconnecting)
-            if (_this.reconnector.reconnect === false && _this.connectionLock === false) {
+            if (_this.reconnector.reconnect === false &&
+                _this.connectionLock === false) {
                 _this.emit('fatal', err);
             }
         })
@@ -274,7 +293,8 @@ var Controller = (function (_super) {
             .on('error', function (err) {
             _this.conn = null;
             if (_this.sentMessage) {
-                _this.sentMessage.reject(new Error('Connection got an error before receiving message response: ' + err.message));
+                _this.sentMessage.reject(new Error('Connection got an error before receiving message response: ' +
+                    err.message));
             }
             console.log('Received error: ' + err.message);
             _this.emit('fatal', err);
@@ -290,14 +310,18 @@ var Controller = (function (_super) {
                         options = options || {
                             detached: true,
                             env: process.env,
-                            stdio: ['ignore', fs.openSync('joltron.log', 'a'), fs.openSync('joltron.log', 'a')],
+                            stdio: [
+                                'ignore',
+                                fs.openSync('joltron.log', 'a'),
+                                fs.openSync('joltron.log', 'a'),
+                            ],
                         };
                         runnerExecutable = getExecutable();
                         // Ensure that the runner is executable.
                         fs.chmodSync(runnerExecutable, '0755');
                         portArg = args.indexOf('--port');
                         if (portArg === -1) {
-                            throw new Error('Can\'t launch a new instance without specifying a port number');
+                            throw new Error("Can't launch a new instance without specifying a port number");
                         }
                         port = parseInt(args[portArg + 1], 10);
                         console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
@@ -333,7 +357,7 @@ var Controller = (function (_super) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             if (_this.connectionLock) {
-                reject(new Error('Can\'t connect while connection is transitioning'));
+                reject(new Error("Can't connect while connection is transitioning"));
                 return;
             }
             if (_this.reconnector.connected) {
@@ -370,7 +394,7 @@ var Controller = (function (_super) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             if (_this.connectionLock) {
-                reject(new Error('Can\'t disconnect while connection is transitioning'));
+                reject(new Error("Can't disconnect while connection is transitioning"));
                 return;
             }
             if (!_this.reconnector.connected) {
@@ -550,9 +574,7 @@ var Controller = (function (_super) {
                     });
                 }
                 else {
-                    _this.process
-                        .once('close', resolve)
-                        .once('error', reject);
+                    _this.process.once('close', resolve).once('error', reject);
                     _this.process.kill();
                 }
             });

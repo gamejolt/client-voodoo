@@ -1,10 +1,4 @@
 "use strict";
-;
-;
-;
-;
-;
-;
 var PatcherState;
 (function (PatcherState) {
     PatcherState[PatcherState["Start"] = 0] = "Start";
@@ -17,12 +11,4 @@ var PatcherState;
     PatcherState[PatcherState["Uninstall"] = 7] = "Uninstall";
     PatcherState[PatcherState["Finished"] = 8] = "Finished";
 })(PatcherState = exports.PatcherState || (exports.PatcherState = {}));
-;
-;
-;
-;
-;
-;
-;
-;
 //# sourceMappingURL=data.js.map

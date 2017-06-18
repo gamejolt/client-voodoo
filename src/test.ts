@@ -1,13 +1,10 @@
-export function mochaAsync( fn: () => Promise<any> )
-{
-	return async ( done ) =>
-	{
+export function mochaAsync(fn: () => Promise<any>) {
+	return async done => {
 		try {
 			await fn();
 			done();
-		}
-		catch ( err ) {
-			done( err );
+		} catch (err) {
+			done(err);
 		}
 	};
 }
