@@ -76,6 +76,7 @@ var Launcher = (function () {
                             '--port', port.toString(),
                             '--dir', dir,
                             '--game', gameUid,
+                            '--wait-for-connection', '2',
                             'run',
                         ];
                         args.push.apply(args, executableArgs);
