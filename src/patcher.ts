@@ -43,7 +43,7 @@ export abstract class Patcher {
 		args.push('install');
 
 		return this.manageInstanceInQueue(
-			new PatchInstance(await Controller.launchNew(args))
+			new PatchInstance(Controller.launchNew(args))
 		);
 	}
 
@@ -54,7 +54,7 @@ export abstract class Patcher {
 	}
 
 	private static manageInstanceInQueue(instance: PatchInstance) {
-		Queue.manage(instance);
+		// Queue.manage(instance);
 		instance.on('resumed', () => {
 			Queue.manage(instance);
 		});
@@ -101,6 +101,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
 		this._isPaused = false;
 
 		this.getState().then(() => {
+			Queue.manage(this);
 			if (this._isPaused) {
 				this.controller.sendResume();
 			}
@@ -157,8 +158,12 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
 		return !this._isPaused;
 	}
 
-	async resume(queue?: boolean) {
-		const result = await this.controller.sendResume({ queue: !!queue });
+	async resume(options?: {
+		queue?: boolean;
+		authToken?: string;
+		extraMetadata?: string;
+	}) {
+		const result = await this.controller.sendResume(options);
 		if (result.success) {
 			this._isPaused = false;
 		}

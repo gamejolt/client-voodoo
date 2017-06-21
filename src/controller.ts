@@ -147,6 +147,7 @@ export class Controller extends TSEventEmitter<Events> {
 			this.process = process;
 		}
 
+		const orly = this;
 		const incomingJson: stream.Duplex = JSONStream.parse();
 		incomingJson
 			.on('data', data => {
@@ -213,7 +214,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 				const type = data.type;
 				if (!type) {
-					return this.emit(
+					return orly.emit(
 						'error',
 						new Error(
 							'Missing `type` field in response' + ' in ' + JSON.stringify(data)
@@ -223,7 +224,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 				let payload = data.payload;
 				if (!payload) {
-					return this.emit(
+					return orly.emit(
 						'error',
 						new Error(
 							'Missing `payload` field in response' +
@@ -288,8 +289,14 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(message);
 							case 'patcherState':
 								return this.emit(message, payload);
+							case 'abort':
+								return this.emit('fatal', new Error(payload));
+							case 'error':
+								// nwjs has a bug where it confuses 'this' and emits the 'error' event in the wrong place.
+								// Emitting an error through a meme fixes it.
+								return orly.emit('error', new Error(payload));
 							default:
-								return this.emit(
+								return orly.emit(
 									'error',
 									new Error(
 										'Unexpected update `message` value: ' +
@@ -302,7 +309,7 @@ export class Controller extends TSEventEmitter<Events> {
 					case 'progress':
 						return this.emit('progress', payload);
 					default:
-						return this.emit(
+						return orly.emit(
 							'error',
 							new Error(
 								'Unexpected `type` value: ' +
@@ -369,7 +376,10 @@ export class Controller extends TSEventEmitter<Events> {
 					this.reconnector.reconnect === false &&
 					this.connectionLock === false
 				) {
-					this.emit('fatal', err);
+					this.emit(
+						'fatal',
+						err || new Error('Unexpected disconnection from joltron')
+					);
 				}
 			})
 			.on('fail', (err: Error) => {
@@ -390,7 +400,7 @@ export class Controller extends TSEventEmitter<Events> {
 			});
 	}
 
-	static async launchNew(args: string[], options?: cp.SpawnOptions) {
+	static launchNew(args: string[], options?: cp.SpawnOptions) {
 		options = options || {
 			detached: true,
 			env: process.env,
@@ -409,7 +419,7 @@ export class Controller extends TSEventEmitter<Events> {
 		const portArg = args.indexOf('--port');
 		if (portArg === -1) {
 			throw new Error(
-				"Can't launch a new instance without specifying a port number"
+				`Can't launch a new instance without specifying a port number`
 			);
 		}
 		const port = parseInt(args[portArg + 1], 10);
@@ -419,13 +429,16 @@ export class Controller extends TSEventEmitter<Events> {
 		runnerProc.unref();
 
 		const runnerInstance = new Controller(port, runnerProc.pid);
-		try {
-			await runnerInstance.connect();
-			return runnerInstance;
-		} catch (err) {
-			await runnerInstance.kill();
-			throw err;
-		}
+		runnerInstance.connect();
+		return runnerInstance;
+
+		// try {
+		// 	await runnerInstance.connect();
+		// 	return runnerInstance;
+		// } catch (err) {
+		// 	await runnerInstance.kill();
+		// 	throw err;
+		// }
 	}
 
 	get connected() {
@@ -435,7 +448,7 @@ export class Controller extends TSEventEmitter<Events> {
 	connect() {
 		return new Promise((resolve, reject) => {
 			if (this.connectionLock) {
-				reject(new Error("Can't connect while connection is transitioning"));
+				reject(new Error(`Can't connect while connection is transitioning`));
 				return;
 			}
 
@@ -480,7 +493,7 @@ export class Controller extends TSEventEmitter<Events> {
 	disconnect() {
 		return new Promise((resolve, reject) => {
 			if (this.connectionLock) {
-				reject(new Error("Can't disconnect while connection is transitioning"));
+				reject(new Error(`Can't disconnect while connection is transitioning`));
 				return;
 			}
 
@@ -578,26 +591,46 @@ export class Controller extends TSEventEmitter<Events> {
 		return msg;
 	}
 
-	private sendControl(command: string, timeout?: number) {
-		return this.send<data.MsgResultResponse>('control', { command }, timeout);
+	private sendControl(
+		command: string,
+		extraData?: { [key: string]: string },
+		timeout?: number
+	) {
+		const msg: any = { command };
+		if (extraData && extraData !== {}) {
+			msg.extraData = extraData;
+		}
+		return this.send<data.MsgResultResponse>('control', msg, timeout);
 	}
 
 	sendKillGame(timeout?: number) {
-		return this.sendControl('kill', timeout).promise;
+		return this.sendControl('kill', null, timeout).promise;
 	}
 
 	async sendPause(options?: { queue?: boolean; timeout?: number }) {
 		options = options || {};
-		const msg = this.sendControl('pause', options.timeout);
+		const msg = this.sendControl('pause', null, options.timeout);
 		if (options.queue) {
 			this.expectingQueuePauseIds.push(msg.msgId);
 		}
 		return msg.promise;
 	}
 
-	async sendResume(options?: { queue?: boolean; timeout?: number }) {
+	async sendResume(options?: {
+		queue?: boolean;
+		authToken?: string;
+		extraMetadata?: string;
+		timeout?: number;
+	}) {
 		options = options || {};
-		const msg = this.sendControl('resume', options.timeout);
+		let extraData: any = {};
+		if (options.authToken) {
+			extraData.authToken = options.authToken;
+		}
+		if (options.extraMetadata) {
+			extraData.extraMetadata = options.extraMetadata;
+		}
+		const msg = this.sendControl('resume', extraData, options.timeout);
 		if (options.queue) {
 			this.expectingQueueResumeIds.push(msg.msgId);
 		}
@@ -605,7 +638,7 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendCancel(timeout?: number) {
-		return this.sendControl('cancel', timeout).promise;
+		return this.sendControl('cancel', null, timeout).promise;
 	}
 
 	sendGetState(includePatchInfo: boolean, timeout?: number) {

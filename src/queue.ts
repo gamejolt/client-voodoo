@@ -266,6 +266,7 @@ export abstract class Queue {
 			return;
 		}
 
+		err = err || new Error('Unknown error');
 		this.log(`Finished with fatal error: ${err.message}`, patch);
 		this.unmanage(patch);
 	}
@@ -366,7 +367,7 @@ export abstract class Queue {
 		this.log('Resuming patch', patch);
 		let result: boolean;
 		try {
-			patch.resume(true);
+			patch.resume({ queue: true });
 		} catch (err) {
 			result = false;
 		}

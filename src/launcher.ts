@@ -39,7 +39,7 @@ export abstract class Launcher {
 		];
 		args.push(...executableArgs);
 
-		const controller = await Controller.launchNew(args);
+		const controller = Controller.launchNew(args);
 		const instance = await new Promise<LaunchInstance>((resolve, reject) => {
 			// tslint:disable-next-line:no-unused-expression
 			new LaunchInstance(controller, (err, inst) => {

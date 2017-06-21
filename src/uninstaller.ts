@@ -18,7 +18,7 @@ export abstract class Uninstaller {
 			'uninstall',
 		];
 
-		return new UninstallInstance(await Controller.launchNew(args));
+		return new UninstallInstance(Controller.launchNew(args));
 	}
 
 	static async uninstallReattach(port: number, pid: number) {
