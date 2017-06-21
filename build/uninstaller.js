@@ -48,14 +48,14 @@ var Uninstaller = (function () {
     }
     Uninstaller.uninstall = function (localPackage) {
         return __awaiter(this, void 0, void 0, function () {
-            var dir, port, args, _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var dir, port, args;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         dir = localPackage.install_dir;
                         return [4 /*yield*/, util.findFreePort()];
                     case 1:
-                        port = _c.sent();
+                        port = _a.sent();
                         args = [
                             '--port',
                             port.toString(),
@@ -66,9 +66,7 @@ var Uninstaller = (function () {
                             '--symbiote',
                             'uninstall',
                         ];
-                        _a = UninstallInstance.bind;
-                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
-                    case 2: return [2 /*return*/, new (_a.apply(UninstallInstance, [void 0, _c.sent()]))()];
+                        return [2 /*return*/, new UninstallInstance(controller_1.Controller.launchNew(args))];
                 }
             });
         });

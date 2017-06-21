@@ -119,6 +119,7 @@ var Controller = (function (_super) {
         if (process) {
             _this.process = process;
         }
+        var orly = _this;
         var incomingJson = JSONStream.parse();
         incomingJson
             .on('data', function (data) {
@@ -165,11 +166,11 @@ var Controller = (function (_super) {
             }
             var type = data.type;
             if (!type) {
-                return _this.emit('error', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data)));
+                return orly.emit('error', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data)));
             }
             var payload = data.payload;
             if (!payload) {
-                return _this.emit('error', new Error('Missing `payload` field in response' +
+                return orly.emit('error', new Error('Missing `payload` field in response' +
                     ' in ' +
                     JSON.stringify(data)));
             }
@@ -228,8 +229,14 @@ var Controller = (function (_super) {
                             return _this.emit(message);
                         case 'patcherState':
                             return _this.emit(message, payload);
+                        case 'abort':
+                            return _this.emit('fatal', new Error(payload));
+                        case 'error':
+                            // nwjs has a bug where it confuses 'this' and emits the 'error' event in the wrong place.
+                            // Emitting an error through a meme fixes it.
+                            return orly.emit('error', new Error(payload));
                         default:
-                            return _this.emit('error', new Error('Unexpected update `message` value: ' +
+                            return orly.emit('error', new Error('Unexpected update `message` value: ' +
                                 message +
                                 ' in ' +
                                 JSON.stringify(data)));
@@ -237,7 +244,7 @@ var Controller = (function (_super) {
                 case 'progress':
                     return _this.emit('progress', payload);
                 default:
-                    return _this.emit('error', new Error('Unexpected `type` value: ' +
+                    return orly.emit('error', new Error('Unexpected `type` value: ' +
                         type +
                         ' in ' +
                         JSON.stringify(data)));
@@ -284,7 +291,7 @@ var Controller = (function (_super) {
             // if we don't have a connection lock (meaning we are not currently connecting or disconnecting)
             if (_this.reconnector.reconnect === false &&
                 _this.connectionLock === false) {
-                _this.emit('fatal', err);
+                _this.emit('fatal', err || new Error('Unexpected disconnection from joltron'));
             }
         })
             .on('fail', function (err) {
@@ -302,49 +309,36 @@ var Controller = (function (_super) {
         return _this;
     }
     Controller.launchNew = function (args, options) {
-        return __awaiter(this, void 0, void 0, function () {
-            var runnerExecutable, portArg, port, runnerProc, runnerInstance, err_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        options = options || {
-                            detached: true,
-                            env: process.env,
-                            stdio: [
-                                'ignore',
-                                fs.openSync('joltron.log', 'a'),
-                                fs.openSync('joltron.log', 'a'),
-                            ],
-                        };
-                        runnerExecutable = getExecutable();
-                        // Ensure that the runner is executable.
-                        fs.chmodSync(runnerExecutable, '0755');
-                        portArg = args.indexOf('--port');
-                        if (portArg === -1) {
-                            throw new Error("Can't launch a new instance without specifying a port number");
-                        }
-                        port = parseInt(args[portArg + 1], 10);
-                        console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
-                        runnerProc = cp.spawn(runnerExecutable, args, options);
-                        runnerProc.unref();
-                        runnerInstance = new Controller(port, runnerProc.pid);
-                        _a.label = 1;
-                    case 1:
-                        _a.trys.push([1, 3, , 5]);
-                        return [4 /*yield*/, runnerInstance.connect()];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, runnerInstance];
-                    case 3:
-                        err_1 = _a.sent();
-                        return [4 /*yield*/, runnerInstance.kill()];
-                    case 4:
-                        _a.sent();
-                        throw err_1;
-                    case 5: return [2 /*return*/];
-                }
-            });
-        });
+        options = options || {
+            detached: true,
+            env: process.env,
+            stdio: [
+                'ignore',
+                fs.openSync('joltron.log', 'a'),
+                fs.openSync('joltron.log', 'a'),
+            ],
+        };
+        var runnerExecutable = getExecutable();
+        // Ensure that the runner is executable.
+        fs.chmodSync(runnerExecutable, '0755');
+        var portArg = args.indexOf('--port');
+        if (portArg === -1) {
+            throw new Error("Can't launch a new instance without specifying a port number");
+        }
+        var port = parseInt(args[portArg + 1], 10);
+        console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
+        var runnerProc = cp.spawn(runnerExecutable, args, options);
+        runnerProc.unref();
+        var runnerInstance = new Controller(port, runnerProc.pid);
+        runnerInstance.connect();
+        return runnerInstance;
+        // try {
+        // 	await runnerInstance.connect();
+        // 	return runnerInstance;
+        // } catch (err) {
+        // 	await runnerInstance.kill();
+        // 	throw err;
+        // }
     };
     Object.defineProperty(Controller.prototype, "connected", {
         get: function () {
@@ -438,7 +432,7 @@ var Controller = (function (_super) {
     Controller.prototype.consumeSendQueue = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var err_2;
+            var err_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -478,7 +472,7 @@ var Controller = (function (_super) {
                         _a.sent();
                         return [3 /*break*/, 6];
                     case 5:
-                        err_2 = _a.sent();
+                        err_1 = _a.sent();
                         return [3 /*break*/, 6];
                     case 6:
                         this.sentMessage = null;
@@ -504,18 +498,22 @@ var Controller = (function (_super) {
         }
         return msg;
     };
-    Controller.prototype.sendControl = function (command, timeout) {
-        return this.send('control', { command: command }, timeout);
+    Controller.prototype.sendControl = function (command, extraData, timeout) {
+        var msg = { command: command };
+        if (extraData && extraData !== {}) {
+            msg.extraData = extraData;
+        }
+        return this.send('control', msg, timeout);
     };
     Controller.prototype.sendKillGame = function (timeout) {
-        return this.sendControl('kill', timeout).promise;
+        return this.sendControl('kill', null, timeout).promise;
     };
     Controller.prototype.sendPause = function (options) {
         return __awaiter(this, void 0, void 0, function () {
             var msg;
             return __generator(this, function (_a) {
                 options = options || {};
-                msg = this.sendControl('pause', options.timeout);
+                msg = this.sendControl('pause', null, options.timeout);
                 if (options.queue) {
                     this.expectingQueuePauseIds.push(msg.msgId);
                 }
@@ -525,10 +523,17 @@ var Controller = (function (_super) {
     };
     Controller.prototype.sendResume = function (options) {
         return __awaiter(this, void 0, void 0, function () {
-            var msg;
+            var extraData, msg;
             return __generator(this, function (_a) {
                 options = options || {};
-                msg = this.sendControl('resume', options.timeout);
+                extraData = {};
+                if (options.authToken) {
+                    extraData.authToken = options.authToken;
+                }
+                if (options.extraMetadata) {
+                    extraData.extraMetadata = options.extraMetadata;
+                }
+                msg = this.sendControl('resume', extraData, options.timeout);
                 if (options.queue) {
                     this.expectingQueueResumeIds.push(msg.msgId);
                 }
@@ -537,7 +542,7 @@ var Controller = (function (_super) {
         });
     };
     Controller.prototype.sendCancel = function (timeout) {
-        return this.sendControl('cancel', timeout).promise;
+        return this.sendControl('cancel', null, timeout).promise;
     };
     Controller.prototype.sendGetState = function (includePatchInfo, timeout) {
         return this.send('state', { includePatchInfo: includePatchInfo }, timeout).promise;

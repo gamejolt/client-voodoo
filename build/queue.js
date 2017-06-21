@@ -223,6 +223,7 @@ var Queue = (function () {
         if (!state.managed) {
             return;
         }
+        err = err || new Error('Unknown error');
         this.log("Finished with fatal error: " + err.message, patch);
         this.unmanage(patch);
     };
@@ -317,7 +318,7 @@ var Queue = (function () {
             return __generator(this, function (_a) {
                 this.log('Resuming patch', patch);
                 try {
-                    patch.resume(true);
+                    patch.resume({ queue: true });
                 }
                 catch (err) {
                     result = false;

@@ -51,15 +51,15 @@ var Patcher = (function () {
     }
     Patcher.patch = function (localPackage, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var dir, port, gameUid, args, _a, _b, _c, _d;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+            var dir, port, gameUid, args;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         options = options || {};
                         dir = localPackage.install_dir;
                         return [4 /*yield*/, util.findFreePort()];
                     case 1:
-                        port = _e.sent();
+                        port = _a.sent();
                         gameUid = localPackage.id + '-' + localPackage.build.id;
                         args = [
                             '--port',
@@ -82,10 +82,7 @@ var Patcher = (function () {
                             args.push('--launch');
                         }
                         args.push('install');
-                        _a = this.manageInstanceInQueue;
-                        _c = PatchInstance.bind;
-                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
-                    case 2: return [2 /*return*/, _a.apply(this, [new (_c.apply(PatchInstance, [void 0, _e.sent()]))()])];
+                        return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(controller_1.Controller.launchNew(args)))];
                 }
             });
         });
@@ -98,7 +95,7 @@ var Patcher = (function () {
         });
     };
     Patcher.manageInstanceInQueue = function (instance) {
-        queue_1.Queue.manage(instance);
+        // Queue.manage(instance);
         instance.on('resumed', function () {
             queue_1.Queue.manage(instance);
         });
@@ -137,6 +134,7 @@ var PatchInstance = (function (_super) {
         _this._state = State.Starting;
         _this._isPaused = false;
         _this.getState().then(function () {
+            queue_1.Queue.manage(_this);
             if (_this._isPaused) {
                 _this.controller.sendResume();
             }
@@ -195,12 +193,12 @@ var PatchInstance = (function (_super) {
     PatchInstance.prototype.isRunning = function () {
         return !this._isPaused;
     };
-    PatchInstance.prototype.resume = function (queue) {
+    PatchInstance.prototype.resume = function (options) {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume({ queue: !!queue })];
+                    case 0: return [4 /*yield*/, this.controller.sendResume(options)];
                     case 1:
                         result = _a.sent();
                         if (result.success) {

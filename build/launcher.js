@@ -84,9 +84,7 @@ var Launcher = (function () {
                             'run',
                         ];
                         args.push.apply(args, executableArgs);
-                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
-                    case 4:
-                        controller = _a.sent();
+                        controller = controller_1.Controller.launchNew(args);
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 // tslint:disable-next-line:no-unused-expression
                                 new LaunchInstance(controller, function (err, inst) {
@@ -96,7 +94,7 @@ var Launcher = (function () {
                                     resolve(inst);
                                 });
                             })];
-                    case 5:
+                    case 4:
                         instance = _a.sent();
                         return [2 /*return*/, this.manageInstanceInQueue(instance)];
                 }
