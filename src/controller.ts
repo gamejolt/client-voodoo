@@ -76,7 +76,7 @@ export type Events = {
 	// called when an error happens which prevents future operations on the controller
 	'fatal': (err: Error) => void;
 	// called when an error happens which isn't severe enough to prevent future operations on the controller
-	'error': (err: Error) => void;
+	'err': (err: Error) => void;
 	// called when a launch operation begins
 	'gameLaunchBegin': (dir: string, ...args: string[]) => void;
 	// called when the launch operation ends completely
@@ -147,7 +147,6 @@ export class Controller extends TSEventEmitter<Events> {
 			this.process = process;
 		}
 
-		const orly = this;
 		const incomingJson: stream.Duplex = JSONStream.parse();
 		incomingJson
 			.on('data', data => {
@@ -214,8 +213,8 @@ export class Controller extends TSEventEmitter<Events> {
 
 				const type = data.type;
 				if (!type) {
-					return orly.emit(
-						'error',
+					return this.emit(
+						'err',
 						new Error(
 							'Missing `type` field in response' + ' in ' + JSON.stringify(data)
 						)
@@ -224,8 +223,8 @@ export class Controller extends TSEventEmitter<Events> {
 
 				let payload = data.payload;
 				if (!payload) {
-					return orly.emit(
-						'error',
+					return this.emit(
+						'err',
 						new Error(
 							'Missing `payload` field in response' +
 								' in ' +
@@ -292,12 +291,10 @@ export class Controller extends TSEventEmitter<Events> {
 							case 'abort':
 								return this.emit('fatal', new Error(payload));
 							case 'error':
-								// nwjs has a bug where it confuses 'this' and emits the 'error' event in the wrong place.
-								// Emitting an error through a meme fixes it.
-								return orly.emit('error', new Error(payload));
+								return this.emit('err', new Error(payload));
 							default:
-								return orly.emit(
-									'error',
+								return this.emit(
+									'err',
 									new Error(
 										'Unexpected update `message` value: ' +
 											message +
@@ -309,8 +306,8 @@ export class Controller extends TSEventEmitter<Events> {
 					case 'progress':
 						return this.emit('progress', payload);
 					default:
-						return orly.emit(
-							'error',
+						return this.emit(
+							'err',
 							new Error(
 								'Unexpected `type` value: ' +
 									type +
@@ -321,6 +318,8 @@ export class Controller extends TSEventEmitter<Events> {
 				}
 			})
 			.on('error', err => {
+				console.log('json stream encountered an error: ' + err.message);
+				console.log(err);
 				this.emit('fatal', err);
 				this.dispose();
 			});
@@ -339,6 +338,7 @@ export class Controller extends TSEventEmitter<Events> {
 				this.conn.setKeepAlive(true, 1000);
 				this.conn.setEncoding('utf8');
 				this.conn.setTimeout(10000);
+				this.conn.setNoDelay(true);
 				this.conn.pipe(incomingJson);
 
 				this.consumeSendQueue();
@@ -383,6 +383,7 @@ export class Controller extends TSEventEmitter<Events> {
 				}
 			})
 			.on('fail', (err: Error) => {
+				console.log('Failed to connect in reconnector: ' + err.message);
 				this.emit('fatal', err);
 			})
 			.on('error', (err: Error) => {
@@ -395,7 +396,7 @@ export class Controller extends TSEventEmitter<Events> {
 						)
 					);
 				}
-				console.log('Received error: ' + err.message);
+				console.log('Received error in reconnector: ' + err.message);
 				this.emit('fatal', err);
 			});
 	}
