@@ -119,7 +119,6 @@ var Controller = (function (_super) {
         if (process) {
             _this.process = process;
         }
-        var orly = _this;
         var incomingJson = JSONStream.parse();
         incomingJson
             .on('data', function (data) {
@@ -166,11 +165,11 @@ var Controller = (function (_super) {
             }
             var type = data.type;
             if (!type) {
-                return orly.emit('error', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data)));
+                return _this.emit('err', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data)));
             }
             var payload = data.payload;
             if (!payload) {
-                return orly.emit('error', new Error('Missing `payload` field in response' +
+                return _this.emit('err', new Error('Missing `payload` field in response' +
                     ' in ' +
                     JSON.stringify(data)));
             }
@@ -232,11 +231,9 @@ var Controller = (function (_super) {
                         case 'abort':
                             return _this.emit('fatal', new Error(payload));
                         case 'error':
-                            // nwjs has a bug where it confuses 'this' and emits the 'error' event in the wrong place.
-                            // Emitting an error through a meme fixes it.
-                            return orly.emit('error', new Error(payload));
+                            return _this.emit('err', new Error(payload));
                         default:
-                            return orly.emit('error', new Error('Unexpected update `message` value: ' +
+                            return _this.emit('err', new Error('Unexpected update `message` value: ' +
                                 message +
                                 ' in ' +
                                 JSON.stringify(data)));
@@ -244,13 +241,15 @@ var Controller = (function (_super) {
                 case 'progress':
                     return _this.emit('progress', payload);
                 default:
-                    return orly.emit('error', new Error('Unexpected `type` value: ' +
+                    return _this.emit('err', new Error('Unexpected `type` value: ' +
                         type +
                         ' in ' +
                         JSON.stringify(data)));
             }
         })
             .on('error', function (err) {
+            console.log('json stream encountered an error: ' + err.message);
+            console.log(err);
             _this.emit('fatal', err);
             _this.dispose();
         });
@@ -266,6 +265,7 @@ var Controller = (function (_super) {
             _this.conn.setKeepAlive(true, 1000);
             _this.conn.setEncoding('utf8');
             _this.conn.setTimeout(10000);
+            _this.conn.setNoDelay(true);
             _this.conn.pipe(incomingJson);
             _this.consumeSendQueue();
         });
@@ -295,6 +295,7 @@ var Controller = (function (_super) {
             }
         })
             .on('fail', function (err) {
+            console.log('Failed to connect in reconnector: ' + err.message);
             _this.emit('fatal', err);
         })
             .on('error', function (err) {
@@ -303,7 +304,7 @@ var Controller = (function (_super) {
                 _this.sentMessage.reject(new Error('Connection got an error before receiving message response: ' +
                     err.message));
             }
-            console.log('Received error: ' + err.message);
+            console.log('Received error in reconnector: ' + err.message);
             _this.emit('fatal', err);
         });
         return _this;
