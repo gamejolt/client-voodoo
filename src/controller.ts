@@ -371,6 +371,8 @@ export class Controller extends TSEventEmitter<Events> {
 		this.connectionLock = true;
 		try {
 			this.conn = await this.reconnector.connect({ port: this.port });
+			this.connectionLock = false;
+
 			this.conn.setKeepAlive(true, 1000);
 			this.conn.setEncoding('utf8');
 			this.conn.setNoDelay(true);
