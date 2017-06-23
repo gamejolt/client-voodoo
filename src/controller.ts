@@ -1,20 +1,10 @@
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as net from 'net';
-import * as stream from 'stream';
-import { EventEmitter } from 'events';
 import * as data from './data';
 import { TSEventEmitter } from './events';
+import { Reconnector } from './reconnector';
 import * as fs from 'fs';
-
-type onStreamCallback = (stream: net.Socket) => void;
-type reconnectModuleBuilder = (
-	opts: any,
-	onStream: onStreamCallback
-) => EventEmitter;
-const reconnect: reconnectModuleBuilder = require('reconnect-core')(
-	(...args: any[]) => net.connect.apply(null, args)
-);
 
 const JSONStream = require('JSONStream');
 const ps = require('ps-node');
@@ -127,7 +117,7 @@ export type Events = {
 export class Controller extends TSEventEmitter<Events> {
 	readonly port: number;
 	private process: cp.ChildProcess | number; // process or pid
-	private reconnector: any;
+	private reconnector: Reconnector;
 	private connectionLock: boolean = null;
 	private conn: net.Socket | null = null;
 	private nextMessageId = 0;
@@ -147,8 +137,11 @@ export class Controller extends TSEventEmitter<Events> {
 			this.process = process;
 		}
 
-		const incomingJson: stream.Duplex = JSONStream.parse();
-		incomingJson
+		this.reconnector = new Reconnector(100, 3000);
+	}
+
+	private newJsonStream() {
+		return JSONStream.parse()
 			.on('data', data => {
 				console.log('Received json: ' + JSON.stringify(data));
 
@@ -323,82 +316,6 @@ export class Controller extends TSEventEmitter<Events> {
 				this.emit('fatal', err);
 				this.dispose();
 			});
-
-		this.reconnector = reconnect(
-			{
-				initialDelay: 100,
-				maxDelay: 1000,
-				strategy: 'fibonacci',
-				failAfter: 7,
-				randomisationFactor: 0,
-				immediate: false,
-			},
-			(conn: net.Socket) => {
-				this.conn = conn;
-				this.conn.setKeepAlive(true, 1000);
-				this.conn.setEncoding('utf8');
-				this.conn.setTimeout(10000);
-				this.conn.setNoDelay(true);
-				this.conn.pipe(incomingJson);
-
-				this.consumeSendQueue();
-			}
-		);
-
-		this.reconnector
-			.on('connect', conn => {
-				// Once connected, don't attempt to reconnect on disconnection.
-				// We only want to use reconnect core for the initial connection attempts.
-				this.reconnector.reconnect = false;
-
-				// console.log( 'Connected to runner' );
-			})
-			.on('disconnect', (err: Error) => {
-				this.conn = null;
-				if (this.sentMessage) {
-					this.sentMessage.reject(
-						new Error('Disconnected before receiving message response')
-					);
-				}
-
-				console.log(
-					'Disconnected from runner' +
-						(this.reconnector.reconnect ? ', reconnecting...' : '')
-				);
-				if (err) {
-					console.log('Received error: ' + err.message);
-				}
-
-				// We emit the 'fatal' event if the disconnect is unexpected.
-				// Disconnect is unexpected if reconnect is false (meaning we had a stable connection) and
-				// if we don't have a connection lock (meaning we are not currently connecting or disconnecting)
-				if (
-					this.reconnector.reconnect === false &&
-					this.connectionLock === false
-				) {
-					this.emit(
-						'fatal',
-						err || new Error('Unexpected disconnection from joltron')
-					);
-				}
-			})
-			.on('fail', (err: Error) => {
-				console.log('Failed to connect in reconnector: ' + err.message);
-				this.emit('fatal', err);
-			})
-			.on('error', (err: Error) => {
-				this.conn = null;
-				if (this.sentMessage) {
-					this.sentMessage.reject(
-						new Error(
-							'Connection got an error before receiving message response: ' +
-								err.message
-						)
-					);
-				}
-				console.log('Received error in reconnector: ' + err.message);
-				this.emit('fatal', err);
-			});
 	}
 
 	static launchNew(args: string[], options?: cp.SpawnOptions) {
@@ -446,88 +363,71 @@ export class Controller extends TSEventEmitter<Events> {
 		return this.reconnector.connected;
 	}
 
-	connect() {
-		return new Promise((resolve, reject) => {
-			if (this.connectionLock) {
-				reject(new Error(`Can't connect while connection is transitioning`));
-				return;
-			}
+	async connect() {
+		if (this.connectionLock) {
+			throw new Error(`Can't connect while connection is transitioning`);
+		}
 
-			if (this.reconnector.connected) {
-				resolve();
-				return;
-			}
+		this.connectionLock = true;
+		try {
+			this.conn = await this.reconnector.connect({ port: this.port });
+			this.conn.setKeepAlive(true, 1000);
+			this.conn.setEncoding('utf8');
+			this.conn.setNoDelay(true);
 
-			this.connectionLock = true;
+			let lastErr: Error = null;
+			this.conn
+				.on('error', (err: Error) => (lastErr = err))
+				.on('close', (hasError: boolean) => {
+					this.conn = null;
+					if (this.sentMessage) {
+						this.sentMessage.reject(
+							new Error(
+								`Disconnected before receiving message response` +
+									(hasError ? `: ${lastErr.message}` : '')
+							)
+						);
+					}
 
-			// Make functions that can be safely removed from event listeners.
-			// Once one of them is called, it'll remove the other before resolving or rejecting the promise.
-			const _reconnector: EventEmitter = this.reconnector;
-			const __this = this;
-			function onConnected() {
-				_reconnector.removeListener('fail', onFail);
+					console.log(
+						`Disconnected from runner` +
+							(hasError ? `: ${lastErr.message}` : '')
+					);
+					if (hasError) {
+						console.log(lastErr);
+					}
 
-				__this.connectionLock = false;
-				resolve();
-			}
+					if (!this.connectionLock) {
+						this.emit(
+							'fatal',
+							hasError
+								? lastErr
+								: new Error(`Unexpected disconnection from joltron`)
+						);
+					}
+				})
+				.pipe(this.newJsonStream());
 
-			function onFail(err: Error) {
-				_reconnector.removeListener('connect', onConnected);
-
-				__this.connectionLock = false;
-				reject(err);
-			}
-
-			this.reconnector
-				.once('connect', onConnected)
-				.once('fail', onFail)
-				.connect(this.port);
-
-			// // Only do the actual connection if not already connecting.
-			// // Otherwise simply wait on event that should be emitter from a previous in connection that is in progress.
-			// if ( !this.reconnector._connection || !this.reconnector._connection.connecting ) {
-			// 	this.reconnector.connect( this.port );
-			// }
-		});
+			this.consumeSendQueue();
+		} catch (err) {
+			console.log('Failed to connect in reconnector: ' + err.message);
+			this.emit('fatal', err);
+		} finally {
+			this.connectionLock = false;
+		}
 	}
 
-	disconnect() {
-		return new Promise((resolve, reject) => {
-			if (this.connectionLock) {
-				reject(new Error(`Can't disconnect while connection is transitioning`));
-				return;
-			}
+	async disconnect() {
+		if (this.connectionLock) {
+			throw new Error(`Can't disconnect while connection is transitioning`);
+		}
 
-			if (!this.reconnector.connected) {
-				resolve();
-				return;
-			}
-
-			this.connectionLock = true;
-
-			// Make functions that can be safely removed from event listeners.
-			// Once one of them is called, it'll remove the other before resolving or rejecting the promise.
-			const _reconnector: EventEmitter = this.reconnector;
-			const __this = this;
-			function onDisconnected() {
-				_reconnector.removeListener('error', onError);
-
-				__this.connectionLock = false;
-				resolve();
-			}
-
-			function onError(err: Error) {
-				_reconnector.removeListener('disconnect', onDisconnected);
-
-				__this.connectionLock = false;
-				reject(err);
-			}
-
-			this.reconnector
-				.once('disconnect', onDisconnected)
-				.once('error', onError)
-				.disconnect();
-		});
+		this.connectionLock = true;
+		try {
+			await this.reconnector.disconnect();
+		} finally {
+			this.connectionLock = false;
+		}
 	}
 
 	async dispose() {
