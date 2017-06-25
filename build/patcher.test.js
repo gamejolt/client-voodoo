@@ -98,7 +98,7 @@ describe('Patcher', function () {
                         install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1')),
                     };
                     console.log('test');
-                    return [4 /*yield*/, patcher_1.Patcher.patch(localPackage, {})];
+                    return [4 /*yield*/, patcher_1.Patcher.patch(localPackage, function () { return Promise.resolve(''); }, {})];
                 case 1:
                     patchInstance = _a.sent();
                     return [4 /*yield*/, new Promise(function (resolve, reject) {

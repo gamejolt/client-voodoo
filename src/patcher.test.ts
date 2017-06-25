@@ -68,6 +68,7 @@ describe('Patcher', function() {
 			console.log('test');
 			const patchInstance = await Patcher.patch(
 				localPackage,
+				() => Promise.resolve(''),
 				{
 					// runLater: true,
 				}
