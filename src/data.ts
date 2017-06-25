@@ -58,7 +58,8 @@ export enum PatcherState {
 	Extract = 5,
 	Cleanup = 6,
 	Uninstall = 7,
-	Finished = 8,
+	Rollback = 8,
+	Finished = 9,
 }
 
 export interface MsgStateResponse {

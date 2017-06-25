@@ -11,9 +11,11 @@ export interface IPatchOptions {
 	runLater?: boolean;
 }
 
+export type AuthTokenGetter = () => Promise<string>;
 export abstract class Patcher {
 	static async patch(
 		localPackage: GameJolt.IGamePackage,
+		getAuthToken: AuthTokenGetter,
 		options?: IPatchOptions
 	) {
 		options = options || {};
@@ -43,13 +45,17 @@ export abstract class Patcher {
 		args.push('install');
 
 		return this.manageInstanceInQueue(
-			new PatchInstance(Controller.launchNew(args))
+			new PatchInstance(Controller.launchNew(args), getAuthToken)
 		);
 	}
 
-	static async patchReattach(port: number, pid: number) {
+	static async patchReattach(
+		port: number,
+		pid: number,
+		authTokenGetter: AuthTokenGetter
+	) {
 		return this.manageInstanceInQueue(
-			new PatchInstance(new Controller(port, pid))
+			new PatchInstance(new Controller(port, pid), authTokenGetter)
 		);
 	}
 
@@ -78,7 +84,10 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
 	private _state: State;
 	private _isPaused: boolean;
 
-	constructor(controller: Controller) {
+	constructor(
+		controller: Controller,
+		private authTokenGetter: AuthTokenGetter
+	) {
 		super(controller);
 		this.on('patcherState', (state: data.PatcherState) => {
 			console.log('patcher got state: ' + state);
@@ -158,11 +167,23 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
 		return !this._isPaused;
 	}
 
+	getAuthToken() {
+		return this.authTokenGetter();
+	}
+
 	async resume(options?: {
 		queue?: boolean;
 		authToken?: string;
 		extraMetadata?: string;
 	}) {
+		options = options || {};
+		if (
+			!options.authToken &&
+			(this._state === State.Starting || this._state === State.Downloading)
+		) {
+			options.authToken = await this.authTokenGetter();
+		}
+
 		const result = await this.controller.sendResume(options);
 		if (result.success) {
 			this._isPaused = false;

@@ -107,6 +107,12 @@ export type Events = {
 	'uninstallFailed': (reason: string) => void;
 	// called when an uninstall operation finished successfully
 	'uninstallFinished': () => void;
+	// called when an rollback operation begins
+	'rollbackBegin': (dir: string) => void;
+	// called when an rollback operation failed for whatever reason
+	'rollbackFailed': (reason: string) => void;
+	// called when an rollback operation finished successfully
+	'rollbackFinished': () => void;
 	// called when the patcher state changes
 	'patcherState': (state: data.PatcherState) => void;
 	// called periodically to report download/extract progress.
@@ -278,6 +284,12 @@ export class Controller extends TSEventEmitter<Events> {
 							case 'uninstallFailed':
 								return this.emit(message, payload);
 							case 'uninstallFinished':
+								return this.emit(message);
+							case 'rollbackBegin':
+								return this.emit(message, payload);
+							case 'rollbackFailed':
+								return this.emit(message, payload);
+							case 'rollbackFinished':
 								return this.emit(message);
 							case 'patcherState':
 								return this.emit(message, payload);
@@ -583,7 +595,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 	kill() {
 		if (this.process) {
-			return new Promise((resolve, reject) => {
+			return new Promise<void>((resolve, reject) => {
 				if (typeof this.process === 'number') {
 					ps.kill(this.process, err => {
 						if (err) {
