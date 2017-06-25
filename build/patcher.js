@@ -49,7 +49,7 @@ var queue_1 = require("./queue");
 var Patcher = (function () {
     function Patcher() {
     }
-    Patcher.patch = function (localPackage, options) {
+    Patcher.patch = function (localPackage, getAuthToken, options) {
         return __awaiter(this, void 0, void 0, function () {
             var dir, port, gameUid, args;
             return __generator(this, function (_a) {
@@ -82,15 +82,15 @@ var Patcher = (function () {
                             args.push('--launch');
                         }
                         args.push('install');
-                        return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(controller_1.Controller.launchNew(args)))];
+                        return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(controller_1.Controller.launchNew(args), getAuthToken))];
                 }
             });
         });
     };
-    Patcher.patchReattach = function (port, pid) {
+    Patcher.patchReattach = function (port, pid, authTokenGetter) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(new controller_1.Controller(port, pid)))];
+                return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(new controller_1.Controller(port, pid), authTokenGetter))];
             });
         });
     };
@@ -113,8 +113,9 @@ var State;
 })(State = exports.State || (exports.State = {}));
 var PatchInstance = (function (_super) {
     __extends(PatchInstance, _super);
-    function PatchInstance(controller) {
+    function PatchInstance(controller, authTokenGetter) {
         var _this = _super.call(this, controller) || this;
+        _this.authTokenGetter = authTokenGetter;
         _this.on('patcherState', function (state) {
             console.log('patcher got state: ' + state);
             _this._state = _this._getState(state);
@@ -193,14 +194,27 @@ var PatchInstance = (function (_super) {
     PatchInstance.prototype.isRunning = function () {
         return !this._isPaused;
     };
+    PatchInstance.prototype.getAuthToken = function () {
+        return this.authTokenGetter();
+    };
     PatchInstance.prototype.resume = function (options) {
         return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendResume(options)];
+            var _a, result;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        options = options || {};
+                        if (!(!options.authToken &&
+                            (this._state === State.Starting || this._state === State.Downloading)))
+                            return [3 /*break*/, 2];
+                        _a = options;
+                        return [4 /*yield*/, this.authTokenGetter()];
                     case 1:
-                        result = _a.sent();
+                        _a.authToken = _b.sent();
+                        _b.label = 2;
+                    case 2: return [4 /*yield*/, this.controller.sendResume(options)];
+                    case 3:
+                        result = _b.sent();
                         if (result.success) {
                             this._isPaused = false;
                         }

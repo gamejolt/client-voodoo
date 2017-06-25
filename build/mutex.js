@@ -34,78 +34,56 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var mkdirp = require("mkdirp");
-exports.domain = process.env.NODE_ENV === 'development'
-    ? 'http://development.gamejolt.com'
-    : 'https://gamejolt.com';
-var _pidDir = '';
-function PID_DIR() {
-    return _pidDir;
-}
-exports.PID_DIR = PID_DIR;
-function ensurePidDir() {
-    return new Promise(function (resolve, reject) {
-        mkdirp(_pidDir, function (err, made) {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(made);
-        });
-    });
-}
-exports.ensurePidDir = ensurePidDir;
-function setPidDir(pidDir) {
-    if (!_pidDir) {
-        _pidDir = pidDir;
-        return true;
+var controller_1 = require("./controller");
+var util = require("./util");
+var Mutex = (function () {
+    function Mutex() {
     }
-    return false;
-}
-exports.setPidDir = setPidDir;
-var mutex_1 = require("./mutex");
-exports.MUTEX_NAME = 'game-jolt-client';
-var clientMutexPromise = null;
-var clientMutex = null;
-function issetClientMutex() {
-    return !!clientMutex;
-}
-exports.issetClientMutex = issetClientMutex;
-function setClientMutex() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            if (process.platform !== 'win32') {
-                return [2 /*return*/];
-            }
-            if (clientMutex) {
-                return [2 /*return*/];
-            }
-            if (!clientMutexPromise) {
-                clientMutexPromise = mutex_1.Mutex.create(exports.MUTEX_NAME).then(function (mutexInst) {
-                    clientMutex = mutexInst;
-                    clientMutexPromise = null;
-                    clientMutex.onReleased.then(function () {
-                        clientMutex = null;
-                    });
-                });
-            }
-            return [2 /*return*/, clientMutexPromise];
+    Mutex.create = function (name) {
+        return __awaiter(this, void 0, void 0, function () {
+            var port, args;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, util.findFreePort()];
+                    case 1:
+                        port = _a.sent();
+                        args = [
+                            '--port',
+                            port.toString(),
+                            '--wait-for-connection',
+                            '2',
+                            '--symbiote',
+                            '--mutex',
+                            name,
+                            'noop',
+                        ];
+                        return [2 /*return*/, new MutexInstance(controller_1.Controller.launchNew(args))];
+                }
+            });
         });
-    });
-}
-exports.setClientMutex = setClientMutex;
-function releaseClientMutex() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            if (process.platform !== 'win32') {
-                return [2 /*return*/, null];
-            }
-            if (!clientMutex) {
-                return [2 /*return*/, null];
-            }
-            return [2 /*return*/, clientMutex.release()];
+    };
+    return Mutex;
+}());
+exports.Mutex = Mutex;
+var MutexInstance = (function () {
+    function MutexInstance(controller) {
+        var _this = this;
+        this.controller = controller;
+        this.releasePromise = new Promise(function (resolve) {
+            _this.controller.on('fatal', resolve);
         });
+    }
+    MutexInstance.prototype.release = function () {
+        var _this = this;
+        return this.controller.kill().then(function () { return _this.releasePromise; });
+    };
+    Object.defineProperty(MutexInstance.prototype, "onReleased", {
+        get: function () {
+            return this.releasePromise;
+        },
+        enumerable: true,
+        configurable: true
     });
-}
-exports.releaseClientMutex = releaseClientMutex;
-setClientMutex();
-//# sourceMappingURL=config.js.map
+    return MutexInstance;
+}());
+//# sourceMappingURL=mutex.js.map

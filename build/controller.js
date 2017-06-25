@@ -41,16 +41,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 var cp = require("child_process");
 var path = require("path");
-var net = require("net");
 var events_1 = require("./events");
+var reconnector_1 = require("./reconnector");
 var fs = require("fs");
-var reconnect = require('reconnect-core')(function () {
-    var args = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-    }
-    return net.connect.apply(null, args);
-});
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
@@ -119,8 +112,12 @@ var Controller = (function (_super) {
         if (process) {
             _this.process = process;
         }
-        var incomingJson = JSONStream.parse();
-        incomingJson
+        _this.reconnector = new reconnector_1.Reconnector(100, 3000);
+        return _this;
+    }
+    Controller.prototype.newJsonStream = function () {
+        var _this = this;
+        return JSONStream.parse()
             .on('data', function (data) {
             console.log('Received json: ' + JSON.stringify(data));
             if (data.msgId &&
@@ -226,6 +223,12 @@ var Controller = (function (_super) {
                             return _this.emit(message, payload);
                         case 'uninstallFinished':
                             return _this.emit(message);
+                        case 'rollbackBegin':
+                            return _this.emit(message, payload);
+                        case 'rollbackFailed':
+                            return _this.emit(message, payload);
+                        case 'rollbackFinished':
+                            return _this.emit(message);
                         case 'patcherState':
                             return _this.emit(message, payload);
                         case 'abort':
@@ -253,62 +256,7 @@ var Controller = (function (_super) {
             _this.emit('fatal', err);
             _this.dispose();
         });
-        _this.reconnector = reconnect({
-            initialDelay: 100,
-            maxDelay: 1000,
-            strategy: 'fibonacci',
-            failAfter: 7,
-            randomisationFactor: 0,
-            immediate: false,
-        }, function (conn) {
-            _this.conn = conn;
-            _this.conn.setKeepAlive(true, 1000);
-            _this.conn.setEncoding('utf8');
-            _this.conn.setTimeout(10000);
-            _this.conn.setNoDelay(true);
-            _this.conn.pipe(incomingJson);
-            _this.consumeSendQueue();
-        });
-        _this.reconnector
-            .on('connect', function (conn) {
-            // Once connected, don't attempt to reconnect on disconnection.
-            // We only want to use reconnect core for the initial connection attempts.
-            _this.reconnector.reconnect = false;
-            // console.log( 'Connected to runner' );
-        })
-            .on('disconnect', function (err) {
-            _this.conn = null;
-            if (_this.sentMessage) {
-                _this.sentMessage.reject(new Error('Disconnected before receiving message response'));
-            }
-            console.log('Disconnected from runner' +
-                (_this.reconnector.reconnect ? ', reconnecting...' : ''));
-            if (err) {
-                console.log('Received error: ' + err.message);
-            }
-            // We emit the 'fatal' event if the disconnect is unexpected.
-            // Disconnect is unexpected if reconnect is false (meaning we had a stable connection) and
-            // if we don't have a connection lock (meaning we are not currently connecting or disconnecting)
-            if (_this.reconnector.reconnect === false &&
-                _this.connectionLock === false) {
-                _this.emit('fatal', err || new Error('Unexpected disconnection from joltron'));
-            }
-        })
-            .on('fail', function (err) {
-            console.log('Failed to connect in reconnector: ' + err.message);
-            _this.emit('fatal', err);
-        })
-            .on('error', function (err) {
-            _this.conn = null;
-            if (_this.sentMessage) {
-                _this.sentMessage.reject(new Error('Connection got an error before receiving message response: ' +
-                    err.message));
-            }
-            console.log('Received error in reconnector: ' + err.message);
-            _this.emit('fatal', err);
-        });
-        return _this;
-    }
+    };
     Controller.launchNew = function (args, options) {
         options = options || {
             detached: true,
@@ -349,72 +297,85 @@ var Controller = (function (_super) {
         configurable: true
     });
     Controller.prototype.connect = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this.connectionLock) {
-                reject(new Error("Can't connect while connection is transitioning"));
-                return;
-            }
-            if (_this.reconnector.connected) {
-                resolve();
-                return;
-            }
-            _this.connectionLock = true;
-            // Make functions that can be safely removed from event listeners.
-            // Once one of them is called, it'll remove the other before resolving or rejecting the promise.
-            var _reconnector = _this.reconnector;
-            var __this = _this;
-            function onConnected() {
-                _reconnector.removeListener('fail', onFail);
-                __this.connectionLock = false;
-                resolve();
-            }
-            function onFail(err) {
-                _reconnector.removeListener('connect', onConnected);
-                __this.connectionLock = false;
-                reject(err);
-            }
-            _this.reconnector
-                .once('connect', onConnected)
-                .once('fail', onFail)
-                .connect(_this.port);
-            // // Only do the actual connection if not already connecting.
-            // // Otherwise simply wait on event that should be emitter from a previous in connection that is in progress.
-            // if ( !this.reconnector._connection || !this.reconnector._connection.connecting ) {
-            // 	this.reconnector.connect( this.port );
-            // }
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            var _a, lastErr_1, err_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (this.connectionLock) {
+                            throw new Error("Can't connect while connection is transitioning");
+                        }
+                        this.connectionLock = true;
+                        _b.label = 1;
+                    case 1:
+                        _b.trys.push([1, 3, 4, 5]);
+                        _a = this;
+                        return [4 /*yield*/, this.reconnector.connect({ port: this.port })];
+                    case 2:
+                        _a.conn = _b.sent();
+                        this.connectionLock = false;
+                        this.conn.setKeepAlive(true, 1000);
+                        this.conn.setEncoding('utf8');
+                        this.conn.setNoDelay(true);
+                        lastErr_1 = null;
+                        this.conn
+                            .on('error', function (err) { return (lastErr_1 = err); })
+                            .on('close', function (hasError) {
+                            _this.conn = null;
+                            if (_this.sentMessage) {
+                                _this.sentMessage.reject(new Error("Disconnected before receiving message response" +
+                                    (hasError ? ": " + lastErr_1.message : '')));
+                            }
+                            console.log("Disconnected from runner" +
+                                (hasError ? ": " + lastErr_1.message : ''));
+                            if (hasError) {
+                                console.log(lastErr_1);
+                            }
+                            if (!_this.connectionLock) {
+                                _this.emit('fatal', hasError
+                                    ? lastErr_1
+                                    : new Error("Unexpected disconnection from joltron"));
+                            }
+                        })
+                            .pipe(this.newJsonStream());
+                        this.consumeSendQueue();
+                        return [3 /*break*/, 5];
+                    case 3:
+                        err_1 = _b.sent();
+                        console.log('Failed to connect in reconnector: ' + err_1.message);
+                        this.emit('fatal', err_1);
+                        return [3 /*break*/, 5];
+                    case 4:
+                        this.connectionLock = false;
+                        return [7 /*endfinally*/];
+                    case 5: return [2 /*return*/];
+                }
+            });
         });
     };
     Controller.prototype.disconnect = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this.connectionLock) {
-                reject(new Error("Can't disconnect while connection is transitioning"));
-                return;
-            }
-            if (!_this.reconnector.connected) {
-                resolve();
-                return;
-            }
-            _this.connectionLock = true;
-            // Make functions that can be safely removed from event listeners.
-            // Once one of them is called, it'll remove the other before resolving or rejecting the promise.
-            var _reconnector = _this.reconnector;
-            var __this = _this;
-            function onDisconnected() {
-                _reconnector.removeListener('error', onError);
-                __this.connectionLock = false;
-                resolve();
-            }
-            function onError(err) {
-                _reconnector.removeListener('disconnect', onDisconnected);
-                __this.connectionLock = false;
-                reject(err);
-            }
-            _this.reconnector
-                .once('disconnect', onDisconnected)
-                .once('error', onError)
-                .disconnect();
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (this.connectionLock) {
+                            throw new Error("Can't disconnect while connection is transitioning");
+                        }
+                        this.connectionLock = true;
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, , 3, 4]);
+                        return [4 /*yield*/, this.reconnector.disconnect()];
+                    case 2:
+                        _a.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        this.connectionLock = false;
+                        return [7 /*endfinally*/];
+                    case 4: return [2 /*return*/];
+                }
+            });
         });
     };
     Controller.prototype.dispose = function () {
@@ -433,7 +394,7 @@ var Controller = (function (_super) {
     Controller.prototype.consumeSendQueue = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var err_1;
+            var err_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -473,7 +434,7 @@ var Controller = (function (_super) {
                         _a.sent();
                         return [3 /*break*/, 6];
                     case 5:
-                        err_1 = _a.sent();
+                        err_2 = _a.sent();
                         return [3 /*break*/, 6];
                     case 6:
                         this.sentMessage = null;

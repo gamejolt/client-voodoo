@@ -9,6 +9,7 @@ var PatcherState;
     PatcherState[PatcherState["Extract"] = 5] = "Extract";
     PatcherState[PatcherState["Cleanup"] = 6] = "Cleanup";
     PatcherState[PatcherState["Uninstall"] = 7] = "Uninstall";
-    PatcherState[PatcherState["Finished"] = 8] = "Finished";
+    PatcherState[PatcherState["Rollback"] = 8] = "Rollback";
+    PatcherState[PatcherState["Finished"] = 9] = "Finished";
 })(PatcherState = exports.PatcherState || (exports.PatcherState = {}));
 //# sourceMappingURL=data.js.map
