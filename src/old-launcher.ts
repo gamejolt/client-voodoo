@@ -1,7 +1,7 @@
 import * as net from 'net';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as config from './config';
+import * as fs from 'mz/fs';
+import { Config } from './config';
 import { TSEventEmitter } from './events';
 import { IParsedWrapper } from './launcher';
 
@@ -10,13 +10,23 @@ export class Launcher {
 		const instance = new LaunchInstance(wrapperId);
 
 		await new Promise((resolve, reject) => {
+			let resolved = false;
 			instance
-				.once('gameLaunched', () => resolve(true))
-				.once('gameOver', () =>
-					reject(new Error('Failed to connect to launch instance'))
-				);
+				.once('gameLaunched', () => {
+					resolved = true;
+					resolve(true);
+				})
+				.once('gameOver', () => {
+					resolved = true;
+					reject(new Error('Failed to connect to launch instance'));
+				});
 
-			setInterval(() => instance.abort(), 5000);
+			setInterval(() => {
+				if (resolved) {
+					return;
+				}
+				instance.abort();
+			}, 5000);
 		});
 
 		return instance;
@@ -75,9 +85,9 @@ class LaunchInstance extends TSEventEmitter<LaunchEvents> {
 }
 
 abstract class WrapperFinder {
-	static find(id: string): Promise<number> {
-		let pidPath = path.join(config.PID_DIR, id);
-		const port = fs.readFileSync(pidPath, 'utf8');
+	static async find(id: string): Promise<number> {
+		let pidPath = path.join(Config.pid_dir, id);
+		const port = await fs.readFile(pidPath, 'utf8');
 		return new Promise<number>((resolve, reject) => {
 			let conn = net.connect({ port: parseInt(port, 10), host: '127.0.0.1' });
 			conn

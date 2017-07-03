@@ -2,7 +2,7 @@
 import { Controller, Events } from './controller';
 import * as util from './util';
 import * as data from './data';
-import * as config from './config';
+import { Config } from './config';
 import { ControllerWrapper } from './controller-wrapper';
 import { Queue } from './queue';
 
@@ -30,7 +30,7 @@ export abstract class Patcher {
 			'--game',
 			gameUid,
 			'--platform-url',
-			config.domain + '/x/updater/check-for-updates',
+			Config.domain + '/x/updater/check-for-updates',
 			'--wait-for-connection',
 			'2',
 			'--symbiote',
