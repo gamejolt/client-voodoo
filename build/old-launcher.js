@@ -41,8 +41,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 var net = require("net");
 var path = require("path");
-var fs = require("fs");
-var config = require("./config");
+var fs = require("mz/fs");
+var config_1 = require("./config");
 var events_1 = require("./events");
 var Launcher = (function () {
     function Launcher() {
@@ -55,12 +55,22 @@ var Launcher = (function () {
                     case 0:
                         instance = new LaunchInstance(wrapperId);
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
+                                var resolved = false;
                                 instance
-                                    .once('gameLaunched', function () { return resolve(true); })
+                                    .once('gameLaunched', function () {
+                                    resolved = true;
+                                    resolve(true);
+                                })
                                     .once('gameOver', function () {
-                                    return reject(new Error('Failed to connect to launch instance'));
+                                    resolved = true;
+                                    reject(new Error('Failed to connect to launch instance'));
                                 });
-                                setInterval(function () { return instance.abort(); }, 5000);
+                                setInterval(function () {
+                                    if (resolved) {
+                                        return;
+                                    }
+                                    instance.abort();
+                                }, 5000);
                             })];
                     case 1:
                         _a.sent();
@@ -122,33 +132,43 @@ var WrapperFinder = (function () {
     function WrapperFinder() {
     }
     WrapperFinder.find = function (id) {
-        var pidPath = path.join(config.PID_DIR, id);
-        var port = fs.readFileSync(pidPath, 'utf8');
-        return new Promise(function (resolve, reject) {
-            var conn = net.connect({ port: parseInt(port, 10), host: '127.0.0.1' });
-            conn
-                .on('data', function (data) {
-                var parsedData = data.toString().split(':');
-                switch (parsedData[0]) {
-                    case 'v0.0.1':
-                    case 'v0.1.0':
-                    case 'v0.2.0':
-                    case 'v0.2.1':
-                        if (parsedData[2] === id) {
-                            resolve(parseInt(port, 10));
-                        }
-                        else {
-                            reject(new Error("Expecting wrapper id " + id + ", received " + parsedData[2]));
-                        }
-                        break;
+        return __awaiter(this, void 0, void 0, function () {
+            var pidPath, port;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        pidPath = path.join(config_1.Config.pid_dir, id);
+                        return [4 /*yield*/, fs.readFile(pidPath, 'utf8')];
+                    case 1:
+                        port = _a.sent();
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                                var conn = net.connect({ port: parseInt(port, 10), host: '127.0.0.1' });
+                                conn
+                                    .on('data', function (data) {
+                                    var parsedData = data.toString().split(':');
+                                    switch (parsedData[0]) {
+                                        case 'v0.0.1':
+                                        case 'v0.1.0':
+                                        case 'v0.2.0':
+                                        case 'v0.2.1':
+                                            if (parsedData[2] === id) {
+                                                resolve(parseInt(port, 10));
+                                            }
+                                            else {
+                                                reject(new Error("Expecting wrapper id " + id + ", received " + parsedData[2]));
+                                            }
+                                            break;
+                                    }
+                                    conn.end();
+                                })
+                                    .on('end', function () {
+                                    reject(new Error('Connection to wrapper ended before we got any info'));
+                                })
+                                    .on('error', function (err) {
+                                    reject(new Error('Got an error in the connection: ' + err.message));
+                                });
+                            })];
                 }
-                conn.end();
-            })
-                .on('end', function () {
-                reject(new Error('Connection to wrapper ended before we got any info'));
-            })
-                .on('error', function (err) {
-                reject(new Error('Got an error in the connection: ' + err.message));
             });
         });
     };

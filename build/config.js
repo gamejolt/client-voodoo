@@ -35,77 +35,83 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 var mkdirp = require("mkdirp");
-exports.domain = process.env.NODE_ENV === 'development'
+var mutex_1 = require("./mutex");
+var Config = (function () {
+    function Config() {
+    }
+    Object.defineProperty(Config, "pid_dir", {
+        get: function () {
+            return this.pidDir;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Config.ensurePidDir = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            mkdirp(_this.pidDir, function (err, made) {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(made);
+            });
+        });
+    };
+    Config.setPidDir = function (pidDir) {
+        if (!this.pidDir) {
+            this.pidDir = pidDir;
+            return true;
+        }
+        return false;
+    };
+    Config.issetClientMutex = function () {
+        return !!this.clientMutex;
+    };
+    Config.setClientMutex = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                if (process.platform !== 'win32') {
+                    return [2 /*return*/];
+                }
+                if (this.clientMutex) {
+                    return [2 /*return*/];
+                }
+                if (!this.clientMutexPromise) {
+                    this.clientMutexPromise = mutex_1.Mutex.create(this.mutex_name).then(function (mutexInst) {
+                        _this.clientMutex = mutexInst;
+                        _this.clientMutexPromise = null;
+                        _this.clientMutex.onReleased.then(function () {
+                            _this.clientMutex = null;
+                        });
+                    });
+                }
+                return [2 /*return*/, this.clientMutexPromise];
+            });
+        });
+    };
+    Config.releaseClientMutex = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                if (process.platform !== 'win32') {
+                    return [2 /*return*/, null];
+                }
+                if (!this.clientMutex) {
+                    return [2 /*return*/, null];
+                }
+                return [2 /*return*/, this.clientMutex.release()];
+            });
+        });
+    };
+    return Config;
+}());
+Config.domain = process.env.NODE_ENV === 'development'
     ? 'http://development.gamejolt.com'
     : 'https://gamejolt.com';
-var _pidDir = '';
-function PID_DIR() {
-    return _pidDir;
-}
-exports.PID_DIR = PID_DIR;
-function ensurePidDir() {
-    return new Promise(function (resolve, reject) {
-        mkdirp(_pidDir, function (err, made) {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(made);
-        });
-    });
-}
-exports.ensurePidDir = ensurePidDir;
-function setPidDir(pidDir) {
-    if (!_pidDir) {
-        _pidDir = pidDir;
-        return true;
-    }
-    return false;
-}
-exports.setPidDir = setPidDir;
-var mutex_1 = require("./mutex");
-exports.MUTEX_NAME = 'game-jolt-client';
-var clientMutexPromise = null;
-var clientMutex = null;
-function issetClientMutex() {
-    return !!clientMutex;
-}
-exports.issetClientMutex = issetClientMutex;
-function setClientMutex() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            if (process.platform !== 'win32') {
-                return [2 /*return*/];
-            }
-            if (clientMutex) {
-                return [2 /*return*/];
-            }
-            if (!clientMutexPromise) {
-                clientMutexPromise = mutex_1.Mutex.create(exports.MUTEX_NAME).then(function (mutexInst) {
-                    clientMutex = mutexInst;
-                    clientMutexPromise = null;
-                    clientMutex.onReleased.then(function () {
-                        clientMutex = null;
-                    });
-                });
-            }
-            return [2 /*return*/, clientMutexPromise];
-        });
-    });
-}
-exports.setClientMutex = setClientMutex;
-function releaseClientMutex() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            if (process.platform !== 'win32') {
-                return [2 /*return*/, null];
-            }
-            if (!clientMutex) {
-                return [2 /*return*/, null];
-            }
-            return [2 /*return*/, clientMutex.release()];
-        });
-    });
-}
-exports.releaseClientMutex = releaseClientMutex;
-setClientMutex();
+Config.mutex_name = 'game-jolt-client';
+Config.pidDir = '';
+Config.clientMutexPromise = null;
+Config.clientMutex = null;
+exports.Config = Config;
+Config.setClientMutex();
 //# sourceMappingURL=config.js.map

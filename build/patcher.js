@@ -43,7 +43,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var controller_1 = require("./controller");
 var util = require("./util");
 var data = require("./data");
-var config = require("./config");
+var config_1 = require("./config");
 var controller_wrapper_1 = require("./controller-wrapper");
 var queue_1 = require("./queue");
 var Patcher = (function () {
@@ -69,7 +69,7 @@ var Patcher = (function () {
                             '--game',
                             gameUid,
                             '--platform-url',
-                            config.domain + '/x/updater/check-for-updates',
+                            config_1.Config.domain + '/x/updater/check-for-updates',
                             '--wait-for-connection',
                             '2',
                             '--symbiote',
