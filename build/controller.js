@@ -261,6 +261,7 @@ var Controller = (function (_super) {
         options = options || {
             detached: true,
             env: process.env,
+            stdio: 'ignore',
         };
         var runnerExecutable = getExecutable();
         // Ensure that the runner is executable.
