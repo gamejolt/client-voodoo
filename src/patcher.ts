@@ -21,7 +21,10 @@ export abstract class Patcher {
 		options = options || {};
 		const dir = localPackage.install_dir;
 		const port = await util.findFreePort();
-		const gameUid = localPackage.id + '-' + localPackage.build.id;
+		const gameUid = localPackage.update
+			? `${localPackage.update.id}-${localPackage.update.build.id}`
+			: `${localPackage.id}-${localPackage.build.id}`;
+
 		const args: string[] = [
 			'--port',
 			port.toString(),
@@ -91,9 +94,14 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
 		super(controller);
 		this.on('patcherState', (state: data.PatcherState) => {
 			console.log('patcher got state: ' + state);
+			const oldState = this._state;
 			this._state = this._getState(state);
-			console.log('patcher emitting state: ' + this._state);
-			this.controller.emit('state', this._state);
+
+			// Only emit state if it's changed
+			if ( oldState !== this._state ) {
+				console.log('patcher emitting state: ' + this._state);
+				this.controller.emit('state', this._state);
+			}
 		})
 			.on('updateFailed', reason => {
 				// If the update was canceled the 'context canceled' will be emitted as the updateFailed reason.

@@ -44,8 +44,13 @@ class RollbackInstance extends ControllerWrapper<RollbackEvents & Events> {
 		super(controller);
 
 		this.on('patcherState', (state: number) => {
+			const oldState = this._state;
 			this._state = this._getState(state);
-			this.controller.emit('state', this._state);
+
+			// Only emit state if it's changed
+			if ( oldState !== this._state ) {
+				this.controller.emit('state', this._state);
+			}
 		});
 
 		this._state = State.Starting;

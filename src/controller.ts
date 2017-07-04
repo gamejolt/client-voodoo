@@ -334,11 +334,11 @@ export class Controller extends TSEventEmitter<Events> {
 		options = options || {
 			detached: true,
 			env: process.env,
-			stdio: [
-				'ignore',
-				fs.openSync('joltron.log', 'a'),
-				fs.openSync('joltron.log', 'a'),
-			],
+			// stdio: [
+			// 	'ignore',
+			// 	fs.openSync('joltron.log', 'a'),
+			// 	fs.openSync('joltron.log', 'a'),
+			// ],
 		};
 
 		let runnerExecutable = getExecutable();

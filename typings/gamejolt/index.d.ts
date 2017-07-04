@@ -16,6 +16,7 @@ declare namespace GameJolt
 		file: IGameBuildFile;
 		launch_options: IGameBuildLaunchOptions[];
 		install_dir: string;
+		update?: IGamePackage;
 	}
 
 	export interface IGameRelease
