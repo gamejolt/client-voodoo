@@ -261,11 +261,6 @@ var Controller = (function (_super) {
         options = options || {
             detached: true,
             env: process.env,
-            stdio: [
-                'ignore',
-                fs.openSync('joltron.log', 'a'),
-                fs.openSync('joltron.log', 'a'),
-            ],
         };
         var runnerExecutable = getExecutable();
         // Ensure that the runner is executable.

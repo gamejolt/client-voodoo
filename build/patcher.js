@@ -60,7 +60,9 @@ var Patcher = (function () {
                         return [4 /*yield*/, util.findFreePort()];
                     case 1:
                         port = _a.sent();
-                        gameUid = localPackage.id + '-' + localPackage.build.id;
+                        gameUid = localPackage.update
+                            ? localPackage.update.id + "-" + localPackage.update.build.id
+                            : localPackage.id + "-" + localPackage.build.id;
                         args = [
                             '--port',
                             port.toString(),
@@ -118,9 +120,13 @@ var PatchInstance = (function (_super) {
         _this.authTokenGetter = authTokenGetter;
         _this.on('patcherState', function (state) {
             console.log('patcher got state: ' + state);
+            var oldState = _this._state;
             _this._state = _this._getState(state);
-            console.log('patcher emitting state: ' + _this._state);
-            _this.controller.emit('state', _this._state);
+            // Only emit state if it's changed
+            if (oldState !== _this._state) {
+                console.log('patcher emitting state: ' + _this._state);
+                _this.controller.emit('state', _this._state);
+            }
         })
             .on('updateFailed', function (reason) {
             // If the update was canceled the 'context canceled' will be emitted as the updateFailed reason.

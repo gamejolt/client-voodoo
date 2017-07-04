@@ -92,8 +92,12 @@ var RollbackInstance = (function (_super) {
     function RollbackInstance(controller) {
         var _this = _super.call(this, controller) || this;
         _this.on('patcherState', function (state) {
+            var oldState = _this._state;
             _this._state = _this._getState(state);
-            _this.controller.emit('state', _this._state);
+            // Only emit state if it's changed
+            if (oldState !== _this._state) {
+                _this.controller.emit('state', _this._state);
+            }
         });
         _this._state = State.Starting;
         _this._isPaused = false;
