@@ -334,6 +334,7 @@ export class Controller extends TSEventEmitter<Events> {
 		options = options || {
 			detached: true,
 			env: process.env,
+			stdio: 'ignore',
 			// stdio: [
 			// 	'ignore',
 			// 	fs.openSync('joltron.log', 'a'),
