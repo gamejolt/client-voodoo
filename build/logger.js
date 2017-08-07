@@ -131,4 +131,3 @@ var Logger = (function () {
 Logger._logLines = [];
 Logger._hijacked = false;
 exports.Logger = Logger;
-//# sourceMappingURL=logger.js.map

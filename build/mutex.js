@@ -86,4 +86,4 @@ var MutexInstance = (function () {
     });
     return MutexInstance;
 }());
-//# sourceMappingURL=mutex.js.map
+exports.MutexInstance = MutexInstance;

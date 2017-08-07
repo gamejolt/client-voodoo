@@ -81,12 +81,12 @@ var Uninstaller = (function () {
     return Uninstaller;
 }());
 exports.Uninstaller = Uninstaller;
-var State;
-(function (State) {
-    State[State["Starting"] = 0] = "Starting";
-    State[State["Uninstalling"] = 1] = "Uninstalling";
-    State[State["Finished"] = 2] = "Finished";
-})(State || (State = {}));
+var UninstallState;
+(function (UninstallState) {
+    UninstallState[UninstallState["Starting"] = 0] = "Starting";
+    UninstallState[UninstallState["Uninstalling"] = 1] = "Uninstalling";
+    UninstallState[UninstallState["Finished"] = 2] = "Finished";
+})(UninstallState = exports.UninstallState || (exports.UninstallState = {}));
 var UninstallInstance = (function (_super) {
     __extends(UninstallInstance, _super);
     function UninstallInstance(controller) {
@@ -99,7 +99,7 @@ var UninstallInstance = (function (_super) {
                 _this.controller.emit('state', _this._state);
             }
         });
-        _this._state = State.Starting;
+        _this._state = UninstallState.Starting;
         _this._isPaused = false;
         _this.getState().then(function () {
             if (_this._isPaused) {
@@ -127,11 +127,11 @@ var UninstallInstance = (function (_super) {
         switch (state) {
             case data.PatcherState.Start:
             case data.PatcherState.Preparing:
-                return State.Starting;
+                return UninstallState.Starting;
             case data.PatcherState.Uninstall:
-                return State.Uninstalling;
+                return UninstallState.Uninstalling;
             case data.PatcherState.Finished:
-                return State.Finished;
+                return UninstallState.Finished;
             default:
                 throw new Error('Invalid state received: ' + state);
         }
@@ -144,11 +144,11 @@ var UninstallInstance = (function (_super) {
         configurable: true
     });
     UninstallInstance.prototype.isFinished = function () {
-        return this._state === State.Finished;
+        return this._state === UninstallState.Finished;
     };
     UninstallInstance.prototype.isRunning = function () {
         return !this._isPaused;
     };
     return UninstallInstance;
 }(controller_wrapper_1.ControllerWrapper));
-//# sourceMappingURL=uninstaller.js.map
+exports.UninstallInstance = UninstallInstance;

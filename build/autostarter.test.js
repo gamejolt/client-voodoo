@@ -66,4 +66,3 @@ describe('Autostarter', function () {
         });
     }); }));
 });
-//# sourceMappingURL=autostarter.test.js.map

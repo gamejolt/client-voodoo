@@ -33,12 +33,12 @@ export class Launcher {
 	}
 }
 
-type LaunchEvents = {
+export type LaunchEvents = {
 	'gameLaunched': () => void;
 	'gameOver': () => void;
 };
 
-class LaunchInstance extends TSEventEmitter<LaunchEvents> {
+export class LaunchInstance extends TSEventEmitter<LaunchEvents> {
 	private _interval: NodeJS.Timer | null;
 	private _wrapperPort: number;
 	private _stable: boolean;

@@ -84,4 +84,3 @@ var Shortcut = (function () {
     return Shortcut;
 }());
 exports.Shortcut = Shortcut;
-//# sourceMappingURL=shortcut.js.map

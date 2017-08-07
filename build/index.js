@@ -14,4 +14,3 @@ __export(require("./mutex"));
 var logger_1 = require("./logger");
 __export(require("./logger"));
 logger_1.Logger.hijack();
-//# sourceMappingURL=index.js.map

@@ -1,7 +1,7 @@
 import * as data from './data';
 import { PatchInstance, State as PatcherState } from './patcher';
 
-interface IQueueState {
+export interface IQueueState {
 	queued: boolean;
 	timeLeft: number;
 	managed: boolean;
@@ -59,29 +59,6 @@ export abstract class Queue {
 			console.log(`Queue: ${message}`);
 		}
 	}
-
-	// static reset( cancel?: boolean )
-	// {
-	// 	this.log( `Restting ${this._patches.size} patches` );
-	// 	const patchesToReset: PatchInstance[] = [];
-
-	// 	const values: PatchInstance[] = [];
-	// 	this._patches.forEach( ( key, patch ) => values.push( patch ) );
-	// 	for ( let patch of values ) {
-	// 		this.unmanage( patch, true );
-	// 		patchesToReset.push( patch );
-	// 	}
-
-	// 	this._maxDownloads = this._fastProfile.downloads;
-	// 	this._maxExtractions = this._fastProfile.extractions;
-
-	// 	this._settingDownloads = false;
-	// 	this._settingExtractions = false;
-
-	// 	this._patches.clear();
-
-	// 	return Promise.all( patchesToReset.map( ( patch ) => cancel ? patch.cancel() : patch.pause() ) );
-	// }
 
 	static fetch(running: boolean, isDownloading?: boolean) {
 		// tslint:disable-next-line:max-line-length

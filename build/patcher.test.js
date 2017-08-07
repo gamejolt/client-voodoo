@@ -136,4 +136,3 @@ describe('Patcher', function () {
         });
     }); }));
 });
-//# sourceMappingURL=patcher.test.js.map

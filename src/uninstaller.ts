@@ -2,6 +2,7 @@ import { Controller, Events } from './controller';
 import * as util from './util';
 import * as data from './data';
 import { ControllerWrapper } from './controller-wrapper';
+import * as GameJolt from './gamejolt';
 
 export abstract class Uninstaller {
 	static async uninstall(localPackage: GameJolt.IGamePackage) {
@@ -26,18 +27,20 @@ export abstract class Uninstaller {
 	}
 }
 
-enum State {
+export enum UninstallState {
 	Starting = 0,
 	Uninstalling = 1,
 	Finished = 2,
 }
 
-type UninstallEvents = {
-	'state': (state: State) => void;
+export type UninstallEvents = {
+	'state': (state: UninstallState) => void;
 };
 
-class UninstallInstance extends ControllerWrapper<UninstallEvents & Events> {
-	private _state: State;
+export class UninstallInstance extends ControllerWrapper<
+	UninstallEvents & Events
+> {
+	private _state: UninstallState;
 	private _isPaused: boolean;
 
 	constructor(controller: Controller) {
@@ -48,12 +51,12 @@ class UninstallInstance extends ControllerWrapper<UninstallEvents & Events> {
 			this._state = this._getState(state);
 
 			// Only emit state if it's changed
-			if ( oldState !== this._state ) {
+			if (oldState !== this._state) {
 				this.controller.emit('state', this._state);
 			}
 		});
 
-		this._state = State.Starting;
+		this._state = UninstallState.Starting;
 		this._isPaused = false;
 
 		this.getState().then(() => {
@@ -74,13 +77,13 @@ class UninstallInstance extends ControllerWrapper<UninstallEvents & Events> {
 		switch (state) {
 			case data.PatcherState.Start:
 			case data.PatcherState.Preparing:
-				return State.Starting;
+				return UninstallState.Starting;
 
 			case data.PatcherState.Uninstall:
-				return State.Uninstalling;
+				return UninstallState.Uninstalling;
 
 			case data.PatcherState.Finished:
-				return State.Finished;
+				return UninstallState.Finished;
 
 			default:
 				throw new Error('Invalid state received: ' + state);
@@ -92,7 +95,7 @@ class UninstallInstance extends ControllerWrapper<UninstallEvents & Events> {
 	}
 
 	isFinished() {
-		return this._state === State.Finished;
+		return this._state === UninstallState.Finished;
 	}
 
 	isRunning() {

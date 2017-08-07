@@ -66,4 +66,3 @@ describe('Shortcut', function () {
         });
     }); }));
 });
-//# sourceMappingURL=shortcut.test.js.map

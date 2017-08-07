@@ -7,6 +7,7 @@ import { Launcher as OldLauncher } from './old-launcher';
 import { Queue } from './queue';
 import { TSEventEmitter } from './events';
 import { Manifest } from './data';
+import * as GameJolt from './gamejolt';
 
 export interface IParsedWrapper {
 	wrapperId: string;
@@ -122,11 +123,11 @@ export abstract class Launcher {
 	}
 }
 
-type LaunchEvents = {
+export type LaunchEvents = {
 	'gameOver': (errMessage?: string) => void;
 };
 
-class LaunchInstance extends ControllerWrapper<LaunchEvents & Events> {
+export class LaunchInstance extends ControllerWrapper<LaunchEvents & Events> {
 	private _pid: number;
 
 	constructor(
@@ -162,7 +163,7 @@ class LaunchInstance extends ControllerWrapper<LaunchEvents & Events> {
 		);
 	}
 
-	kill() {
+	kill(): Promise<{ success: boolean; err?: string }> {
 		return this.controller.sendKillGame();
 	}
 }

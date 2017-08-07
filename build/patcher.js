@@ -261,4 +261,3 @@ var PatchInstance = (function (_super) {
     return PatchInstance;
 }(controller_wrapper_1.ControllerWrapper));
 exports.PatchInstance = PatchInstance;
-//# sourceMappingURL=patcher.js.map

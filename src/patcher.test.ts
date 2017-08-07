@@ -4,6 +4,7 @@ import { Patcher } from './patcher';
 import * as path from 'path';
 import { Launcher } from './launcher';
 import { mochaAsync } from './test';
+import * as GameJolt from './gamejolt';
 
 chai.use(chaiAsPromised);
 // const expect = chai.expect;

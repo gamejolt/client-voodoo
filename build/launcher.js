@@ -210,4 +210,4 @@ var LaunchInstance = (function (_super) {
     };
     return LaunchInstance;
 }(controller_wrapper_1.ControllerWrapper));
-//# sourceMappingURL=launcher.js.map
+exports.LaunchInstance = LaunchInstance;

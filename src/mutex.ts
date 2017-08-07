@@ -19,7 +19,7 @@ export abstract class Mutex {
 	}
 }
 
-class MutexInstance {
+export class MutexInstance {
 	private releasePromise: Promise<Error>;
 
 	constructor(private controller: Controller) {

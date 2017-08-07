@@ -128,6 +128,7 @@ var LaunchInstance = (function (_super) {
     };
     return LaunchInstance;
 }(events_1.TSEventEmitter));
+exports.LaunchInstance = LaunchInstance;
 var WrapperFinder = (function () {
     function WrapperFinder() {
     }
@@ -174,4 +175,3 @@ var WrapperFinder = (function () {
     };
     return WrapperFinder;
 }());
-//# sourceMappingURL=old-launcher.js.map

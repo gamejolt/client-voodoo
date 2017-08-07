@@ -1067,4 +1067,3 @@ describe('Joltron Controller', function () {
         });
     }); }));
 });
-//# sourceMappingURL=controller.test.js.map

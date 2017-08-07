@@ -162,4 +162,3 @@ var Reconnector = (function (_super) {
     return Reconnector;
 }(events_1.TSEventEmitter));
 exports.Reconnector = Reconnector;
-//# sourceMappingURL=reconnector.js.map

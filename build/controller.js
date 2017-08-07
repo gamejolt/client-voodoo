@@ -547,4 +547,3 @@ var Controller = (function (_super) {
     return Controller;
 }(events_1.TSEventEmitter));
 exports.Controller = Controller;
-//# sourceMappingURL=controller.js.map

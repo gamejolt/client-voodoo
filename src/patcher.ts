@@ -5,6 +5,7 @@ import * as data from './data';
 import { Config } from './config';
 import { ControllerWrapper } from './controller-wrapper';
 import { Queue } from './queue';
+import * as GameJolt from './gamejolt';
 
 export interface IPatchOptions {
 	authToken?: string;
@@ -98,7 +99,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
 			this._state = this._getState(state);
 
 			// Only emit state if it's changed
-			if ( oldState !== this._state ) {
+			if (oldState !== this._state) {
 				console.log('patcher emitting state: ' + this._state);
 				this.controller.emit('state', this._state);
 			}

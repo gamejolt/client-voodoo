@@ -38,4 +38,3 @@ var ControllerWrapper = (function (_super) {
     return ControllerWrapper;
 }(events_1.TSEventEmitter));
 exports.ControllerWrapper = ControllerWrapper;
-//# sourceMappingURL=controller-wrapper.js.map

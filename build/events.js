@@ -31,4 +31,3 @@ var TSEventEmitter = (function (_super) {
     return TSEventEmitter;
 }(events_1.EventEmitter));
 exports.TSEventEmitter = TSEventEmitter;
-//# sourceMappingURL=events.js.map

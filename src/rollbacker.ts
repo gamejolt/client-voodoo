@@ -2,6 +2,7 @@ import { Controller, Events } from './controller';
 import * as util from './util';
 import * as data from './data';
 import { ControllerWrapper } from './controller-wrapper';
+import * as GameJolt from './gamejolt';
 
 export abstract class Rollbacker {
 	static async rollback(localPackage: GameJolt.IGamePackage) {
@@ -26,18 +27,20 @@ export abstract class Rollbacker {
 	}
 }
 
-enum State {
+export enum RollbackState {
 	Starting = 0,
 	Rollback = 1,
 	Finished = 2,
 }
 
-type RollbackEvents = {
-	'state': (state: State) => void;
+export type RollbackEvents = {
+	'state': (state: RollbackState) => void;
 };
 
-class RollbackInstance extends ControllerWrapper<RollbackEvents & Events> {
-	private _state: State;
+export class RollbackInstance extends ControllerWrapper<
+	RollbackEvents & Events
+> {
+	private _state: RollbackState;
 	private _isPaused: boolean;
 
 	constructor(controller: Controller) {
@@ -48,12 +51,12 @@ class RollbackInstance extends ControllerWrapper<RollbackEvents & Events> {
 			this._state = this._getState(state);
 
 			// Only emit state if it's changed
-			if ( oldState !== this._state ) {
+			if (oldState !== this._state) {
 				this.controller.emit('state', this._state);
 			}
 		});
 
-		this._state = State.Starting;
+		this._state = RollbackState.Starting;
 		this._isPaused = false;
 
 		this.getState().then(() => {
@@ -74,13 +77,13 @@ class RollbackInstance extends ControllerWrapper<RollbackEvents & Events> {
 		switch (state) {
 			case data.PatcherState.Start:
 			case data.PatcherState.Preparing:
-				return State.Starting;
+				return RollbackState.Starting;
 
 			case data.PatcherState.Rollback:
-				return State.Rollback;
+				return RollbackState.Rollback;
 
 			case data.PatcherState.Finished:
-				return State.Finished;
+				return RollbackState.Finished;
 
 			default:
 				throw new Error('Invalid state received: ' + state);
@@ -92,7 +95,7 @@ class RollbackInstance extends ControllerWrapper<RollbackEvents & Events> {
 	}
 
 	isFinished() {
-		return this._state === State.Finished;
+		return this._state === RollbackState.Finished;
 	}
 
 	isRunning() {

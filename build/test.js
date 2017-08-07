@@ -57,4 +57,3 @@ function mochaAsync(fn) {
     }); };
 }
 exports.mochaAsync = mochaAsync;
-//# sourceMappingURL=test.js.map

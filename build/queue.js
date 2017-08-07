@@ -59,23 +59,6 @@ var Queue = (function () {
             console.log("Queue: " + message);
         }
     };
-    // static reset( cancel?: boolean )
-    // {
-    // 	this.log( `Restting ${this._patches.size} patches` );
-    // 	const patchesToReset: PatchInstance[] = [];
-    // 	const values: PatchInstance[] = [];
-    // 	this._patches.forEach( ( key, patch ) => values.push( patch ) );
-    // 	for ( let patch of values ) {
-    // 		this.unmanage( patch, true );
-    // 		patchesToReset.push( patch );
-    // 	}
-    // 	this._maxDownloads = this._fastProfile.downloads;
-    // 	this._maxExtractions = this._fastProfile.extractions;
-    // 	this._settingDownloads = false;
-    // 	this._settingExtractions = false;
-    // 	this._patches.clear();
-    // 	return Promise.all( patchesToReset.map( ( patch ) => cancel ? patch.cancel() : patch.pause() ) );
-    // }
     Queue.fetch = function (running, isDownloading) {
         // tslint:disable-next-line:max-line-length
         this.log("Fetching " + (running ? 'running' : 'pending') + " " + (isDownloading
@@ -474,4 +457,3 @@ Queue._settingDownloads = false;
 Queue._settingExtractions = false;
 Queue._patches = new Map();
 exports.Queue = Queue;
-//# sourceMappingURL=queue.js.map

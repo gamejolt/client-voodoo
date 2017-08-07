@@ -224,4 +224,3 @@ Autostarter.winAutostarter = new WindowsAutostarter();
 Autostarter.linuxAutostarter = new LinuxAutostarter();
 Autostarter.macAutostarter = new MacAutostarter();
 exports.Autostarter = Autostarter;
-//# sourceMappingURL=autostarter.js.map

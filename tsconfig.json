@@ -1,26 +1,17 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": ["es2015", "dom"],
-    "outDir": "./build",
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "sourceMap": true,
-    "typeRoots": [
-      "node_modules/@types",
-      "typings"
-    ]
-  },
-  "include": [
-    "./src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "typings",
-    "build"
-  ]
+	"compilerOptions": {
+		"target": "es5",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"lib": ["es2015", "dom"],
+		"outDir": "./build",
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noUnusedLocals": true,
+		"declaration": true,
+		"typeRoots": ["node_modules/@types", "typings"]
+	},
+	"include": ["./src/**/*"],
+	"exclude": ["node_modules", "typings", "build"]
 }

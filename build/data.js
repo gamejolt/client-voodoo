@@ -12,4 +12,3 @@ var PatcherState;
     PatcherState[PatcherState["Rollback"] = 8] = "Rollback";
     PatcherState[PatcherState["Finished"] = 9] = "Finished";
 })(PatcherState = exports.PatcherState || (exports.PatcherState = {}));
-//# sourceMappingURL=data.js.map

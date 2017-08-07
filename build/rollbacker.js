@@ -81,12 +81,12 @@ var Rollbacker = (function () {
     return Rollbacker;
 }());
 exports.Rollbacker = Rollbacker;
-var State;
-(function (State) {
-    State[State["Starting"] = 0] = "Starting";
-    State[State["Rollback"] = 1] = "Rollback";
-    State[State["Finished"] = 2] = "Finished";
-})(State || (State = {}));
+var RollbackState;
+(function (RollbackState) {
+    RollbackState[RollbackState["Starting"] = 0] = "Starting";
+    RollbackState[RollbackState["Rollback"] = 1] = "Rollback";
+    RollbackState[RollbackState["Finished"] = 2] = "Finished";
+})(RollbackState = exports.RollbackState || (exports.RollbackState = {}));
 var RollbackInstance = (function (_super) {
     __extends(RollbackInstance, _super);
     function RollbackInstance(controller) {
@@ -99,7 +99,7 @@ var RollbackInstance = (function (_super) {
                 _this.controller.emit('state', _this._state);
             }
         });
-        _this._state = State.Starting;
+        _this._state = RollbackState.Starting;
         _this._isPaused = false;
         _this.getState().then(function () {
             if (_this._isPaused) {
@@ -127,11 +127,11 @@ var RollbackInstance = (function (_super) {
         switch (state) {
             case data.PatcherState.Start:
             case data.PatcherState.Preparing:
-                return State.Starting;
+                return RollbackState.Starting;
             case data.PatcherState.Rollback:
-                return State.Rollback;
+                return RollbackState.Rollback;
             case data.PatcherState.Finished:
-                return State.Finished;
+                return RollbackState.Finished;
             default:
                 throw new Error('Invalid state received: ' + state);
         }
@@ -144,11 +144,11 @@ var RollbackInstance = (function (_super) {
         configurable: true
     });
     RollbackInstance.prototype.isFinished = function () {
-        return this._state === State.Finished;
+        return this._state === RollbackState.Finished;
     };
     RollbackInstance.prototype.isRunning = function () {
         return !this._isPaused;
     };
     return RollbackInstance;
 }(controller_wrapper_1.ControllerWrapper));
-//# sourceMappingURL=rollbacker.js.map
+exports.RollbackInstance = RollbackInstance;
