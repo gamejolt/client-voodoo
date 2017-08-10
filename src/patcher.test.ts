@@ -27,6 +27,7 @@ describe('Patcher', function() {
 		mochaAsync(async () => {
 			let localPackage: GameJolt.IGamePackage = {
 				id: 119886,
+				game_id: 42742,
 				title: 'test',
 				description: 'test',
 				release: {
@@ -35,7 +36,6 @@ describe('Patcher', function() {
 				},
 				build: {
 					id: 282275,
-					game_id: 42742,
 					folder: 'test',
 					type: 'downloadable', // downloadable, html, flash, silverlight, unity, applet
 					archive_type: 'tar.xz',

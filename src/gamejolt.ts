@@ -1,5 +1,6 @@
 export interface IGamePackage {
 	id: number;
+	game_id: number;
 	title: string;
 	description: string;
 	release: IGameRelease;
@@ -17,7 +18,6 @@ export interface IGameRelease {
 
 export interface IGameBuild {
 	id: number;
-	game_id: number;
 	folder?: string;
 	type: string; // downloadable, html, flash, silverlight, unity, applet
 	archive_type: string;

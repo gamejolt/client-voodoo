@@ -62,6 +62,7 @@ describe('Patcher', function () {
                 case 0:
                     localPackage = {
                         id: 119886,
+                        game_id: 42742,
                         title: 'test',
                         description: 'test',
                         release: {
@@ -70,7 +71,6 @@ describe('Patcher', function () {
                         },
                         build: {
                             id: 282275,
-                            game_id: 42742,
                             folder: 'test',
                             type: 'downloadable',
                             archive_type: 'tar.xz',
