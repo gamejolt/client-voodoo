@@ -33,13 +33,11 @@ export enum UninstallState {
 	Finished = 2,
 }
 
-export type UninstallEvents = {
+export type UninstallEvents = Events & {
 	'state': (state: UninstallState) => void;
 };
 
-export class UninstallInstance extends ControllerWrapper<
-	UninstallEvents & Events
-> {
+export class UninstallInstance extends ControllerWrapper<UninstallEvents> {
 	private _state: UninstallState;
 	private _isPaused: boolean;
 

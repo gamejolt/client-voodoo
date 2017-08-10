@@ -10,10 +10,10 @@ export declare enum RollbackState {
     Rollback = 1,
     Finished = 2,
 }
-export declare type RollbackEvents = {
+export declare type RollbackEvents = Events & {
     'state': (state: RollbackState) => void;
 };
-export declare class RollbackInstance extends ControllerWrapper<RollbackEvents & Events> {
+export declare class RollbackInstance extends ControllerWrapper<RollbackEvents> {
     private _state;
     private _isPaused;
     constructor(controller: Controller);

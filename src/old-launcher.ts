@@ -4,6 +4,7 @@ import * as fs from 'mz/fs';
 import { Config } from './config';
 import { TSEventEmitter } from './events';
 import { IParsedWrapper } from './launcher';
+import { Events } from './controller';
 
 export class Launcher {
 	static async attach(wrapperId: string) {
@@ -33,7 +34,7 @@ export class Launcher {
 	}
 }
 
-export type LaunchEvents = {
+export type LaunchEvents = Events & {
 	'gameLaunched': () => void;
 	'gameOver': () => void;
 };

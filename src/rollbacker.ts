@@ -33,13 +33,11 @@ export enum RollbackState {
 	Finished = 2,
 }
 
-export type RollbackEvents = {
+export type RollbackEvents = Events & {
 	'state': (state: RollbackState) => void;
 };
 
-export class RollbackInstance extends ControllerWrapper<
-	RollbackEvents & Events
-> {
+export class RollbackInstance extends ControllerWrapper<RollbackEvents> {
 	private _state: RollbackState;
 	private _isPaused: boolean;
 

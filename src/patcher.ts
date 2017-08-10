@@ -79,12 +79,12 @@ export enum State {
 	Finished = 3,
 }
 
-export type PatchEvents = {
+export type PatchEvents = Events & {
 	'state': (state: State) => void;
 	'done': (errMessage?: string) => void;
 };
 
-export class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
+export class PatchInstance extends ControllerWrapper<PatchEvents> {
 	private _state: State;
 	private _isPaused: boolean;
 

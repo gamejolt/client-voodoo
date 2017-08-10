@@ -10,10 +10,10 @@ export declare enum UninstallState {
     Uninstalling = 1,
     Finished = 2,
 }
-export declare type UninstallEvents = {
+export declare type UninstallEvents = Events & {
     'state': (state: UninstallState) => void;
 };
-export declare class UninstallInstance extends ControllerWrapper<UninstallEvents & Events> {
+export declare class UninstallInstance extends ControllerWrapper<UninstallEvents> {
     private _state;
     private _isPaused;
     constructor(controller: Controller);

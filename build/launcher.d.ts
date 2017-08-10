@@ -11,10 +11,10 @@ export declare abstract class Launcher {
     private static ensureCredentials(localPackage, credentials);
     private static manageInstanceInQueue(instance);
 }
-export declare type LaunchEvents = {
+export declare type LaunchEvents = Events & {
     'gameOver': (errMessage?: string) => void;
 };
-export declare class LaunchInstance extends ControllerWrapper<LaunchEvents & Events> {
+export declare class LaunchInstance extends ControllerWrapper<LaunchEvents> {
     private _pid;
     constructor(controller: Controller, onReady: (err: Error | null, instance: LaunchInstance) => void);
     readonly pid: string;

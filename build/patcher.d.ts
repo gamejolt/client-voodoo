@@ -18,11 +18,11 @@ export declare enum State {
     Patching = 2,
     Finished = 3,
 }
-export declare type PatchEvents = {
+export declare type PatchEvents = Events & {
     'state': (state: State) => void;
     'done': (errMessage?: string) => void;
 };
-export declare class PatchInstance extends ControllerWrapper<PatchEvents & Events> {
+export declare class PatchInstance extends ControllerWrapper<PatchEvents> {
     private authTokenGetter;
     private _state;
     private _isPaused;

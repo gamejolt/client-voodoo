@@ -123,11 +123,11 @@ export abstract class Launcher {
 	}
 }
 
-export type LaunchEvents = {
+export type LaunchEvents = Events & {
 	'gameOver': (errMessage?: string) => void;
 };
 
-export class LaunchInstance extends ControllerWrapper<LaunchEvents & Events> {
+export class LaunchInstance extends ControllerWrapper<LaunchEvents> {
 	private _pid: number;
 
 	constructor(
