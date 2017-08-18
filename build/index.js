@@ -5,6 +5,7 @@ function __export(m) {
 __export(require("./data"));
 __export(require("./patcher"));
 __export(require("./launcher"));
+__export(require("./old-launcher"));
 __export(require("./uninstaller"));
 __export(require("./config"));
 __export(require("./queue"));

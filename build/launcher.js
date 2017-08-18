@@ -110,7 +110,7 @@ var Launcher = (function () {
                         instance = null;
                         if (!(typeof runningPid !== 'string'))
                             return [3 /*break*/, 2];
-                        return [4 /*yield*/, old_launcher_1.Launcher.attach(runningPid.wrapperId)];
+                        return [4 /*yield*/, old_launcher_1.OldLauncher.attach(runningPid.wrapperId)];
                     case 1:
                         instance = _a.sent();
                         return [3 /*break*/, 4];

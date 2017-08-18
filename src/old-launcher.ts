@@ -6,9 +6,9 @@ import { TSEventEmitter } from './events';
 import { IParsedWrapper } from './launcher';
 import { Events } from './controller';
 
-export class Launcher {
+export class OldLauncher {
 	static async attach(wrapperId: string) {
-		const instance = new LaunchInstance(wrapperId);
+		const instance = new OldLaunchInstance(wrapperId);
 
 		await new Promise((resolve, reject) => {
 			let resolved = false;
@@ -34,12 +34,12 @@ export class Launcher {
 	}
 }
 
-export type LaunchEvents = Events & {
+export type OldLauncherEvents = Events & {
 	'gameLaunched': () => void;
 	'gameOver': () => void;
 };
 
-export class LaunchInstance extends TSEventEmitter<LaunchEvents> {
+export class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents> {
 	private _interval: NodeJS.Timer | null;
 	private _wrapperPort: number;
 	private _stable: boolean;

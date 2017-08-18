@@ -3,7 +3,7 @@ import * as path from 'path';
 import { Controller, Events } from './controller';
 import * as util from './util';
 import { ControllerWrapper } from './controller-wrapper';
-import { Launcher as OldLauncher } from './old-launcher';
+import { OldLauncher, OldLaunchInstance } from './old-launcher';
 import { Queue } from './queue';
 import { TSEventEmitter } from './events';
 import { Manifest } from './data';
@@ -56,8 +56,8 @@ export abstract class Launcher {
 
 	static async attach(
 		runningPid: string | IParsedWrapper
-	): Promise<TSEventEmitter<LaunchEvents>> {
-		let instance: TSEventEmitter<LaunchEvents> = null;
+	): Promise<LaunchInstance | OldLaunchInstance> {
+		let instance: LaunchInstance | OldLaunchInstance = null;
 		if (typeof runningPid !== 'string') {
 			instance = await OldLauncher.attach(runningPid.wrapperId);
 		} else {
@@ -116,7 +116,9 @@ export abstract class Launcher {
 		]);
 	}
 
-	private static manageInstanceInQueue(instance: TSEventEmitter<LaunchEvents>) {
+	private static manageInstanceInQueue<T extends TSEventEmitter<LaunchEvents>>(
+		instance: T
+	): T {
 		Queue.setSlower();
 		instance.once('gameOver', () => Queue.setFaster());
 		return instance;

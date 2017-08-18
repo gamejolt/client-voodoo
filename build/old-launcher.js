@@ -44,16 +44,16 @@ var path = require("path");
 var fs = require("mz/fs");
 var config_1 = require("./config");
 var events_1 = require("./events");
-var Launcher = (function () {
-    function Launcher() {
+var OldLauncher = (function () {
+    function OldLauncher() {
     }
-    Launcher.attach = function (wrapperId) {
+    OldLauncher.attach = function (wrapperId) {
         return __awaiter(this, void 0, void 0, function () {
             var instance;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        instance = new LaunchInstance(wrapperId);
+                        instance = new OldLaunchInstance(wrapperId);
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 var resolved = false;
                                 instance
@@ -79,19 +79,19 @@ var Launcher = (function () {
             });
         });
     };
-    return Launcher;
+    return OldLauncher;
 }());
-exports.Launcher = Launcher;
-var LaunchInstance = (function (_super) {
-    __extends(LaunchInstance, _super);
-    function LaunchInstance(_wrapperId) {
+exports.OldLauncher = OldLauncher;
+var OldLaunchInstance = (function (_super) {
+    __extends(OldLaunchInstance, _super);
+    function OldLaunchInstance(_wrapperId) {
         var _this = _super.call(this) || this;
         _this._wrapperId = _wrapperId;
         _this._interval = setInterval(function () { return _this.tick(); }, 1000);
         _this._stable = false;
         return _this;
     }
-    Object.defineProperty(LaunchInstance.prototype, "pid", {
+    Object.defineProperty(OldLaunchInstance.prototype, "pid", {
         get: function () {
             return {
                 wrapperId: this._wrapperId,
@@ -100,7 +100,7 @@ var LaunchInstance = (function (_super) {
         enumerable: true,
         configurable: true
     });
-    LaunchInstance.prototype.tick = function () {
+    OldLaunchInstance.prototype.tick = function () {
         var _this = this;
         return WrapperFinder.find(this._wrapperId)
             .then(function (port) {
@@ -119,16 +119,16 @@ var LaunchInstance = (function (_super) {
             return false;
         });
     };
-    LaunchInstance.prototype.abort = function () {
+    OldLaunchInstance.prototype.abort = function () {
         if (this._interval) {
             clearInterval(this._interval);
             this._interval = null;
         }
         this.emit('gameOver');
     };
-    return LaunchInstance;
+    return OldLaunchInstance;
 }(events_1.TSEventEmitter));
-exports.LaunchInstance = LaunchInstance;
+exports.OldLaunchInstance = OldLaunchInstance;
 var WrapperFinder = (function () {
     function WrapperFinder() {
     }

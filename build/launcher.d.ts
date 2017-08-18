@@ -1,15 +1,15 @@
 import { Controller, Events } from './controller';
 import { ControllerWrapper } from './controller-wrapper';
-import { TSEventEmitter } from './events';
+import { OldLaunchInstance } from './old-launcher';
 import * as GameJolt from './gamejolt';
 export interface IParsedWrapper {
     wrapperId: string;
 }
 export declare abstract class Launcher {
-    static launch(localPackage: GameJolt.IGamePackage, credentials: GameJolt.IGameCredentials | null, ...executableArgs: string[]): Promise<TSEventEmitter<LaunchEvents>>;
-    static attach(runningPid: string | IParsedWrapper): Promise<TSEventEmitter<LaunchEvents>>;
+    static launch(localPackage: GameJolt.IGamePackage, credentials: GameJolt.IGameCredentials | null, ...executableArgs: string[]): Promise<LaunchInstance>;
+    static attach(runningPid: string | IParsedWrapper): Promise<LaunchInstance | OldLaunchInstance>;
     private static ensureCredentials(localPackage, credentials);
-    private static manageInstanceInQueue(instance);
+    private static manageInstanceInQueue<T>(instance);
 }
 export declare type LaunchEvents = Events & {
     'gameOver': (errMessage?: string) => void;

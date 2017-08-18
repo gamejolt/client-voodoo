@@ -1,14 +1,14 @@
 import { TSEventEmitter } from './events';
 import { IParsedWrapper } from './launcher';
 import { Events } from './controller';
-export declare class Launcher {
-    static attach(wrapperId: string): Promise<LaunchInstance>;
+export declare class OldLauncher {
+    static attach(wrapperId: string): Promise<OldLaunchInstance>;
 }
-export declare type LaunchEvents = Events & {
+export declare type OldLauncherEvents = Events & {
     'gameLaunched': () => void;
     'gameOver': () => void;
 };
-export declare class LaunchInstance extends TSEventEmitter<LaunchEvents> {
+export declare class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents> {
     private _wrapperId;
     private _interval;
     private _wrapperPort;

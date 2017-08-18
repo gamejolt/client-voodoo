@@ -1,6 +1,7 @@
 export * from './data';
 export * from './patcher';
 export * from './launcher';
+export * from './old-launcher';
 export * from './uninstaller';
 export * from './config';
 export * from './queue';
