@@ -2,6 +2,7 @@
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
+__export(require("./data"));
 __export(require("./patcher"));
 __export(require("./launcher"));
 __export(require("./uninstaller"));
