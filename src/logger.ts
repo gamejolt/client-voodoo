@@ -1,7 +1,7 @@
 import * as util from 'util';
 import * as os from 'os';
 import * as _ from 'lodash';
-import * as fs from 'mz/fs';
+import * as fs from 'fs';
 
 const LOG_LINES = 300;
 const CONSOLE_LOG = console.log;
@@ -35,7 +35,9 @@ export abstract class Logger {
 				this._file.close();
 			}
 			this._file = null;
-			fs.unlinkSync(this._filePath);
+			if (fs.existsSync(this._filePath)) {
+				fs.unlinkSync(this._filePath);
+			}
 			let str = this._logLines.join('\n') + '\n';
 			fs.writeFileSync(this._filePath, str);
 			let logLineLength = this._logLines.join('\n').length,

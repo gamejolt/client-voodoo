@@ -7,15 +7,17 @@ interface IMutexInstance {
 }
 
 export abstract class Config {
-	static readonly domain = process.env.NODE_ENV === 'development'
-		? 'http://development.gamejolt.com'
-		: 'https://gamejolt.com';
+	static env: 'development' | 'production' | null = null;
 	static readonly mutex_name = 'game-jolt-client';
 
 	private static pidDir = '';
 	private static clientMutexPromise: Promise<void> = null;
 	private static clientMutex: IMutexInstance = null;
 
+	static get domain() {
+		const isDev = this.env === 'development' || process.env === 'development';
+		return isDev ? 'http://development.gamejolt.com' : 'https://gamejolt.com';
+	}
 	static get pid_dir() {
 		return this.pidDir;
 	}

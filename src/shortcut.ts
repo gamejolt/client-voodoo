@@ -1,13 +1,14 @@
 import * as path from 'path';
-import * as fs from 'mz/fs';
+import * as fs from './fs';
 import * as xdgBasedir from 'xdg-basedir';
 
 const shellEscape: (args: string[]) => string = require('shell-escape');
 
 export abstract class Shortcut {
-	static create(program: string, icon: string) {
+	static async create(program: string, icon: string) {
 		if (process.platform === 'linux') {
-			return this.removeLinux().then(() => this.createLinux(program, icon));
+			await this.removeLinux();
+			return this.createLinux(program, icon);
 		} else {
 			throw new Error('Not supported');
 		}
@@ -23,7 +24,7 @@ export abstract class Shortcut {
 
 	private static async createLinux(program: string, icon: string) {
 		let desktopFile = path.join(
-			xdgBasedir.data,
+			xdgBasedir.data || '',
 			'applications',
 			'game-jolt-client.desktop'
 		);
@@ -42,7 +43,7 @@ Keywords=Play;Games;GJ;GameJolt;Indie;
 Hidden=false
 Name[en_US]=Game Jolt Client`;
 
-		await fs.writeFile(desktopFile, desktopContents, { mode: '0755' });
+		await fs.writeFileAsync(desktopFile, desktopContents, { mode: 0o755 });
 	}
 
 	private static removeLinux() {
@@ -56,7 +57,10 @@ Name[en_US]=Game Jolt Client`;
 			'applications',
 			'Game Jolt Client.desktop'
 		);
-		return Promise.all([fs.unlink(desktopFile), fs.unlink(oldDesktopFile)])
+		return Promise.all([
+			fs.unlinkAsync(desktopFile),
+			fs.unlinkAsync(oldDesktopFile),
+		])
 			.then(() => true)
 			.catch(err => false);
 	}

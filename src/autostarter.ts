@@ -1,7 +1,7 @@
 import * as path from 'path';
-import * as fs from 'mz/fs';
 import * as xdgBasedir from 'xdg-basedir';
 import * as Winreg from 'winreg';
+import * as fs from './fs';
 
 let applescript: (script: string) => Promise<any> = null;
 
@@ -70,7 +70,7 @@ class WindowsAutostarter implements IAutostarter {
 
 class LinuxAutostarter implements IAutostarter {
 	private static desktopFilePath = path.join(
-		xdgBasedir.config,
+		xdgBasedir.config || '',
 		'autostart',
 		`${autostartId}.desktop`
 	);
@@ -81,7 +81,7 @@ if [ -e "${program}" ]; then
 	${shellEscape([program].concat(args || []))}
 fi`;
 
-		await fs.writeFile(runner, runnerScript, { mode: '0755' });
+		await fs.writeFileAsync(runner, runnerScript, { mode: 0o755 });
 	}
 
 	async set(program: string, args?: string[], runner?: string) {
@@ -100,17 +100,17 @@ Hidden=false
 Name[en_US]=Game Jolt Client
 TX-GNOME-Autostart-enabled=true`;
 
-		await fs.writeFile(LinuxAutostarter.desktopFilePath, desktopContents, {
-			mode: '0755',
+		await fs.writeFileAsync(LinuxAutostarter.desktopFilePath, desktopContents, {
+			mode: 0o755,
 		});
 	}
 
 	unset() {
-		return fs.unlink(LinuxAutostarter.desktopFilePath);
+		return fs.unlinkAsync(LinuxAutostarter.desktopFilePath);
 	}
 
 	isset() {
-		return fs.exists(LinuxAutostarter.desktopFilePath);
+		return fs.existsAsync(LinuxAutostarter.desktopFilePath);
 	}
 }
 
@@ -121,7 +121,7 @@ if [ -e "${program}" ]; then
 	${shellEscape([program].concat(args || []))}
 fi`;
 
-		await fs.writeFile(runner, runnerScript, { mode: '0755' });
+		await fs.writeFileAsync(runner, runnerScript, { mode: 0o755 });
 	}
 
 	async set(program: string, args?: string[], runner?: string) {
@@ -139,12 +139,12 @@ fi`;
 		);
 	}
 
-	isset() {
-		return applescript(
+	async isset() {
+		const loginItems: string = await applescript(
 			'tell application "System Events" to get the name of every login item'
-		).then((loginItems: string) => {
-			return loginItems && loginItems.indexOf(autostartId) !== -1;
-		});
+		);
+
+		return loginItems && loginItems.indexOf(autostartId) !== -1;
 	}
 }
 
@@ -173,19 +173,21 @@ export abstract class Autostarter {
 		throw new Error('Invalid OS');
 	}
 
-	static set(path: string, args?: string[], runner?: string): Promise<void> {
-		return this.unset(path).then(() =>
-			this.autostarter.set(path, args, runner)
-		);
+	static async set(
+		path_: string,
+		args?: string[],
+		runner?: string
+	): Promise<void> {
+		await this.unset(path_);
+		this.autostarter.set(path_, args, runner);
 	}
 
-	static unset(runner?: string): Promise<void> {
-		return this.isset().then(isset => {
-			if (isset) {
-				return this.autostarter.unset(runner);
-			}
-			return undefined;
-		});
+	static async unset(runner?: string): Promise<void> {
+		const isset = await this.isset();
+		if (isset) {
+			return this.autostarter.unset(runner);
+		}
+		return;
 	}
 
 	static isset(): Promise<boolean> {

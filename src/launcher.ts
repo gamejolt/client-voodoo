@@ -1,4 +1,4 @@
-import * as fs from 'mz/fs';
+import * as fs from './fs';
 import * as path from 'path';
 import { Controller, Events } from './controller';
 import * as util from './util';
@@ -94,7 +94,7 @@ export abstract class Launcher {
 		localPackage: GameJolt.IGamePackage,
 		credentials: GameJolt.IGameCredentials
 	) {
-		const manifestStr = await fs.readFile(
+		const manifestStr = await fs.readFileAsync(
 			path.join(localPackage.install_dir, '.manifest'),
 			'utf8'
 		);
@@ -102,8 +102,11 @@ export abstract class Launcher {
 
 		const str = `0.2.1\n${credentials.username}\n${credentials.user_token}\n`;
 		await Promise.all([
-			fs.writeFile(path.join(localPackage.install_dir, '.gj-credentials'), str),
-			fs.writeFile(
+			fs.writeFileAsync(
+				path.join(localPackage.install_dir, '.gj-credentials'),
+				str
+			),
+			fs.writeFileAsync(
 				path.join(
 					localPackage.install_dir,
 					manifest.gameInfo.dir,

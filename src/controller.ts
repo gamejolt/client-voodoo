@@ -10,6 +10,7 @@ const JSONStream = require('JSONStream');
 const ps = require('ps-node');
 
 export function getExecutable() {
+	console.log('My dirname: ' + __dirname);
 	let binFolder = path.resolve(__dirname, '..', 'bin');
 	switch (process.platform) {
 		case 'win32':
@@ -51,9 +52,9 @@ class SentMessage<T> {
 		return this._resolved;
 	}
 
-	resolve(data: any) {
+	resolve(data_: any) {
 		this._resolved = true;
-		this.resolver(data);
+		this.resolver(data_);
 	}
 
 	reject(reason: any) {
@@ -148,13 +149,15 @@ export class Controller extends TSEventEmitter<Events> {
 
 	private newJsonStream() {
 		return JSONStream.parse()
-			.on('data', data => {
-				console.log('Received json: ' + JSON.stringify(data));
+			.on('data', data_ => {
+				console.log('Received json: ' + JSON.stringify(data_));
+
+				let payload: any, type: string;
 
 				if (
-					data.msgId &&
+					data_.msgId &&
 					this.sentMessage &&
-					data.msgId === this.sentMessage.msgId
+					data_.msgId === this.sentMessage.msgId
 				) {
 					let idx = this.expectingQueuePauseIds.indexOf(this.sentMessage.msgId);
 					if (idx !== -1) {
@@ -168,24 +171,24 @@ export class Controller extends TSEventEmitter<Events> {
 						this.expectingQueueResume++;
 					}
 
-					const payload = data.payload;
+					payload = data_.payload;
 					if (!payload) {
 						return this.sentMessage.reject(
 							new Error(
 								'Missing `payload` field in response' +
 									' in ' +
-									JSON.stringify(data)
+									JSON.stringify(data_)
 							)
 						);
 					}
 
-					const type = data.type;
+					type = data_.type;
 					if (!type) {
 						return this.sentMessage.reject(
 							new Error(
 								'Missing `type` field in response' +
 									' in ' +
-									JSON.stringify(data)
+									JSON.stringify(data_)
 							)
 						);
 					}
@@ -195,7 +198,7 @@ export class Controller extends TSEventEmitter<Events> {
 							return this.sentMessage.resolve(payload);
 						case 'result':
 							if (payload.success) {
-								return this.sentMessage.resolve(data);
+								return this.sentMessage.resolve(data_);
 							}
 							return this.sentMessage.resolve(payload.err);
 						default:
@@ -204,30 +207,32 @@ export class Controller extends TSEventEmitter<Events> {
 									'Unexpected `type` value: ' +
 										type +
 										' in ' +
-										JSON.stringify(data)
+										JSON.stringify(data_)
 								)
 							);
 					}
 				}
 
-				const type = data.type;
+				type = data_.type;
 				if (!type) {
 					return this.emit(
 						'err',
 						new Error(
-							'Missing `type` field in response' + ' in ' + JSON.stringify(data)
+							'Missing `type` field in response' +
+								' in ' +
+								JSON.stringify(data_)
 						)
 					);
 				}
 
-				let payload = data.payload;
+				payload = data_.payload;
 				if (!payload) {
 					return this.emit(
 						'err',
 						new Error(
 							'Missing `payload` field in response' +
 								' in ' +
-								JSON.stringify(data)
+								JSON.stringify(data_)
 						)
 					);
 				}
@@ -304,7 +309,7 @@ export class Controller extends TSEventEmitter<Events> {
 										'Unexpected update `message` value: ' +
 											message +
 											' in ' +
-											JSON.stringify(data)
+											JSON.stringify(data_)
 									)
 								);
 						}
@@ -317,7 +322,7 @@ export class Controller extends TSEventEmitter<Events> {
 								'Unexpected `type` value: ' +
 									type +
 									' in ' +
-									JSON.stringify(data)
+									JSON.stringify(data_)
 							)
 						);
 				}
