@@ -45,7 +45,7 @@ export declare abstract class Queue {
     private static onDone(patch, state, errMessage?);
     private static onFatalError(patch, state, err);
     static canResume(patch: PatchInstance): boolean;
-    static manage(patch: PatchInstance): Promise<any>;
+    static manage(patch: PatchInstance): Promise<IQueueState>;
     static unmanage(patch: PatchInstance, noTick?: boolean): void;
     private static resumePatch(patch, state);
     private static pausePatch(patch, state);

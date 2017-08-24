@@ -4,12 +4,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments)).next());
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
-    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -34,11 +34,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 var mkdirp = require("mkdirp");
 var mutex_1 = require("./mutex");
 var Config = (function () {
     function Config() {
     }
+    Object.defineProperty(Config, "domain", {
+        get: function () {
+            var isDev = this.env === 'development' || process.env === 'development';
+            return isDev ? 'http://development.gamejolt.com' : 'https://gamejolt.com';
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Config, "pid_dir", {
         get: function () {
             return this.pidDir;
@@ -103,14 +112,12 @@ var Config = (function () {
             });
         });
     };
+    Config.env = null;
+    Config.mutex_name = 'game-jolt-client';
+    Config.pidDir = '';
+    Config.clientMutexPromise = null;
+    Config.clientMutex = null;
     return Config;
 }());
-Config.domain = process.env.NODE_ENV === 'development'
-    ? 'http://development.gamejolt.com'
-    : 'https://gamejolt.com';
-Config.mutex_name = 'game-jolt-client';
-Config.pidDir = '';
-Config.clientMutexPromise = null;
-Config.clientMutex = null;
 exports.Config = Config;
 Config.setClientMutex();

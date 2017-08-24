@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var PatcherState;
 (function (PatcherState) {
     PatcherState[PatcherState["Start"] = 0] = "Start";

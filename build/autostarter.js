@@ -4,12 +4,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments)).next());
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
-    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -34,10 +34,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 var path = require("path");
-var fs = require("mz/fs");
 var xdgBasedir = require("xdg-basedir");
 var Winreg = require("winreg");
+var fs = require("./fs");
 var applescript = null;
 if (process.platform === 'darwin') {
     var applescriptExecString_1 = require('applescript').execString;
@@ -105,7 +106,7 @@ var LinuxAutostarter = (function () {
                 switch (_a.label) {
                     case 0:
                         runnerScript = "#!/bin/bash\nif [ -e \"" + program + "\" ]; then\n\t" + shellEscape([program].concat(args || [])) + "\nfi";
-                        return [4 /*yield*/, fs.writeFile(runner, runnerScript, { mode: '0755' })];
+                        return [4 /*yield*/, fs.writeFileAsync(runner, runnerScript, { mode: 493 })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -122,8 +123,8 @@ var LinuxAutostarter = (function () {
                     case 1:
                         _a.sent();
                         desktopContents = "[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=" + shellEscape([runner]) + "\nTerminal=false\nCategories=Game;\nKeywords=Play;GJ;GameJolt;\nHidden=false\nName[en_US]=Game Jolt Client\nTX-GNOME-Autostart-enabled=true";
-                        return [4 /*yield*/, fs.writeFile(LinuxAutostarter.desktopFilePath, desktopContents, {
-                                mode: '0755',
+                        return [4 /*yield*/, fs.writeFileAsync(LinuxAutostarter.desktopFilePath, desktopContents, {
+                                mode: 493,
                             })];
                     case 2:
                         _a.sent();
@@ -133,14 +134,14 @@ var LinuxAutostarter = (function () {
         });
     };
     LinuxAutostarter.prototype.unset = function () {
-        return fs.unlink(LinuxAutostarter.desktopFilePath);
+        return fs.unlinkAsync(LinuxAutostarter.desktopFilePath);
     };
     LinuxAutostarter.prototype.isset = function () {
-        return fs.exists(LinuxAutostarter.desktopFilePath);
+        return fs.existsAsync(LinuxAutostarter.desktopFilePath);
     };
+    LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config || '', 'autostart', autostartId + ".desktop");
     return LinuxAutostarter;
 }());
-LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config, 'autostart', autostartId + ".desktop");
 var MacAutostarter = (function () {
     function MacAutostarter() {
     }
@@ -151,7 +152,7 @@ var MacAutostarter = (function () {
                 switch (_a.label) {
                     case 0:
                         runnerScript = "#!/bin/bash\nif [ -e \"" + program + "\" ]; then\n\t" + shellEscape([program].concat(args || [])) + "\nfi";
-                        return [4 /*yield*/, fs.writeFile(runner, runnerScript, { mode: '0755' })];
+                        return [4 /*yield*/, fs.writeFileAsync(runner, runnerScript, { mode: 493 })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -176,8 +177,16 @@ var MacAutostarter = (function () {
         return applescript("tell application \"System Events\" to delete every login item whose name is \"" + autostartId + "\"");
     };
     MacAutostarter.prototype.isset = function () {
-        return applescript('tell application "System Events" to get the name of every login item').then(function (loginItems) {
-            return loginItems && loginItems.indexOf(autostartId) !== -1;
+        return __awaiter(this, void 0, void 0, function () {
+            var loginItems;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, applescript('tell application "System Events" to get the name of every login item')];
+                    case 1:
+                        loginItems = _a.sent();
+                        return [2 /*return*/, loginItems && loginItems.indexOf(autostartId) !== -1];
+                }
+            });
         });
     };
     return MacAutostarter;
@@ -200,27 +209,41 @@ var Autostarter = (function () {
         enumerable: true,
         configurable: true
     });
-    Autostarter.set = function (path, args, runner) {
-        var _this = this;
-        return this.unset(path).then(function () {
-            return _this.autostarter.set(path, args, runner);
+    Autostarter.set = function (path_, args, runner) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.unset(path_)];
+                    case 1:
+                        _a.sent();
+                        this.autostarter.set(path_, args, runner);
+                        return [2 /*return*/];
+                }
+            });
         });
     };
     Autostarter.unset = function (runner) {
-        var _this = this;
-        return this.isset().then(function (isset) {
-            if (isset) {
-                return _this.autostarter.unset(runner);
-            }
-            return undefined;
+        return __awaiter(this, void 0, void 0, function () {
+            var isset;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.isset()];
+                    case 1:
+                        isset = _a.sent();
+                        if (isset) {
+                            return [2 /*return*/, this.autostarter.unset(runner)];
+                        }
+                        return [2 /*return*/];
+                }
+            });
         });
     };
     Autostarter.isset = function () {
         return this.autostarter.isset();
     };
+    Autostarter.winAutostarter = new WindowsAutostarter();
+    Autostarter.linuxAutostarter = new LinuxAutostarter();
+    Autostarter.macAutostarter = new MacAutostarter();
     return Autostarter;
 }());
-Autostarter.winAutostarter = new WindowsAutostarter();
-Autostarter.linuxAutostarter = new LinuxAutostarter();
-Autostarter.macAutostarter = new MacAutostarter();
 exports.Autostarter = Autostarter;

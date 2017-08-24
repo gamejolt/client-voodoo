@@ -1,8 +1,9 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("util");
 var os = require("os");
 var _ = require("lodash");
-var fs = require("mz/fs");
+var fs = require("fs");
 var LOG_LINES = 300;
 var CONSOLE_LOG = console.log;
 var CONSOLE_ERR = console.error;
@@ -15,7 +16,9 @@ var Logger = (function () {
                 this._file.close();
             }
             this._file = null;
-            fs.unlinkSync(this._filePath);
+            if (fs.existsSync(this._filePath)) {
+                fs.unlinkSync(this._filePath);
+            }
             var str = this._logLines.join('\n') + '\n';
             fs.writeFileSync(this._filePath, str);
             var logLineLength = this._logLines.join('\n').length, logLineCount = this._logLines.length;
@@ -126,8 +129,8 @@ var Logger = (function () {
             },
         };
     };
+    Logger._logLines = [];
+    Logger._hijacked = false;
     return Logger;
 }());
-Logger._logLines = [];
-Logger._hijacked = false;
 exports.Logger = Logger;

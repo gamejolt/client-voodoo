@@ -1,20 +1,25 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments)).next());
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
-    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -39,6 +44,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 var cp = require("child_process");
 var path = require("path");
 var events_1 = require("./events");
@@ -47,6 +53,7 @@ var fs = require("fs");
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
+    console.log('My dirname: ' + __dirname);
     var binFolder = path.resolve(__dirname, '..', 'bin');
     switch (process.platform) {
         case 'win32':
@@ -84,9 +91,9 @@ var SentMessage = (function () {
         enumerable: true,
         configurable: true
     });
-    SentMessage.prototype.resolve = function (data) {
+    SentMessage.prototype.resolve = function (data_) {
         this._resolved = true;
-        this.resolver(data);
+        this.resolver(data_);
     };
     SentMessage.prototype.reject = function (reason) {
         this._resolved = true;
@@ -118,11 +125,12 @@ var Controller = (function (_super) {
     Controller.prototype.newJsonStream = function () {
         var _this = this;
         return JSONStream.parse()
-            .on('data', function (data) {
-            console.log('Received json: ' + JSON.stringify(data));
-            if (data.msgId &&
+            .on('data', function (data_) {
+            console.log('Received json: ' + JSON.stringify(data_));
+            var payload, type;
+            if (data_.msgId &&
                 _this.sentMessage &&
-                data.msgId === _this.sentMessage.msgId) {
+                data_.msgId === _this.sentMessage.msgId) {
                 var idx = _this.expectingQueuePauseIds.indexOf(_this.sentMessage.msgId);
                 if (idx !== -1) {
                     _this.expectingQueuePauseIds.splice(idx);
@@ -133,42 +141,44 @@ var Controller = (function (_super) {
                     _this.expectingQueueResumeIds.splice(idx);
                     _this.expectingQueueResume++;
                 }
-                var payload_1 = data.payload;
-                if (!payload_1) {
+                payload = data_.payload;
+                if (!payload) {
                     return _this.sentMessage.reject(new Error('Missing `payload` field in response' +
                         ' in ' +
-                        JSON.stringify(data)));
+                        JSON.stringify(data_)));
                 }
-                var type_1 = data.type;
-                if (!type_1) {
+                type = data_.type;
+                if (!type) {
                     return _this.sentMessage.reject(new Error('Missing `type` field in response' +
                         ' in ' +
-                        JSON.stringify(data)));
+                        JSON.stringify(data_)));
                 }
-                switch (type_1) {
+                switch (type) {
                     case 'state':
-                        return _this.sentMessage.resolve(payload_1);
+                        return _this.sentMessage.resolve(payload);
                     case 'result':
-                        if (payload_1.success) {
-                            return _this.sentMessage.resolve(data);
+                        if (payload.success) {
+                            return _this.sentMessage.resolve(data_);
                         }
-                        return _this.sentMessage.resolve(payload_1.err);
+                        return _this.sentMessage.resolve(payload.err);
                     default:
                         return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
-                            type_1 +
+                            type +
                             ' in ' +
-                            JSON.stringify(data)));
+                            JSON.stringify(data_)));
                 }
             }
-            var type = data.type;
+            type = data_.type;
             if (!type) {
-                return _this.emit('err', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data)));
+                return _this.emit('err', new Error('Missing `type` field in response' +
+                    ' in ' +
+                    JSON.stringify(data_)));
             }
-            var payload = data.payload;
+            payload = data_.payload;
             if (!payload) {
                 return _this.emit('err', new Error('Missing `payload` field in response' +
                     ' in ' +
-                    JSON.stringify(data)));
+                    JSON.stringify(data_)));
             }
             switch (type) {
                 case 'update':
@@ -239,7 +249,7 @@ var Controller = (function (_super) {
                             return _this.emit('err', new Error('Unexpected update `message` value: ' +
                                 message +
                                 ' in ' +
-                                JSON.stringify(data)));
+                                JSON.stringify(data_)));
                     }
                 case 'progress':
                     return _this.emit('progress', payload);
@@ -247,7 +257,7 @@ var Controller = (function (_super) {
                     return _this.emit('err', new Error('Unexpected `type` value: ' +
                         type +
                         ' in ' +
-                        JSON.stringify(data)));
+                        JSON.stringify(data_)));
             }
         })
             .on('error', function (err) {
@@ -400,8 +410,7 @@ var Controller = (function (_super) {
                         this.consumingQueue = true;
                         _a.label = 1;
                     case 1:
-                        if (!(this.sendQueue.length !== 0))
-                            return [3 /*break*/, 7];
+                        if (!(this.sendQueue.length !== 0)) return [3 /*break*/, 7];
                         this.sentMessage = this.sendQueue.shift();
                         if (this.sentMessage.resolved) {
                             this.sentMessage = null;

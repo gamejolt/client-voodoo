@@ -4,12 +4,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments)).next());
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
-    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -34,21 +34,28 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 var path = require("path");
-var fs = require("mz/fs");
+var fs = require("./fs");
 var xdgBasedir = require("xdg-basedir");
 var shellEscape = require('shell-escape');
 var Shortcut = (function () {
     function Shortcut() {
     }
     Shortcut.create = function (program, icon) {
-        var _this = this;
-        if (process.platform === 'linux') {
-            return this.removeLinux().then(function () { return _this.createLinux(program, icon); });
-        }
-        else {
-            throw new Error('Not supported');
-        }
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(process.platform === 'linux')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.removeLinux()];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/, this.createLinux(program, icon)];
+                    case 2: throw new Error('Not supported');
+                }
+            });
+        });
     };
     Shortcut.remove = function () {
         if (process.platform === 'linux') {
@@ -64,9 +71,9 @@ var Shortcut = (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
+                        desktopFile = path.join(xdgBasedir.data || '', 'applications', 'game-jolt-client.desktop');
                         desktopContents = "[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=" + shellEscape([program]) + "\nTerminal=false\nIcon=" + icon + "\nCategories=Game;\nKeywords=Play;Games;GJ;GameJolt;Indie;\nHidden=false\nName[en_US]=Game Jolt Client";
-                        return [4 /*yield*/, fs.writeFile(desktopFile, desktopContents, { mode: '0755' })];
+                        return [4 /*yield*/, fs.writeFileAsync(desktopFile, desktopContents, { mode: 493 })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -77,7 +84,10 @@ var Shortcut = (function () {
     Shortcut.removeLinux = function () {
         var desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
         var oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
-        return Promise.all([fs.unlink(desktopFile), fs.unlink(oldDesktopFile)])
+        return Promise.all([
+            fs.unlinkAsync(desktopFile),
+            fs.unlinkAsync(oldDesktopFile),
+        ])
             .then(function () { return true; })
             .catch(function (err) { return false; });
     };
