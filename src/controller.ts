@@ -27,39 +27,77 @@ export function getExecutable() {
 class SentMessage<T> {
 	readonly msg: string;
 	readonly msgId: string;
-	private _resolved: boolean;
-	private resolver: Function;
-	private rejector: Function;
-	readonly promise: Promise<T>;
+
+	// Result promise - will resolve when the message is acknowledged and responded to by joltron
+	private _resultResolved: boolean;
+	private resultResolver: Function;
+	private resultRejector: Function;
+	readonly resultPromise: Promise<T>;
+
+	// Request promise - will resolve when the message is SENT.
+	private _requestResolved: boolean;
+	private requestResolver: Function;
+	private requestRejector: Function;
+	readonly requestPromise: Promise<void>;
 
 	constructor(msg: any, timeout?: number) {
 		this.msg = JSON.stringify(msg);
 		this.msgId = msg.msgId;
-		this._resolved = false;
-		this.promise = new Promise<T>((resolve, reject) => {
-			this.resolver = resolve;
-			this.rejector = reject;
+
+		// Initialize the result promise
+		this._resultResolved = false;
+		this.resultPromise = new Promise<T>((resolve, reject) => {
+			this.resultResolver = resolve;
+			this.resultRejector = reject;
 			if (timeout && timeout !== Infinity) {
 				setTimeout(() => {
-					this._resolved = true;
+					this._resultResolved = true;
 					reject(new Error('Message was not handled in time'));
+				}, timeout);
+			}
+		});
+
+		// Initialize the request promise
+		this._requestResolved = false;
+		this.requestPromise = new Promise<void>((resolve, reject) => {
+			this.requestResolver = resolve;
+			this.requestRejector = reject;
+			if (timeout && timeout !== Infinity) {
+				setTimeout(() => {
+					this._requestResolved = true;
+					reject(new Error('Message was not sent in time'));
 				}, timeout);
 			}
 		});
 	}
 
 	get resolved() {
-		return this._resolved;
+		return this._resultResolved;
 	}
 
 	resolve(data_: any) {
-		this._resolved = true;
-		this.resolver(data_);
+		this._resultResolved = true;
+		this.resultResolver(data_);
 	}
 
 	reject(reason: any) {
-		this._resolved = true;
-		this.rejector(reason);
+		this._resultResolved = true;
+		this.resultRejector(reason);
+	}
+
+	get sent() {
+		return this._requestResolved;
+	}
+
+	resolveSend() {
+		this._requestResolved = true;
+		this.requestResolver();
+	}
+
+	rejectSend(reason: any) {
+		this.reject(reason);
+		this._requestResolved = true;
+		this.requestRejector(reason);
 	}
 }
 
@@ -483,10 +521,13 @@ export class Controller extends TSEventEmitter<Events> {
 
 					resolve();
 				});
-			}).catch(err => this.sentMessage.reject(err));
+			}).catch(err => {
+				this.sentMessage.rejectSend(err);
+			});
+			this.sentMessage.resolveSend();
 
 			try {
-				await this.sentMessage.promise;
+				await this.sentMessage.resultPromise;
 			} catch (err) {}
 			this.sentMessage = null;
 		}
@@ -525,7 +566,7 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendKillGame(timeout?: number) {
-		return this.sendControl('kill', null, timeout).promise;
+		return this.sendControl('kill', null, timeout).resultPromise;
 	}
 
 	async sendPause(options?: { queue?: boolean; timeout?: number }) {
@@ -534,7 +575,7 @@ export class Controller extends TSEventEmitter<Events> {
 		if (options.queue) {
 			this.expectingQueuePauseIds.push(msg.msgId);
 		}
-		return msg.promise;
+		return msg.resultPromise;
 	}
 
 	async sendResume(options?: {
@@ -555,11 +596,12 @@ export class Controller extends TSEventEmitter<Events> {
 		if (options.queue) {
 			this.expectingQueueResumeIds.push(msg.msgId);
 		}
-		return msg.promise;
+		return msg.resultPromise;
 	}
 
-	sendCancel(timeout?: number) {
-		return this.sendControl('cancel', null, timeout).promise;
+	sendCancel(timeout?: number, waitOnlyForSend?: boolean) {
+		const msg = this.sendControl('cancel', null, timeout);
+		return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
 	}
 
 	sendGetState(includePatchInfo: boolean, timeout?: number) {
@@ -567,7 +609,7 @@ export class Controller extends TSEventEmitter<Events> {
 			'state',
 			{ includePatchInfo },
 			timeout
-		).promise;
+		).resultPromise;
 	}
 
 	sendCheckForUpdates(
@@ -584,19 +626,19 @@ export class Controller extends TSEventEmitter<Events> {
 		if (metadata) {
 			data.metadata = metadata;
 		}
-		return this.send('checkForUpdates', data, timeout).promise;
+		return this.send('checkForUpdates', data, timeout).resultPromise;
 	}
 
 	sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number) {
-		return this.send('updateAvailable', updateMetadata, timeout).promise;
+		return this.send('updateAvailable', updateMetadata, timeout).resultPromise;
 	}
 
 	sendUpdateBegin(timeout?: number) {
-		return this.send('updateBegin', {}, timeout).promise;
+		return this.send('updateBegin', {}, timeout).resultPromise;
 	}
 
 	sendUpdateApply(env: Object, args: string[], timeout?: number) {
-		return this.send('updateApply', { env, args }, timeout).promise;
+		return this.send('updateApply', { env, args }, timeout).resultPromise;
 	}
 
 	kill() {

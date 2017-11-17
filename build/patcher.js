@@ -55,6 +55,17 @@ var queue_1 = require("./queue");
 var Patcher = (function () {
     function Patcher() {
     }
+    /**
+     * Starts a new installation/update, or resumes the operation if it was closed prematurely.
+     * If the game is already managed by another joltron instance, joltron will send back an abort message and terminate itself.
+     * client voodoo will re-emit this as a fatal error.
+     *
+     * This function returns immediately after launching the joltron executable.
+     *
+     * @param localPackage
+     * @param getAuthToken a callback that joltron will use to fetch a new game api token for the package it's patching.
+     * @param options
+     */
     Patcher.patch = function (localPackage, getAuthToken, options) {
         return __awaiter(this, void 0, void 0, function () {
             var dir, port, gameUid, args;
@@ -79,7 +90,7 @@ var Patcher = (function () {
                             '--platform-url',
                             config_1.Config.domain + '/x/updater/check-for-updates',
                             '--wait-for-connection',
-                            '2',
+                            '5',
                             '--symbiote',
                             '--no-loader',
                         ];
@@ -250,18 +261,8 @@ var PatchInstance = (function (_super) {
             });
         });
     };
-    PatchInstance.prototype.cancel = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.controller.sendCancel()];
-                    case 1:
-                        result = _a.sent();
-                        return [2 /*return*/, result];
-                }
-            });
-        });
+    PatchInstance.prototype.cancel = function (waitOnlyForSend) {
+        return this.controller.sendCancel(undefined, waitOnlyForSend);
     };
     return PatchInstance;
 }(controller_wrapper_1.ControllerWrapper));

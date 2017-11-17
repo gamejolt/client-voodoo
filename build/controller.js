@@ -72,32 +72,61 @@ var SentMessage = (function () {
         var _this = this;
         this.msg = JSON.stringify(msg);
         this.msgId = msg.msgId;
-        this._resolved = false;
-        this.promise = new Promise(function (resolve, reject) {
-            _this.resolver = resolve;
-            _this.rejector = reject;
+        // Initialize the result promise
+        this._resultResolved = false;
+        this.resultPromise = new Promise(function (resolve, reject) {
+            _this.resultResolver = resolve;
+            _this.resultRejector = reject;
             if (timeout && timeout !== Infinity) {
                 setTimeout(function () {
-                    _this._resolved = true;
+                    _this._resultResolved = true;
                     reject(new Error('Message was not handled in time'));
+                }, timeout);
+            }
+        });
+        // Initialize the request promise
+        this._requestResolved = false;
+        this.requestPromise = new Promise(function (resolve, reject) {
+            _this.requestResolver = resolve;
+            _this.requestRejector = reject;
+            if (timeout && timeout !== Infinity) {
+                setTimeout(function () {
+                    _this._requestResolved = true;
+                    reject(new Error('Message was not sent in time'));
                 }, timeout);
             }
         });
     }
     Object.defineProperty(SentMessage.prototype, "resolved", {
         get: function () {
-            return this._resolved;
+            return this._resultResolved;
         },
         enumerable: true,
         configurable: true
     });
     SentMessage.prototype.resolve = function (data_) {
-        this._resolved = true;
-        this.resolver(data_);
+        this._resultResolved = true;
+        this.resultResolver(data_);
     };
     SentMessage.prototype.reject = function (reason) {
-        this._resolved = true;
-        this.rejector(reason);
+        this._resultResolved = true;
+        this.resultRejector(reason);
+    };
+    Object.defineProperty(SentMessage.prototype, "sent", {
+        get: function () {
+            return this._requestResolved;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    SentMessage.prototype.resolveSend = function () {
+        this._requestResolved = true;
+        this.requestResolver();
+    };
+    SentMessage.prototype.rejectSend = function (reason) {
+        this.reject(reason);
+        this._requestResolved = true;
+        this.requestRejector(reason);
     };
     return SentMessage;
 }());
@@ -428,13 +457,16 @@ var Controller = (function (_super) {
                                     }
                                     resolve();
                                 });
-                            }).catch(function (err) { return _this.sentMessage.reject(err); })];
+                            }).catch(function (err) {
+                                _this.sentMessage.rejectSend(err);
+                            })];
                     case 2:
                         _a.sent();
+                        this.sentMessage.resolveSend();
                         _a.label = 3;
                     case 3:
                         _a.trys.push([3, 5, , 6]);
-                        return [4 /*yield*/, this.sentMessage.promise];
+                        return [4 /*yield*/, this.sentMessage.resultPromise];
                     case 4:
                         _a.sent();
                         return [3 /*break*/, 6];
@@ -473,7 +505,7 @@ var Controller = (function (_super) {
         return this.send('control', msg, timeout);
     };
     Controller.prototype.sendKillGame = function (timeout) {
-        return this.sendControl('kill', null, timeout).promise;
+        return this.sendControl('kill', null, timeout).resultPromise;
     };
     Controller.prototype.sendPause = function (options) {
         return __awaiter(this, void 0, void 0, function () {
@@ -484,7 +516,7 @@ var Controller = (function (_super) {
                 if (options.queue) {
                     this.expectingQueuePauseIds.push(msg.msgId);
                 }
-                return [2 /*return*/, msg.promise];
+                return [2 /*return*/, msg.resultPromise];
             });
         });
     };
@@ -504,15 +536,16 @@ var Controller = (function (_super) {
                 if (options.queue) {
                     this.expectingQueueResumeIds.push(msg.msgId);
                 }
-                return [2 /*return*/, msg.promise];
+                return [2 /*return*/, msg.resultPromise];
             });
         });
     };
-    Controller.prototype.sendCancel = function (timeout) {
-        return this.sendControl('cancel', null, timeout).promise;
+    Controller.prototype.sendCancel = function (timeout, waitOnlyForSend) {
+        var msg = this.sendControl('cancel', null, timeout);
+        return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
     };
     Controller.prototype.sendGetState = function (includePatchInfo, timeout) {
-        return this.send('state', { includePatchInfo: includePatchInfo }, timeout).promise;
+        return this.send('state', { includePatchInfo: includePatchInfo }, timeout).resultPromise;
     };
     Controller.prototype.sendCheckForUpdates = function (gameUID, platformURL, authToken, metadata, timeout) {
         var data = { gameUID: gameUID, platformURL: platformURL };
@@ -522,16 +555,16 @@ var Controller = (function (_super) {
         if (metadata) {
             data.metadata = metadata;
         }
-        return this.send('checkForUpdates', data, timeout).promise;
+        return this.send('checkForUpdates', data, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateAvailable = function (updateMetadata, timeout) {
-        return this.send('updateAvailable', updateMetadata, timeout).promise;
+        return this.send('updateAvailable', updateMetadata, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateBegin = function (timeout) {
-        return this.send('updateBegin', {}, timeout).promise;
+        return this.send('updateBegin', {}, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateApply = function (env, args, timeout) {
-        return this.send('updateApply', { env: env, args: args }, timeout).promise;
+        return this.send('updateApply', { env: env, args: args }, timeout).resultPromise;
     };
     Controller.prototype.kill = function () {
         var _this = this;

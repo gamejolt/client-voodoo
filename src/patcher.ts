@@ -14,6 +14,17 @@ export interface IPatchOptions {
 
 export type AuthTokenGetter = () => Promise<string>;
 export abstract class Patcher {
+	/**
+	 * Starts a new installation/update, or resumes the operation if it was closed prematurely.
+	 * If the game is already managed by another joltron instance, joltron will send back an abort message and terminate itself.
+	 * client voodoo will re-emit this as a fatal error.
+	 *
+	 * This function returns immediately after launching the joltron executable.
+	 *
+	 * @param localPackage
+	 * @param getAuthToken a callback that joltron will use to fetch a new game api token for the package it's patching.
+	 * @param options
+	 */
 	static async patch(
 		localPackage: GameJolt.IGamePackage,
 		getAuthToken: AuthTokenGetter,
@@ -36,7 +47,7 @@ export abstract class Patcher {
 			'--platform-url',
 			Config.domain + '/x/updater/check-for-updates',
 			'--wait-for-connection',
-			'2',
+			'5',
 			'--symbiote',
 			'--no-loader',
 		];
@@ -208,8 +219,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents> {
 		return result;
 	}
 
-	async cancel() {
-		const result = await this.controller.sendCancel();
-		return result;
+	cancel(waitOnlyForSend?: boolean) {
+		return this.controller.sendCancel(undefined, waitOnlyForSend);
 	}
 }

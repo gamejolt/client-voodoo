@@ -7,3 +7,4 @@
 /tsconfig.json
 /tslint.json
 *-spec.js
+*-spec.d.ts
