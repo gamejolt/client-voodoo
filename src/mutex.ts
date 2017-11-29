@@ -15,7 +15,8 @@ export abstract class Mutex {
 			'noop',
 		];
 
-		return new MutexInstance(Controller.launchNew(args));
+		const controller = await Controller.launchNew(args);
+		return new MutexInstance(controller);
 	}
 }
 

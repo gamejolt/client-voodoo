@@ -40,7 +40,8 @@ export abstract class Launcher {
 		];
 		args.push(...executableArgs);
 
-		const controller = Controller.launchNew(args);
+		await Controller.ensureMigrationFile(localPackage);
+		const controller = await Controller.launchNew(args);
 		const instance = await new Promise<LaunchInstance>((resolve, reject) => {
 			// tslint:disable-next-line:no-unused-expression
 			new LaunchInstance(controller, (err, inst) => {
@@ -94,11 +95,25 @@ export abstract class Launcher {
 		localPackage: GameJolt.IGamePackage,
 		credentials: GameJolt.IGameCredentials
 	) {
-		const manifestStr = await fs.readFileAsync(
-			path.join(localPackage.install_dir, '.manifest'),
-			'utf8'
-		);
-		const manifest: Manifest = JSON.parse(manifestStr);
+		let dir, executable: string;
+		// We try getting the data dir and executable path from the manifest,
+		// but the manifest might not exist if the package hasn't been migrated yet,
+		// and since joltron does the migration itself we fall back to placing the credentials
+		// in the old location - where the data dir doesn't exist and the game contents
+		// are located directly inside the installation dir.
+		try {
+			const manifestStr = await fs.readFileAsync(
+				path.join(localPackage.install_dir, '.manifest'),
+				'utf8'
+			);
+			const manifest: Manifest = JSON.parse(manifestStr);
+			dir = manifest.gameInfo.dir;
+			executable = manifest.launchOptions.executable;
+		}
+		catch (err) {
+			dir = '.';
+			executable = localPackage.executablePath;
+		}
 
 		const str = `0.2.1\n${credentials.username}\n${credentials.user_token}\n`;
 		await Promise.all([
@@ -109,8 +124,8 @@ export abstract class Launcher {
 			fs.writeFileAsync(
 				path.join(
 					localPackage.install_dir,
-					manifest.gameInfo.dir,
-					manifest.launchOptions.executable,
+					dir,
+					executable,
 					'..',
 					'.gj-credentials'
 				),

@@ -59,8 +59,12 @@ export abstract class Patcher {
 		}
 		args.push('install');
 
+		// TODO(client-vue) this might not be needed on installations.
+		await Controller.ensureMigrationFile(localPackage);
+
+		const controller = await Controller.launchNew(args);
 		return this.manageInstanceInQueue(
-			new PatchInstance(Controller.launchNew(args), getAuthToken)
+			new PatchInstance(controller, getAuthToken)
 		);
 	}
 

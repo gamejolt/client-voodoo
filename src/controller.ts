@@ -4,7 +4,8 @@ import * as net from 'net';
 import * as data from './data';
 import { TSEventEmitter } from './events';
 import { Reconnector } from './reconnector';
-import * as fs from 'fs';
+import * as fsAsync from './fs';
+import * as GameJolt from './gamejolt';
 
 const JSONStream = require('JSONStream');
 const ps = require('ps-node');
@@ -373,7 +374,27 @@ export class Controller extends TSEventEmitter<Events> {
 			});
 	}
 
-	static launchNew(args: string[], options?: cp.SpawnOptions) {
+	static async ensureMigrationFile(localPackage: GameJolt.IGamePackage) {
+		const migration: any = {
+			version0: {
+				packageId: localPackage.id,
+				buildId: localPackage.build.id,
+				executablePath: localPackage.executablePath,
+			},
+		};
+
+		if (localPackage.update) {
+			migration.version0.updateId = localPackage.update.id;
+			migration.version0.updateBuildId = localPackage.update.build.id;
+		}
+
+		await fsAsync.writeFileAsync(
+			path.join(localPackage.install_dir, '..', '.migration'),
+			JSON.stringify(migration)
+		);
+	}
+
+	static async launchNew(args: string[], options?: cp.SpawnOptions) {
 		options = options || {
 			detached: true,
 			env: process.env,
@@ -388,7 +409,7 @@ export class Controller extends TSEventEmitter<Events> {
 		let runnerExecutable = getExecutable();
 
 		// Ensure that the runner is executable.
-		fs.chmodSync(runnerExecutable, '0755');
+		await fsAsync.chmod(runnerExecutable, '0755');
 
 		const portArg = args.indexOf('--port');
 		if (portArg === -1) {
@@ -535,11 +556,11 @@ export class Controller extends TSEventEmitter<Events> {
 		this.consumingQueue = false;
 	}
 
-	private send<T>(type: string, data: Object, timeout?: number) {
+	private send<T>(type: string, payload: Object, timeout?: number) {
 		const msgData = {
 			type: type,
 			msgId: (this.nextMessageId++).toString(),
-			payload: data,
+			payload: payload,
 		};
 		console.log('Sending ' + JSON.stringify(msgData));
 
@@ -619,14 +640,14 @@ export class Controller extends TSEventEmitter<Events> {
 		metadata?: string,
 		timeout?: number
 	) {
-		let data: any = { gameUID, platformURL };
+		let payload: any = { gameUID, platformURL };
 		if (authToken) {
-			data.authToken = authToken;
+			payload.authToken = authToken;
 		}
 		if (metadata) {
-			data.metadata = metadata;
+			payload.metadata = metadata;
 		}
-		return this.send('checkForUpdates', data, timeout).resultPromise;
+		return this.send('checkForUpdates', payload, timeout).resultPromise;
 	}
 
 	sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number) {

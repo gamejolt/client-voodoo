@@ -64,6 +64,7 @@ describe('Patcher', function() {
 					process.cwd(),
 					path.join('test-files', 'games', 'game-test-1', 'build-1')
 				),
+				executablePath: 'eggnoggplus-linux/eggnoggplus',
 			};
 
 			console.log('test');
