@@ -22,7 +22,7 @@ export class OldLauncher {
 					reject(new Error('Failed to connect to launch instance'));
 				});
 
-			setInterval(() => {
+			setTimeout(() => {
 				if (resolved) {
 					return;
 				}
@@ -41,7 +41,6 @@ export type OldLauncherEvents = Events & {
 
 export class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents> {
 	private _interval: NodeJS.Timer | null;
-	private _wrapperPort: number;
 	private _stable: boolean;
 
 	constructor(private _wrapperId: string) {
@@ -58,12 +57,12 @@ export class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents> {
 
 	async tick(): Promise<boolean> {
 		try {
-			const port = await WrapperFinder.find(this._wrapperId);
+			await WrapperFinder.find(this._wrapperId);
 			const wasStable = this._stable;
 			this._stable = true;
-			this._wrapperPort = port;
 
 			if (!wasStable) {
+				console.log('Managed to connect to old launcher');
 				this.emit('gameLaunched');
 			}
 			return true;
@@ -76,6 +75,7 @@ export class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents> {
 	}
 
 	abort() {
+		console.log('Old launcher detected to close. Emitting gameOVer');
 		if (this._interval) {
 			clearInterval(this._interval);
 			this._interval = null;
@@ -101,20 +101,14 @@ abstract class WrapperFinder {
 							if (parsedData[2] === id) {
 								resolve(parseInt(port, 10));
 							} else {
-								reject(
-									new Error(
-										`Expecting wrapper id ${id}, received ${parsedData[2]}`
-									)
-								);
+								reject(new Error(`Expecting wrapper id ${id}, received ${parsedData[2]}`));
 							}
 							break;
 					}
 					conn.end();
 				})
 				.on('end', () => {
-					reject(
-						new Error('Connection to wrapper ended before we got any info')
-					);
+					reject(new Error('Connection to wrapper ended before we got any info'));
 				})
 				.on('error', (err: NodeJS.ErrnoException) => {
 					reject(new Error('Got an error in the connection: ' + err.message));

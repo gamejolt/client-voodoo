@@ -60,6 +60,7 @@ export abstract class Launcher {
 	): Promise<LaunchInstance | OldLaunchInstance> {
 		let instance: LaunchInstance | OldLaunchInstance = null;
 		if (typeof runningPid !== 'string') {
+			console.log('Attaching to wrapper id: ' + runningPid.wrapperId);
 			instance = await OldLauncher.attach(runningPid.wrapperId);
 		} else {
 			const index = runningPid.indexOf(':');
@@ -74,6 +75,7 @@ export abstract class Launcher {
 			}
 
 			const parsedPid = JSON.parse(pidStr);
+			console.log('Attaching to parsed pid: ' + pidStr);
 			const controller = new Controller(parsedPid.port, parsedPid.pid);
 			controller.connect();
 
@@ -109,34 +111,22 @@ export abstract class Launcher {
 			const manifest: Manifest = JSON.parse(manifestStr);
 			dir = manifest.gameInfo.dir;
 			executable = manifest.launchOptions.executable;
-		}
-		catch (err) {
+		} catch (err) {
 			dir = '.';
 			executable = localPackage.executablePath;
 		}
 
 		const str = `0.2.1\n${credentials.username}\n${credentials.user_token}\n`;
 		await Promise.all([
+			fs.writeFileAsync(path.join(localPackage.install_dir, '.gj-credentials'), str),
 			fs.writeFileAsync(
-				path.join(localPackage.install_dir, '.gj-credentials'),
-				str
-			),
-			fs.writeFileAsync(
-				path.join(
-					localPackage.install_dir,
-					dir,
-					executable,
-					'..',
-					'.gj-credentials'
-				),
+				path.join(localPackage.install_dir, dir, executable, '..', '.gj-credentials'),
 				str
 			),
 		]);
 	}
 
-	private static manageInstanceInQueue<T extends TSEventEmitter<LaunchEvents>>(
-		instance: T
-	): T {
+	private static manageInstanceInQueue<T extends TSEventEmitter<LaunchEvents>>(instance: T): T {
 		Queue.setSlower();
 		instance.once('gameOver', () => Queue.setFaster());
 		return instance;
@@ -178,9 +168,7 @@ export class LaunchInstance extends ControllerWrapper<LaunchEvents> {
 	}
 
 	get pid() {
-		return (
-			'1:' + JSON.stringify({ port: this.controller.port, pid: this._pid })
-		);
+		return '1:' + JSON.stringify({ port: this.controller.port, pid: this._pid });
 	}
 
 	kill(): Promise<{ success: boolean; err?: string }> {
