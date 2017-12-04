@@ -8,6 +8,7 @@ export interface IGamePackage {
     file: IGameBuildFile;
     launch_options: IGameBuildLaunchOptions[];
     install_dir: string;
+    executablePath: string;
     update?: IGamePackage;
 }
 export interface IGameRelease {

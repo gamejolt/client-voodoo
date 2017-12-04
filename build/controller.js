@@ -49,7 +49,7 @@ var cp = require("child_process");
 var path = require("path");
 var events_1 = require("./events");
 var reconnector_1 = require("./reconnector");
-var fs = require("fs");
+var fs_1 = require("./fs");
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
@@ -157,9 +157,7 @@ var Controller = (function (_super) {
             .on('data', function (data_) {
             console.log('Received json: ' + JSON.stringify(data_));
             var payload, type;
-            if (data_.msgId &&
-                _this.sentMessage &&
-                data_.msgId === _this.sentMessage.msgId) {
+            if (data_.msgId && _this.sentMessage && data_.msgId === _this.sentMessage.msgId) {
                 var idx = _this.expectingQueuePauseIds.indexOf(_this.sentMessage.msgId);
                 if (idx !== -1) {
                     _this.expectingQueuePauseIds.splice(idx);
@@ -172,15 +170,11 @@ var Controller = (function (_super) {
                 }
                 payload = data_.payload;
                 if (!payload) {
-                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' +
-                        ' in ' +
-                        JSON.stringify(data_)));
+                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_)));
                 }
                 type = data_.type;
                 if (!type) {
-                    return _this.sentMessage.reject(new Error('Missing `type` field in response' +
-                        ' in ' +
-                        JSON.stringify(data_)));
+                    return _this.sentMessage.reject(new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_)));
                 }
                 switch (type) {
                     case 'state':
@@ -191,23 +185,16 @@ var Controller = (function (_super) {
                         }
                         return _this.sentMessage.resolve(payload.err);
                     default:
-                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
-                            type +
-                            ' in ' +
-                            JSON.stringify(data_)));
+                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_)));
                 }
             }
             type = data_.type;
             if (!type) {
-                return _this.emit('err', new Error('Missing `type` field in response' +
-                    ' in ' +
-                    JSON.stringify(data_)));
+                return _this.emit('err', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_)));
             }
             payload = data_.payload;
             if (!payload) {
-                return _this.emit('err', new Error('Missing `payload` field in response' +
-                    ' in ' +
-                    JSON.stringify(data_)));
+                return _this.emit('err', new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_)));
             }
             switch (type) {
                 case 'update':
@@ -275,18 +262,12 @@ var Controller = (function (_super) {
                         case 'error':
                             return _this.emit('err', new Error(payload));
                         default:
-                            return _this.emit('err', new Error('Unexpected update `message` value: ' +
-                                message +
-                                ' in ' +
-                                JSON.stringify(data_)));
+                            return _this.emit('err', new Error('Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data_)));
                     }
                 case 'progress':
                     return _this.emit('progress', payload);
                 default:
-                    return _this.emit('err', new Error('Unexpected `type` value: ' +
-                        type +
-                        ' in ' +
-                        JSON.stringify(data_)));
+                    return _this.emit('err', new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_)));
             }
         })
             .on('error', function (err) {
@@ -296,33 +277,62 @@ var Controller = (function (_super) {
             _this.dispose();
         });
     };
+    Controller.ensureMigrationFile = function (localPackage) {
+        return __awaiter(this, void 0, void 0, function () {
+            var migration;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        migration = {
+                            version0: {
+                                packageId: localPackage.id,
+                                buildId: localPackage.build.id,
+                                executablePath: localPackage.executablePath,
+                            },
+                        };
+                        if (localPackage.update) {
+                            migration.version0.updateId = localPackage.update.id;
+                            migration.version0.updateBuildId = localPackage.update.build.id;
+                        }
+                        return [4 /*yield*/, fs_1.default.writeFile(path.join(localPackage.install_dir, '..', '.migration'), JSON.stringify(migration))];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
     Controller.launchNew = function (args, options) {
-        options = options || {
-            detached: true,
-            env: process.env,
-            stdio: 'ignore',
-        };
-        var runnerExecutable = getExecutable();
-        // Ensure that the runner is executable.
-        fs.chmodSync(runnerExecutable, '0755');
-        var portArg = args.indexOf('--port');
-        if (portArg === -1) {
-            throw new Error("Can't launch a new instance without specifying a port number");
-        }
-        var port = parseInt(args[portArg + 1], 10);
-        console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
-        var runnerProc = cp.spawn(runnerExecutable, args, options);
-        runnerProc.unref();
-        var runnerInstance = new Controller(port, runnerProc.pid);
-        runnerInstance.connect();
-        return runnerInstance;
-        // try {
-        // 	await runnerInstance.connect();
-        // 	return runnerInstance;
-        // } catch (err) {
-        // 	await runnerInstance.kill();
-        // 	throw err;
-        // }
+        return __awaiter(this, void 0, void 0, function () {
+            var runnerExecutable, portArg, port, runnerProc, runnerInstance;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        options = options || {
+                            detached: true,
+                            env: process.env,
+                            stdio: 'ignore',
+                        };
+                        runnerExecutable = getExecutable();
+                        // Ensure that the runner is executable.
+                        return [4 /*yield*/, fs_1.default.chmod(runnerExecutable, '0755')];
+                    case 1:
+                        // Ensure that the runner is executable.
+                        _a.sent();
+                        portArg = args.indexOf('--port');
+                        if (portArg === -1) {
+                            throw new Error("Can't launch a new instance without specifying a port number");
+                        }
+                        port = parseInt(args[portArg + 1], 10);
+                        console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
+                        runnerProc = cp.spawn(runnerExecutable, args, options);
+                        runnerProc.unref();
+                        runnerInstance = new Controller(port, runnerProc.pid);
+                        runnerInstance.connect();
+                        return [2 /*return*/, runnerInstance];
+                }
+            });
+        });
     };
     Object.defineProperty(Controller.prototype, "connected", {
         get: function () {
@@ -362,15 +372,12 @@ var Controller = (function (_super) {
                                 _this.sentMessage.reject(new Error("Disconnected before receiving message response" +
                                     (hasError ? ": " + lastErr_1.message : '')));
                             }
-                            console.log("Disconnected from runner" +
-                                (hasError ? ": " + lastErr_1.message : ''));
+                            console.log("Disconnected from runner" + (hasError ? ": " + lastErr_1.message : ''));
                             if (hasError) {
                                 console.log(lastErr_1);
                             }
                             if (!_this.connectionLock) {
-                                _this.emit('fatal', hasError
-                                    ? lastErr_1
-                                    : new Error("Unexpected disconnection from joltron"));
+                                _this.emit('fatal', hasError ? lastErr_1 : new Error("Unexpected disconnection from joltron"));
                             }
                         })
                             .pipe(this.newJsonStream());
@@ -483,11 +490,11 @@ var Controller = (function (_super) {
             });
         });
     };
-    Controller.prototype.send = function (type, data, timeout) {
+    Controller.prototype.send = function (type, payload, timeout) {
         var msgData = {
             type: type,
             msgId: (this.nextMessageId++).toString(),
-            payload: data,
+            payload: payload,
         };
         console.log('Sending ' + JSON.stringify(msgData));
         var msg = new SentMessage(msgData, timeout);
@@ -548,14 +555,14 @@ var Controller = (function (_super) {
         return this.send('state', { includePatchInfo: includePatchInfo }, timeout).resultPromise;
     };
     Controller.prototype.sendCheckForUpdates = function (gameUID, platformURL, authToken, metadata, timeout) {
-        var data = { gameUID: gameUID, platformURL: platformURL };
+        var payload = { gameUID: gameUID, platformURL: platformURL };
         if (authToken) {
-            data.authToken = authToken;
+            payload.authToken = authToken;
         }
         if (metadata) {
-            data.metadata = metadata;
+            payload.metadata = metadata;
         }
-        return this.send('checkForUpdates', data, timeout).resultPromise;
+        return this.send('checkForUpdates', payload, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateAvailable = function (updateMetadata, timeout) {
         return this.send('updateAvailable', updateMetadata, timeout).resultPromise;

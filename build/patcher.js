@@ -68,7 +68,7 @@ var Patcher = (function () {
      */
     Patcher.patch = function (localPackage, getAuthToken, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var dir, port, gameUid, args;
+            var dir, port, gameUid, args, controller;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -101,7 +101,15 @@ var Patcher = (function () {
                             args.push('--launch');
                         }
                         args.push('install');
-                        return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(controller_1.Controller.launchNew(args), getAuthToken))];
+                        // TODO(client-vue) this might not be needed on installations.
+                        return [4 /*yield*/, controller_1.Controller.ensureMigrationFile(localPackage)];
+                    case 2:
+                        // TODO(client-vue) this might not be needed on installations.
+                        _a.sent();
+                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
+                    case 3:
+                        controller = _a.sent();
+                        return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(controller, getAuthToken))];
                 }
             });
         });

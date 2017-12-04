@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var path = require("path");
-var fs = require("./fs");
+var fs_1 = require("./fs");
 var xdgBasedir = require("xdg-basedir");
 var shellEscape = require('shell-escape');
 var Shortcut = (function () {
@@ -73,7 +73,7 @@ var Shortcut = (function () {
                     case 0:
                         desktopFile = path.join(xdgBasedir.data || '', 'applications', 'game-jolt-client.desktop');
                         desktopContents = "[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=" + shellEscape([program]) + "\nTerminal=false\nIcon=" + icon + "\nCategories=Game;\nKeywords=Play;Games;GJ;GameJolt;Indie;\nHidden=false\nName[en_US]=Game Jolt Client";
-                        return [4 /*yield*/, fs.writeFileAsync(desktopFile, desktopContents, { mode: 493 })];
+                        return [4 /*yield*/, fs_1.default.writeFile(desktopFile, desktopContents, { mode: 493 })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -84,10 +84,7 @@ var Shortcut = (function () {
     Shortcut.removeLinux = function () {
         var desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
         var oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
-        return Promise.all([
-            fs.unlinkAsync(desktopFile),
-            fs.unlinkAsync(oldDesktopFile),
-        ])
+        return Promise.all([fs_1.default.unlink(desktopFile), fs_1.default.unlink(oldDesktopFile)])
             .then(function () { return true; })
             .catch(function (err) { return false; });
     };

@@ -38,7 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var path = require("path");
 var xdgBasedir = require("xdg-basedir");
 var Winreg = require("winreg");
-var fs = require("./fs");
+var fs_1 = require("./fs");
 var applescript = null;
 if (process.platform === 'darwin') {
     var applescriptExecString_1 = require('applescript').execString;
@@ -66,9 +66,7 @@ var WindowsAutostarter = (function () {
     };
     WindowsAutostarter.prototype.set = function (program, args) {
         return new Promise(function (resolve, reject) {
-            var autoStartCommand = "\"" + program + "\"" + (args && args.length
-                ? " " + args.join(' ')
-                : '');
+            var autoStartCommand = "\"" + program + "\"" + (args && args.length ? " " + args.join(' ') : '');
             WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, autoStartCommand, function (err) {
                 if (err) {
                     return reject(err);
@@ -106,7 +104,7 @@ var LinuxAutostarter = (function () {
                 switch (_a.label) {
                     case 0:
                         runnerScript = "#!/bin/bash\nif [ -e \"" + program + "\" ]; then\n\t" + shellEscape([program].concat(args || [])) + "\nfi";
-                        return [4 /*yield*/, fs.writeFileAsync(runner, runnerScript, { mode: 493 })];
+                        return [4 /*yield*/, fs_1.default.writeFile(runner, runnerScript, { mode: 493 })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -123,7 +121,7 @@ var LinuxAutostarter = (function () {
                     case 1:
                         _a.sent();
                         desktopContents = "[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=" + shellEscape([runner]) + "\nTerminal=false\nCategories=Game;\nKeywords=Play;GJ;GameJolt;\nHidden=false\nName[en_US]=Game Jolt Client\nTX-GNOME-Autostart-enabled=true";
-                        return [4 /*yield*/, fs.writeFileAsync(LinuxAutostarter.desktopFilePath, desktopContents, {
+                        return [4 /*yield*/, fs_1.default.writeFile(LinuxAutostarter.desktopFilePath, desktopContents, {
                                 mode: 493,
                             })];
                     case 2:
@@ -134,10 +132,10 @@ var LinuxAutostarter = (function () {
         });
     };
     LinuxAutostarter.prototype.unset = function () {
-        return fs.unlinkAsync(LinuxAutostarter.desktopFilePath);
+        return fs_1.default.unlink(LinuxAutostarter.desktopFilePath);
     };
     LinuxAutostarter.prototype.isset = function () {
-        return fs.existsAsync(LinuxAutostarter.desktopFilePath);
+        return fs_1.default.exists(LinuxAutostarter.desktopFilePath);
     };
     LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config || '', 'autostart', autostartId + ".desktop");
     return LinuxAutostarter;
@@ -152,7 +150,7 @@ var MacAutostarter = (function () {
                 switch (_a.label) {
                     case 0:
                         runnerScript = "#!/bin/bash\nif [ -e \"" + program + "\" ]; then\n\t" + shellEscape([program].concat(args || [])) + "\nfi";
-                        return [4 /*yield*/, fs.writeFileAsync(runner, runnerScript, { mode: 493 })];
+                        return [4 /*yield*/, fs_1.default.writeFile(runner, runnerScript, { mode: 493 })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];

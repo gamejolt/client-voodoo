@@ -97,6 +97,7 @@ describe('Patcher', function () {
                             },
                         ],
                         install_dir: path.resolve(process.cwd(), path.join('test-files', 'games', 'game-test-1', 'build-1')),
+                        executablePath: 'eggnoggplus-linux/eggnoggplus',
                     };
                     console.log('test');
                     return [4 /*yield*/, patcher_1.Patcher.patch(localPackage, function () { return Promise.resolve(''); }, {})];
