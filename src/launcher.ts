@@ -1,4 +1,4 @@
-import * as fs from './fs';
+import fs from './fs';
 import * as path from 'path';
 import { Controller, Events } from './controller';
 import * as util from './util';
@@ -104,7 +104,7 @@ export abstract class Launcher {
 		// in the old location - where the data dir doesn't exist and the game contents
 		// are located directly inside the installation dir.
 		try {
-			const manifestStr = await fs.readFileAsync(
+			const manifestStr = await fs.readFile(
 				path.join(localPackage.install_dir, '.manifest'),
 				'utf8'
 			);
@@ -118,8 +118,8 @@ export abstract class Launcher {
 
 		const str = `0.2.1\n${credentials.username}\n${credentials.user_token}\n`;
 		await Promise.all([
-			fs.writeFileAsync(path.join(localPackage.install_dir, '.gj-credentials'), str),
-			fs.writeFileAsync(
+			fs.writeFile(path.join(localPackage.install_dir, '.gj-credentials'), str),
+			fs.writeFile(
 				path.join(localPackage.install_dir, dir, executable, '..', '.gj-credentials'),
 				str
 			),

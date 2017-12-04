@@ -1,5 +1,5 @@
 import * as path from 'path';
-import * as fs from './fs';
+import fs from './fs';
 import * as xdgBasedir from 'xdg-basedir';
 
 const shellEscape: (args: string[]) => string = require('shell-escape');
@@ -23,11 +23,7 @@ export abstract class Shortcut {
 	}
 
 	private static async createLinux(program: string, icon: string) {
-		let desktopFile = path.join(
-			xdgBasedir.data || '',
-			'applications',
-			'game-jolt-client.desktop'
-		);
+		let desktopFile = path.join(xdgBasedir.data || '', 'applications', 'game-jolt-client.desktop');
 
 		let desktopContents = `[Desktop Entry]
 Version=1.0
@@ -43,24 +39,13 @@ Keywords=Play;Games;GJ;GameJolt;Indie;
 Hidden=false
 Name[en_US]=Game Jolt Client`;
 
-		await fs.writeFileAsync(desktopFile, desktopContents, { mode: 0o755 });
+		await fs.writeFile(desktopFile, desktopContents, { mode: 0o755 });
 	}
 
 	private static removeLinux() {
-		let desktopFile = path.join(
-			xdgBasedir.data,
-			'applications',
-			'game-jolt-client.desktop'
-		);
-		let oldDesktopFile = path.join(
-			xdgBasedir.data,
-			'applications',
-			'Game Jolt Client.desktop'
-		);
-		return Promise.all([
-			fs.unlinkAsync(desktopFile),
-			fs.unlinkAsync(oldDesktopFile),
-		])
+		let desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
+		let oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
+		return Promise.all([fs.unlink(desktopFile), fs.unlink(oldDesktopFile)])
 			.then(() => true)
 			.catch(err => false);
 	}

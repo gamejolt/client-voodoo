@@ -4,7 +4,7 @@ import * as net from 'net';
 import * as data from './data';
 import { TSEventEmitter } from './events';
 import { Reconnector } from './reconnector';
-import * as fsAsync from './fs';
+import fs from './fs';
 import * as GameJolt from './gamejolt';
 
 const JSONStream = require('JSONStream');
@@ -193,11 +193,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 				let payload: any, type: string;
 
-				if (
-					data_.msgId &&
-					this.sentMessage &&
-					data_.msgId === this.sentMessage.msgId
-				) {
+				if (data_.msgId && this.sentMessage && data_.msgId === this.sentMessage.msgId) {
 					let idx = this.expectingQueuePauseIds.indexOf(this.sentMessage.msgId);
 					if (idx !== -1) {
 						this.expectingQueuePauseIds.splice(idx);
@@ -213,22 +209,14 @@ export class Controller extends TSEventEmitter<Events> {
 					payload = data_.payload;
 					if (!payload) {
 						return this.sentMessage.reject(
-							new Error(
-								'Missing `payload` field in response' +
-									' in ' +
-									JSON.stringify(data_)
-							)
+							new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_))
 						);
 					}
 
 					type = data_.type;
 					if (!type) {
 						return this.sentMessage.reject(
-							new Error(
-								'Missing `type` field in response' +
-									' in ' +
-									JSON.stringify(data_)
-							)
+							new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_))
 						);
 					}
 
@@ -242,12 +230,7 @@ export class Controller extends TSEventEmitter<Events> {
 							return this.sentMessage.resolve(payload.err);
 						default:
 							return this.sentMessage.reject(
-								new Error(
-									'Unexpected `type` value: ' +
-										type +
-										' in ' +
-										JSON.stringify(data_)
-								)
+								new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_))
 							);
 					}
 				}
@@ -256,11 +239,7 @@ export class Controller extends TSEventEmitter<Events> {
 				if (!type) {
 					return this.emit(
 						'err',
-						new Error(
-							'Missing `type` field in response' +
-								' in ' +
-								JSON.stringify(data_)
-						)
+						new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_))
 					);
 				}
 
@@ -268,11 +247,7 @@ export class Controller extends TSEventEmitter<Events> {
 				if (!payload) {
 					return this.emit(
 						'err',
-						new Error(
-							'Missing `payload` field in response' +
-								' in ' +
-								JSON.stringify(data_)
-						)
+						new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_))
 					);
 				}
 
@@ -345,10 +320,7 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(
 									'err',
 									new Error(
-										'Unexpected update `message` value: ' +
-											message +
-											' in ' +
-											JSON.stringify(data_)
+										'Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data_)
 									)
 								);
 						}
@@ -357,12 +329,7 @@ export class Controller extends TSEventEmitter<Events> {
 					default:
 						return this.emit(
 							'err',
-							new Error(
-								'Unexpected `type` value: ' +
-									type +
-									' in ' +
-									JSON.stringify(data_)
-							)
+							new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_))
 						);
 				}
 			})
@@ -388,7 +355,7 @@ export class Controller extends TSEventEmitter<Events> {
 			migration.version0.updateBuildId = localPackage.update.build.id;
 		}
 
-		await fsAsync.writeFileAsync(
+		await fs.writeFile(
 			path.join(localPackage.install_dir, '..', '.migration'),
 			JSON.stringify(migration)
 		);
@@ -409,13 +376,11 @@ export class Controller extends TSEventEmitter<Events> {
 		let runnerExecutable = getExecutable();
 
 		// Ensure that the runner is executable.
-		await fsAsync.chmod(runnerExecutable, '0755');
+		await fs.chmod(runnerExecutable, '0755');
 
 		const portArg = args.indexOf('--port');
 		if (portArg === -1) {
-			throw new Error(
-				`Can't launch a new instance without specifying a port number`
-			);
+			throw new Error(`Can't launch a new instance without specifying a port number`);
 		}
 		const port = parseInt(args[portArg + 1], 10);
 
@@ -468,10 +433,7 @@ export class Controller extends TSEventEmitter<Events> {
 						);
 					}
 
-					console.log(
-						`Disconnected from runner` +
-							(hasError ? `: ${lastErr.message}` : '')
-					);
+					console.log(`Disconnected from runner` + (hasError ? `: ${lastErr.message}` : ''));
 					if (hasError) {
 						console.log(lastErr);
 					}
@@ -479,9 +441,7 @@ export class Controller extends TSEventEmitter<Events> {
 					if (!this.connectionLock) {
 						this.emit(
 							'fatal',
-							hasError
-								? lastErr
-								: new Error(`Unexpected disconnection from joltron`)
+							hasError ? lastErr : new Error(`Unexpected disconnection from joltron`)
 						);
 					}
 				})
@@ -574,11 +534,7 @@ export class Controller extends TSEventEmitter<Events> {
 		return msg;
 	}
 
-	private sendControl(
-		command: string,
-		extraData?: { [key: string]: string },
-		timeout?: number
-	) {
+	private sendControl(command: string, extraData?: { [key: string]: string }, timeout?: number) {
 		const msg: any = { command };
 		if (extraData && extraData !== {}) {
 			msg.extraData = extraData;
@@ -626,11 +582,7 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendGetState(includePatchInfo: boolean, timeout?: number) {
-		return this.send<data.MsgStateResponse>(
-			'state',
-			{ includePatchInfo },
-			timeout
-		).resultPromise;
+		return this.send<data.MsgStateResponse>('state', { includePatchInfo }, timeout).resultPromise;
 	}
 
 	sendCheckForUpdates(
