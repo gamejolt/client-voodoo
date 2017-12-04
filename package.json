@@ -16,7 +16,8 @@
 		"cover": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --full-trace -u tdd --timeout 999999 --colors src/**/*.test.ts",
 		"build": "tsc",
     "watch": "tsc -w",
-    "dev": "gulp watch"
+    "dev": "gulp watch",
+    "postinstall": "node ./build/postinstall.js"
 	},
 	"nyc": {
 		"include": [
@@ -65,7 +66,8 @@
 		"xdg-basedir": "3.0.0"
 	},
 	"dependencies": {
-		"JSONStream": "github:gamejolt/JSONStream#no-shebang",
+    "JSONStream": "github:gamejolt/JSONStream#no-shebang",
+    "follow-redirects": "1.2.6",
 		"mkdirp": "0.5.1",
 		"shell-escape": "0.2.0"
 	}

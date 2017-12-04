@@ -3,7 +3,7 @@ import * as cp from 'child_process';
 import * as data from './data';
 import { TSEventEmitter } from './events';
 import * as GameJolt from './gamejolt';
-export declare function getExecutable(): string;
+export declare function getExecutable(withDirname?: boolean): string;
 export declare type Events = {
     'fatal': (err: Error) => void;
     'err': (err: Error) => void;
