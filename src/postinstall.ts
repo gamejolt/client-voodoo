@@ -20,7 +20,7 @@ async function doTheThing() {
 		});
 	});
 
-	const file = fs.createWriteStream(executable, { mode: 755 });
+	const file = fs.createWriteStream(executable, { mode: 0o755 });
 	const options: _https.RequestOptions = {
 		host: 'github.com',
 		path: `/gamejolt/joltron/releases/download/${joltronVersion}/` + getExecutable(false),

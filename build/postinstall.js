@@ -59,7 +59,7 @@ function doTheThing() {
                         })];
                 case 1:
                     _a.sent();
-                    file = fs.createWriteStream(executable, { mode: 755 });
+                    file = fs.createWriteStream(executable, { mode: 493 });
                     options = {
                         host: 'github.com',
                         path: "/gamejolt/joltron/releases/download/" + joltronVersion + "/" + controller_1.getExecutable(false),
