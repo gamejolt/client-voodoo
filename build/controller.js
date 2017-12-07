@@ -52,25 +52,12 @@ var reconnector_1 = require("./reconnector");
 var fs_1 = require("./fs");
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
-function getExecutable(withDirname) {
-    var executable;
-    switch (process.platform) {
-        case 'win32':
-            executable = 'joltron_win32.exe';
-            break;
-        case 'linux':
-            executable = 'joltron_linux';
-            break;
-        case 'darwin':
-            executable = 'joltron_osx';
-            break;
-        default:
-            throw new Error('Unsupported OS');
+function getExecutable() {
+    var executable = 'GameJoltRunner';
+    if (process.platform === 'win32') {
+        executable += '.exe';
     }
-    if (withDirname || typeof withDirname === 'undefined') {
-        return path.resolve(__dirname, '..', 'bin', executable);
-    }
-    return executable;
+    return path.resolve(__dirname, '..', 'bin', executable);
 }
 exports.getExecutable = getExecutable;
 var SentMessage = (function () {

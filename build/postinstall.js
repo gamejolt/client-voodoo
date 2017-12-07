@@ -43,11 +43,11 @@ var joltronVersion = 'v1.1.0-beta';
 var https = require('follow-redirects').https;
 function doTheThing() {
     return __awaiter(this, void 0, void 0, function () {
-        var executable, binDir, file, options;
+        var executable, binDir, file, remoteExecutable, options;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    executable = controller_1.getExecutable(true);
+                    executable = controller_1.getExecutable();
                     binDir = path.dirname(executable);
                     return [4 /*yield*/, new Promise(function (resolve, reject) {
                             mkdirp(binDir, function (err) {
@@ -60,9 +60,20 @@ function doTheThing() {
                 case 1:
                     _a.sent();
                     file = fs.createWriteStream(executable, { mode: 493 });
+                    switch (process.platform) {
+                        case 'win32':
+                            remoteExecutable = 'joltron_win32.exe';
+                            break;
+                        case 'linux':
+                            remoteExecutable = 'joltron_linux';
+                            break;
+                        case 'darwin':
+                            remoteExecutable = 'joltron_osx';
+                            break;
+                    }
                     options = {
                         host: 'github.com',
-                        path: "/gamejolt/joltron/releases/download/" + joltronVersion + "/" + controller_1.getExecutable(false),
+                        path: "/gamejolt/joltron/releases/download/" + joltronVersion + "/" + remoteExecutable,
                     };
                     return [4 /*yield*/, new Promise(function (resolve, reject) {
                             https

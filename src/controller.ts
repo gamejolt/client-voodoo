@@ -10,26 +10,13 @@ import * as GameJolt from './gamejolt';
 const JSONStream = require('JSONStream');
 const ps = require('ps-node');
 
-export function getExecutable(withDirname?: boolean) {
-	let executable: string;
-	switch (process.platform) {
-		case 'win32':
-			executable = 'joltron_win32.exe';
-			break;
-		case 'linux':
-			executable = 'joltron_linux';
-			break;
-		case 'darwin':
-			executable = 'joltron_osx';
-			break;
-		default:
-			throw new Error('Unsupported OS');
+export function getExecutable() {
+	let executable = 'GameJoltRunner';
+	if (process.platform === 'win32') {
+		executable += '.exe';
 	}
 
-	if (withDirname || typeof withDirname === 'undefined') {
-		return path.resolve(__dirname, '..', 'bin', executable);
-	}
-	return executable;
+	return path.resolve(__dirname, '..', 'bin', executable);
 }
 
 class SentMessage<T> {
