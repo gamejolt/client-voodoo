@@ -101,10 +101,10 @@ var Patcher = (function () {
                             args.push('--launch');
                         }
                         args.push('install');
-                        // TODO(client-vue) this might not be needed on installations.
+                        // As far as joltron is concerned, an installation can also be an update, therefore it might need the migration file.
                         return [4 /*yield*/, controller_1.Controller.ensureMigrationFile(localPackage)];
                     case 2:
-                        // TODO(client-vue) this might not be needed on installations.
+                        // As far as joltron is concerned, an installation can also be an update, therefore it might need the migration file.
                         _a.sent();
                         return [4 /*yield*/, controller_1.Controller.launchNew(args)];
                     case 3:

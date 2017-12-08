@@ -272,7 +272,7 @@ var Controller = (function (_super) {
     };
     Controller.ensureMigrationFile = function (localPackage) {
         return __awaiter(this, void 0, void 0, function () {
-            var migration;
+            var migration, err_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -287,10 +287,17 @@ var Controller = (function (_super) {
                             migration.version0.updateId = localPackage.update.id;
                             migration.version0.updateBuildId = localPackage.update.build.id;
                         }
-                        return [4 /*yield*/, fs_1.default.writeFile(path.join(localPackage.install_dir, '..', '.migration'), JSON.stringify(migration))];
+                        _a.label = 1;
                     case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, fs_1.default.writeFile(path.join(localPackage.install_dir, '..', '.migration'), JSON.stringify(migration))];
+                    case 2:
                         _a.sent();
-                        return [2 /*return*/];
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_1 = _a.sent();
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
                 }
             });
         });
@@ -337,7 +344,7 @@ var Controller = (function (_super) {
     Controller.prototype.connect = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var _a, lastErr_1, err_1;
+            var _a, lastErr_1, err_2;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -377,9 +384,9 @@ var Controller = (function (_super) {
                         this.consumeSendQueue();
                         return [3 /*break*/, 5];
                     case 3:
-                        err_1 = _b.sent();
-                        console.log('Failed to connect in reconnector: ' + err_1.message);
-                        this.emit('fatal', err_1);
+                        err_2 = _b.sent();
+                        console.log('Failed to connect in reconnector: ' + err_2.message);
+                        this.emit('fatal', err_2);
                         return [3 /*break*/, 5];
                     case 4:
                         this.connectionLock = false;
@@ -429,7 +436,7 @@ var Controller = (function (_super) {
     Controller.prototype.consumeSendQueue = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var err_2;
+            var err_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -471,7 +478,7 @@ var Controller = (function (_super) {
                         _a.sent();
                         return [3 /*break*/, 6];
                     case 5:
-                        err_2 = _a.sent();
+                        err_3 = _a.sent();
                         return [3 /*break*/, 6];
                     case 6:
                         this.sentMessage = null;

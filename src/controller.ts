@@ -349,10 +349,15 @@ export class Controller extends TSEventEmitter<Events> {
 			migration.version0.updateBuildId = localPackage.update.build.id;
 		}
 
-		await fs.writeFile(
-			path.join(localPackage.install_dir, '..', '.migration'),
-			JSON.stringify(migration)
-		);
+		try {
+			await fs.writeFile(
+				path.join(localPackage.install_dir, '..', '.migration'),
+				JSON.stringify(migration)
+			);
+		}
+		catch (err) {
+			// We don't care if this fails because if the game directory doesn't exist we don't need a .migration file.
+		}
 	}
 
 	static async launchNew(args: string[], options?: cp.SpawnOptions) {

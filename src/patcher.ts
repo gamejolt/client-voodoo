@@ -59,7 +59,7 @@ export abstract class Patcher {
 		}
 		args.push('install');
 
-		// TODO(client-vue) this might not be needed on installations.
+		// As far as joltron is concerned, an installation can also be an update, therefore it might need the migration file.
 		await Controller.ensureMigrationFile(localPackage);
 
 		const controller = await Controller.launchNew(args);
