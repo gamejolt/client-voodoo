@@ -1,8 +1,7 @@
 {
 	"name": "client-voodoo",
-	"description":
-		"This is an almighty package for anything that has to do with managing a library of games through the Game Jolt Client.",
-	"version": "2.0.0-alpha.11",
+	"description": "This is an almighty package for anything that has to do with managing a library of games through the Game Jolt Client.",
+	"version": "2.0.0",
 	"bugs": {
 		"url": "https://github.com/gamejolt/client-voodoo/issues"
 	},
@@ -14,18 +13,25 @@
 	},
 	"scripts": {
 		"test": "mocha -u tdd --timeout 999999 --colors \"./build/**/patcher.test.js\"",
-		"cover":
-			"nyc mocha --compilers ts:ts-node/register --require source-map-support/register --full-trace -u tdd --timeout 999999 --colors src/**/*.test.ts",
+		"cover": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --full-trace -u tdd --timeout 999999 --colors src/**/*.test.ts",
 		"build": "tsc",
 		"watch": "tsc -w",
 		"dev": "gulp watch",
 		"postinstall": "node ./build/postinstall.js"
 	},
 	"nyc": {
-		"include": ["src/**/*.ts"],
-		"extension": [".ts"],
-		"exclude": ["**/*.d.ts"],
-		"require": ["ts-node/register"],
+		"include": [
+			"src/**/*.ts"
+		],
+		"extension": [
+			".ts"
+		],
+		"exclude": [
+			"**/*.d.ts"
+		],
+		"require": [
+			"ts-node/register"
+		],
 		"sourceMap": true,
 		"instrument": true
 	},
