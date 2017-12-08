@@ -4,62 +4,95 @@ import * as net from 'net';
 import * as data from './data';
 import { TSEventEmitter } from './events';
 import { Reconnector } from './reconnector';
-import * as fs from 'fs';
+import fs from './fs';
+import * as GameJolt from './gamejolt';
 
 const JSONStream = require('JSONStream');
 const ps = require('ps-node');
 
 export function getExecutable() {
-	console.log('My dirname: ' + __dirname);
-	let binFolder = path.resolve(__dirname, '..', 'bin');
-	switch (process.platform) {
-		case 'win32':
-			return path.join(binFolder, 'joltron_win32.exe');
-		case 'linux':
-			return path.join(binFolder, 'joltron_linux');
-		case 'darwin':
-			return path.join(binFolder, 'joltron_osx');
-		default:
-			throw new Error('Unsupported OS');
+	let executable = 'GameJoltRunner';
+	if (process.platform === 'win32') {
+		executable += '.exe';
 	}
+
+	return path.resolve(__dirname, '..', 'bin', executable);
 }
 
 class SentMessage<T> {
 	readonly msg: string;
 	readonly msgId: string;
-	private _resolved: boolean;
-	private resolver: Function;
-	private rejector: Function;
-	readonly promise: Promise<T>;
+
+	// Result promise - will resolve when the message is acknowledged and responded to by joltron
+	private _resultResolved: boolean;
+	private resultResolver: Function;
+	private resultRejector: Function;
+	readonly resultPromise: Promise<T>;
+
+	// Request promise - will resolve when the message is SENT.
+	private _requestResolved: boolean;
+	private requestResolver: Function;
+	private requestRejector: Function;
+	readonly requestPromise: Promise<void>;
 
 	constructor(msg: any, timeout?: number) {
 		this.msg = JSON.stringify(msg);
 		this.msgId = msg.msgId;
-		this._resolved = false;
-		this.promise = new Promise<T>((resolve, reject) => {
-			this.resolver = resolve;
-			this.rejector = reject;
+
+		// Initialize the result promise
+		this._resultResolved = false;
+		this.resultPromise = new Promise<T>((resolve, reject) => {
+			this.resultResolver = resolve;
+			this.resultRejector = reject;
 			if (timeout && timeout !== Infinity) {
 				setTimeout(() => {
-					this._resolved = true;
+					this._resultResolved = true;
 					reject(new Error('Message was not handled in time'));
+				}, timeout);
+			}
+		});
+
+		// Initialize the request promise
+		this._requestResolved = false;
+		this.requestPromise = new Promise<void>((resolve, reject) => {
+			this.requestResolver = resolve;
+			this.requestRejector = reject;
+			if (timeout && timeout !== Infinity) {
+				setTimeout(() => {
+					this._requestResolved = true;
+					reject(new Error('Message was not sent in time'));
 				}, timeout);
 			}
 		});
 	}
 
 	get resolved() {
-		return this._resolved;
+		return this._resultResolved;
 	}
 
 	resolve(data_: any) {
-		this._resolved = true;
-		this.resolver(data_);
+		this._resultResolved = true;
+		this.resultResolver(data_);
 	}
 
 	reject(reason: any) {
-		this._resolved = true;
-		this.rejector(reason);
+		this._resultResolved = true;
+		this.resultRejector(reason);
+	}
+
+	get sent() {
+		return this._requestResolved;
+	}
+
+	resolveSend() {
+		this._requestResolved = true;
+		this.requestResolver();
+	}
+
+	rejectSend(reason: any) {
+		this.reject(reason);
+		this._requestResolved = true;
+		this.requestRejector(reason);
 	}
 }
 
@@ -154,11 +187,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 				let payload: any, type: string;
 
-				if (
-					data_.msgId &&
-					this.sentMessage &&
-					data_.msgId === this.sentMessage.msgId
-				) {
+				if (data_.msgId && this.sentMessage && data_.msgId === this.sentMessage.msgId) {
 					let idx = this.expectingQueuePauseIds.indexOf(this.sentMessage.msgId);
 					if (idx !== -1) {
 						this.expectingQueuePauseIds.splice(idx);
@@ -174,22 +203,14 @@ export class Controller extends TSEventEmitter<Events> {
 					payload = data_.payload;
 					if (!payload) {
 						return this.sentMessage.reject(
-							new Error(
-								'Missing `payload` field in response' +
-									' in ' +
-									JSON.stringify(data_)
-							)
+							new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_))
 						);
 					}
 
 					type = data_.type;
 					if (!type) {
 						return this.sentMessage.reject(
-							new Error(
-								'Missing `type` field in response' +
-									' in ' +
-									JSON.stringify(data_)
-							)
+							new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_))
 						);
 					}
 
@@ -203,12 +224,7 @@ export class Controller extends TSEventEmitter<Events> {
 							return this.sentMessage.resolve(payload.err);
 						default:
 							return this.sentMessage.reject(
-								new Error(
-									'Unexpected `type` value: ' +
-										type +
-										' in ' +
-										JSON.stringify(data_)
-								)
+								new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_))
 							);
 					}
 				}
@@ -217,11 +233,7 @@ export class Controller extends TSEventEmitter<Events> {
 				if (!type) {
 					return this.emit(
 						'err',
-						new Error(
-							'Missing `type` field in response' +
-								' in ' +
-								JSON.stringify(data_)
-						)
+						new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_))
 					);
 				}
 
@@ -229,11 +241,7 @@ export class Controller extends TSEventEmitter<Events> {
 				if (!payload) {
 					return this.emit(
 						'err',
-						new Error(
-							'Missing `payload` field in response' +
-								' in ' +
-								JSON.stringify(data_)
-						)
+						new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_))
 					);
 				}
 
@@ -306,10 +314,7 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(
 									'err',
 									new Error(
-										'Unexpected update `message` value: ' +
-											message +
-											' in ' +
-											JSON.stringify(data_)
+										'Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data_)
 									)
 								);
 						}
@@ -318,12 +323,7 @@ export class Controller extends TSEventEmitter<Events> {
 					default:
 						return this.emit(
 							'err',
-							new Error(
-								'Unexpected `type` value: ' +
-									type +
-									' in ' +
-									JSON.stringify(data_)
-							)
+							new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_))
 						);
 				}
 			})
@@ -335,7 +335,32 @@ export class Controller extends TSEventEmitter<Events> {
 			});
 	}
 
-	static launchNew(args: string[], options?: cp.SpawnOptions) {
+	static async ensureMigrationFile(localPackage: GameJolt.IGamePackage) {
+		const migration: any = {
+			version0: {
+				packageId: localPackage.id,
+				buildId: localPackage.build.id,
+				executablePath: localPackage.executablePath,
+			},
+		};
+
+		if (localPackage.update) {
+			migration.version0.updateId = localPackage.update.id;
+			migration.version0.updateBuildId = localPackage.update.build.id;
+		}
+
+		try {
+			await fs.writeFile(
+				path.join(localPackage.install_dir, '..', '.migration'),
+				JSON.stringify(migration)
+			);
+		}
+		catch (err) {
+			// We don't care if this fails because if the game directory doesn't exist we don't need a .migration file.
+		}
+	}
+
+	static async launchNew(args: string[], options?: cp.SpawnOptions) {
 		options = options || {
 			detached: true,
 			env: process.env,
@@ -350,13 +375,11 @@ export class Controller extends TSEventEmitter<Events> {
 		let runnerExecutable = getExecutable();
 
 		// Ensure that the runner is executable.
-		fs.chmodSync(runnerExecutable, '0755');
+		await fs.chmod(runnerExecutable, '0755');
 
 		const portArg = args.indexOf('--port');
 		if (portArg === -1) {
-			throw new Error(
-				`Can't launch a new instance without specifying a port number`
-			);
+			throw new Error(`Can't launch a new instance without specifying a port number`);
 		}
 		const port = parseInt(args[portArg + 1], 10);
 
@@ -409,10 +432,7 @@ export class Controller extends TSEventEmitter<Events> {
 						);
 					}
 
-					console.log(
-						`Disconnected from runner` +
-							(hasError ? `: ${lastErr.message}` : '')
-					);
+					console.log(`Disconnected from runner` + (hasError ? `: ${lastErr.message}` : ''));
 					if (hasError) {
 						console.log(lastErr);
 					}
@@ -420,9 +440,7 @@ export class Controller extends TSEventEmitter<Events> {
 					if (!this.connectionLock) {
 						this.emit(
 							'fatal',
-							hasError
-								? lastErr
-								: new Error(`Unexpected disconnection from joltron`)
+							hasError ? lastErr : new Error(`Unexpected disconnection from joltron`)
 						);
 					}
 				})
@@ -483,10 +501,13 @@ export class Controller extends TSEventEmitter<Events> {
 
 					resolve();
 				});
-			}).catch(err => this.sentMessage.reject(err));
+			}).catch(err => {
+				this.sentMessage.rejectSend(err);
+			});
+			this.sentMessage.resolveSend();
 
 			try {
-				await this.sentMessage.promise;
+				await this.sentMessage.resultPromise;
 			} catch (err) {}
 			this.sentMessage = null;
 		}
@@ -494,11 +515,11 @@ export class Controller extends TSEventEmitter<Events> {
 		this.consumingQueue = false;
 	}
 
-	private send<T>(type: string, data: Object, timeout?: number) {
+	private send<T>(type: string, payload: Object, timeout?: number) {
 		const msgData = {
 			type: type,
 			msgId: (this.nextMessageId++).toString(),
-			payload: data,
+			payload: payload,
 		};
 		console.log('Sending ' + JSON.stringify(msgData));
 
@@ -512,11 +533,7 @@ export class Controller extends TSEventEmitter<Events> {
 		return msg;
 	}
 
-	private sendControl(
-		command: string,
-		extraData?: { [key: string]: string },
-		timeout?: number
-	) {
+	private sendControl(command: string, extraData?: { [key: string]: string }, timeout?: number) {
 		const msg: any = { command };
 		if (extraData && extraData !== {}) {
 			msg.extraData = extraData;
@@ -525,7 +542,7 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendKillGame(timeout?: number) {
-		return this.sendControl('kill', null, timeout).promise;
+		return this.sendControl('kill', null, timeout).resultPromise;
 	}
 
 	async sendPause(options?: { queue?: boolean; timeout?: number }) {
@@ -534,7 +551,7 @@ export class Controller extends TSEventEmitter<Events> {
 		if (options.queue) {
 			this.expectingQueuePauseIds.push(msg.msgId);
 		}
-		return msg.promise;
+		return msg.resultPromise;
 	}
 
 	async sendResume(options?: {
@@ -555,19 +572,16 @@ export class Controller extends TSEventEmitter<Events> {
 		if (options.queue) {
 			this.expectingQueueResumeIds.push(msg.msgId);
 		}
-		return msg.promise;
+		return msg.resultPromise;
 	}
 
-	sendCancel(timeout?: number) {
-		return this.sendControl('cancel', null, timeout).promise;
+	sendCancel(timeout?: number, waitOnlyForSend?: boolean) {
+		const msg = this.sendControl('cancel', null, timeout);
+		return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
 	}
 
 	sendGetState(includePatchInfo: boolean, timeout?: number) {
-		return this.send<data.MsgStateResponse>(
-			'state',
-			{ includePatchInfo },
-			timeout
-		).promise;
+		return this.send<data.MsgStateResponse>('state', { includePatchInfo }, timeout).resultPromise;
 	}
 
 	sendCheckForUpdates(
@@ -577,26 +591,26 @@ export class Controller extends TSEventEmitter<Events> {
 		metadata?: string,
 		timeout?: number
 	) {
-		let data: any = { gameUID, platformURL };
+		let payload: any = { gameUID, platformURL };
 		if (authToken) {
-			data.authToken = authToken;
+			payload.authToken = authToken;
 		}
 		if (metadata) {
-			data.metadata = metadata;
+			payload.metadata = metadata;
 		}
-		return this.send('checkForUpdates', data, timeout).promise;
+		return this.send('checkForUpdates', payload, timeout).resultPromise;
 	}
 
 	sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number) {
-		return this.send('updateAvailable', updateMetadata, timeout).promise;
+		return this.send('updateAvailable', updateMetadata, timeout).resultPromise;
 	}
 
 	sendUpdateBegin(timeout?: number) {
-		return this.send('updateBegin', {}, timeout).promise;
+		return this.send('updateBegin', {}, timeout).resultPromise;
 	}
 
 	sendUpdateApply(env: Object, args: string[], timeout?: number) {
-		return this.send('updateApply', { env, args }, timeout).promise;
+		return this.send('updateApply', { env, args }, timeout).resultPromise;
 	}
 
 	kill() {

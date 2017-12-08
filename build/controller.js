@@ -49,22 +49,15 @@ var cp = require("child_process");
 var path = require("path");
 var events_1 = require("./events");
 var reconnector_1 = require("./reconnector");
-var fs = require("fs");
+var fs_1 = require("./fs");
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
-    console.log('My dirname: ' + __dirname);
-    var binFolder = path.resolve(__dirname, '..', 'bin');
-    switch (process.platform) {
-        case 'win32':
-            return path.join(binFolder, 'joltron_win32.exe');
-        case 'linux':
-            return path.join(binFolder, 'joltron_linux');
-        case 'darwin':
-            return path.join(binFolder, 'joltron_osx');
-        default:
-            throw new Error('Unsupported OS');
+    var executable = 'GameJoltRunner';
+    if (process.platform === 'win32') {
+        executable += '.exe';
     }
+    return path.resolve(__dirname, '..', 'bin', executable);
 }
 exports.getExecutable = getExecutable;
 var SentMessage = (function () {
@@ -72,32 +65,61 @@ var SentMessage = (function () {
         var _this = this;
         this.msg = JSON.stringify(msg);
         this.msgId = msg.msgId;
-        this._resolved = false;
-        this.promise = new Promise(function (resolve, reject) {
-            _this.resolver = resolve;
-            _this.rejector = reject;
+        // Initialize the result promise
+        this._resultResolved = false;
+        this.resultPromise = new Promise(function (resolve, reject) {
+            _this.resultResolver = resolve;
+            _this.resultRejector = reject;
             if (timeout && timeout !== Infinity) {
                 setTimeout(function () {
-                    _this._resolved = true;
+                    _this._resultResolved = true;
                     reject(new Error('Message was not handled in time'));
+                }, timeout);
+            }
+        });
+        // Initialize the request promise
+        this._requestResolved = false;
+        this.requestPromise = new Promise(function (resolve, reject) {
+            _this.requestResolver = resolve;
+            _this.requestRejector = reject;
+            if (timeout && timeout !== Infinity) {
+                setTimeout(function () {
+                    _this._requestResolved = true;
+                    reject(new Error('Message was not sent in time'));
                 }, timeout);
             }
         });
     }
     Object.defineProperty(SentMessage.prototype, "resolved", {
         get: function () {
-            return this._resolved;
+            return this._resultResolved;
         },
         enumerable: true,
         configurable: true
     });
     SentMessage.prototype.resolve = function (data_) {
-        this._resolved = true;
-        this.resolver(data_);
+        this._resultResolved = true;
+        this.resultResolver(data_);
     };
     SentMessage.prototype.reject = function (reason) {
-        this._resolved = true;
-        this.rejector(reason);
+        this._resultResolved = true;
+        this.resultRejector(reason);
+    };
+    Object.defineProperty(SentMessage.prototype, "sent", {
+        get: function () {
+            return this._requestResolved;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    SentMessage.prototype.resolveSend = function () {
+        this._requestResolved = true;
+        this.requestResolver();
+    };
+    SentMessage.prototype.rejectSend = function (reason) {
+        this.reject(reason);
+        this._requestResolved = true;
+        this.requestRejector(reason);
     };
     return SentMessage;
 }());
@@ -128,9 +150,7 @@ var Controller = (function (_super) {
             .on('data', function (data_) {
             console.log('Received json: ' + JSON.stringify(data_));
             var payload, type;
-            if (data_.msgId &&
-                _this.sentMessage &&
-                data_.msgId === _this.sentMessage.msgId) {
+            if (data_.msgId && _this.sentMessage && data_.msgId === _this.sentMessage.msgId) {
                 var idx = _this.expectingQueuePauseIds.indexOf(_this.sentMessage.msgId);
                 if (idx !== -1) {
                     _this.expectingQueuePauseIds.splice(idx);
@@ -143,15 +163,11 @@ var Controller = (function (_super) {
                 }
                 payload = data_.payload;
                 if (!payload) {
-                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' +
-                        ' in ' +
-                        JSON.stringify(data_)));
+                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_)));
                 }
                 type = data_.type;
                 if (!type) {
-                    return _this.sentMessage.reject(new Error('Missing `type` field in response' +
-                        ' in ' +
-                        JSON.stringify(data_)));
+                    return _this.sentMessage.reject(new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_)));
                 }
                 switch (type) {
                     case 'state':
@@ -162,23 +178,16 @@ var Controller = (function (_super) {
                         }
                         return _this.sentMessage.resolve(payload.err);
                     default:
-                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
-                            type +
-                            ' in ' +
-                            JSON.stringify(data_)));
+                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_)));
                 }
             }
             type = data_.type;
             if (!type) {
-                return _this.emit('err', new Error('Missing `type` field in response' +
-                    ' in ' +
-                    JSON.stringify(data_)));
+                return _this.emit('err', new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_)));
             }
             payload = data_.payload;
             if (!payload) {
-                return _this.emit('err', new Error('Missing `payload` field in response' +
-                    ' in ' +
-                    JSON.stringify(data_)));
+                return _this.emit('err', new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_)));
             }
             switch (type) {
                 case 'update':
@@ -246,18 +255,12 @@ var Controller = (function (_super) {
                         case 'error':
                             return _this.emit('err', new Error(payload));
                         default:
-                            return _this.emit('err', new Error('Unexpected update `message` value: ' +
-                                message +
-                                ' in ' +
-                                JSON.stringify(data_)));
+                            return _this.emit('err', new Error('Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data_)));
                     }
                 case 'progress':
                     return _this.emit('progress', payload);
                 default:
-                    return _this.emit('err', new Error('Unexpected `type` value: ' +
-                        type +
-                        ' in ' +
-                        JSON.stringify(data_)));
+                    return _this.emit('err', new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_)));
             }
         })
             .on('error', function (err) {
@@ -267,33 +270,69 @@ var Controller = (function (_super) {
             _this.dispose();
         });
     };
+    Controller.ensureMigrationFile = function (localPackage) {
+        return __awaiter(this, void 0, void 0, function () {
+            var migration, err_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        migration = {
+                            version0: {
+                                packageId: localPackage.id,
+                                buildId: localPackage.build.id,
+                                executablePath: localPackage.executablePath,
+                            },
+                        };
+                        if (localPackage.update) {
+                            migration.version0.updateId = localPackage.update.id;
+                            migration.version0.updateBuildId = localPackage.update.build.id;
+                        }
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, fs_1.default.writeFile(path.join(localPackage.install_dir, '..', '.migration'), JSON.stringify(migration))];
+                    case 2:
+                        _a.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_1 = _a.sent();
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    };
     Controller.launchNew = function (args, options) {
-        options = options || {
-            detached: true,
-            env: process.env,
-            stdio: 'ignore',
-        };
-        var runnerExecutable = getExecutable();
-        // Ensure that the runner is executable.
-        fs.chmodSync(runnerExecutable, '0755');
-        var portArg = args.indexOf('--port');
-        if (portArg === -1) {
-            throw new Error("Can't launch a new instance without specifying a port number");
-        }
-        var port = parseInt(args[portArg + 1], 10);
-        console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
-        var runnerProc = cp.spawn(runnerExecutable, args, options);
-        runnerProc.unref();
-        var runnerInstance = new Controller(port, runnerProc.pid);
-        runnerInstance.connect();
-        return runnerInstance;
-        // try {
-        // 	await runnerInstance.connect();
-        // 	return runnerInstance;
-        // } catch (err) {
-        // 	await runnerInstance.kill();
-        // 	throw err;
-        // }
+        return __awaiter(this, void 0, void 0, function () {
+            var runnerExecutable, portArg, port, runnerProc, runnerInstance;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        options = options || {
+                            detached: true,
+                            env: process.env,
+                            stdio: 'ignore',
+                        };
+                        runnerExecutable = getExecutable();
+                        // Ensure that the runner is executable.
+                        return [4 /*yield*/, fs_1.default.chmod(runnerExecutable, '0755')];
+                    case 1:
+                        // Ensure that the runner is executable.
+                        _a.sent();
+                        portArg = args.indexOf('--port');
+                        if (portArg === -1) {
+                            throw new Error("Can't launch a new instance without specifying a port number");
+                        }
+                        port = parseInt(args[portArg + 1], 10);
+                        console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
+                        runnerProc = cp.spawn(runnerExecutable, args, options);
+                        runnerProc.unref();
+                        runnerInstance = new Controller(port, runnerProc.pid);
+                        runnerInstance.connect();
+                        return [2 /*return*/, runnerInstance];
+                }
+            });
+        });
     };
     Object.defineProperty(Controller.prototype, "connected", {
         get: function () {
@@ -305,7 +344,7 @@ var Controller = (function (_super) {
     Controller.prototype.connect = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var _a, lastErr_1, err_1;
+            var _a, lastErr_1, err_2;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -333,24 +372,21 @@ var Controller = (function (_super) {
                                 _this.sentMessage.reject(new Error("Disconnected before receiving message response" +
                                     (hasError ? ": " + lastErr_1.message : '')));
                             }
-                            console.log("Disconnected from runner" +
-                                (hasError ? ": " + lastErr_1.message : ''));
+                            console.log("Disconnected from runner" + (hasError ? ": " + lastErr_1.message : ''));
                             if (hasError) {
                                 console.log(lastErr_1);
                             }
                             if (!_this.connectionLock) {
-                                _this.emit('fatal', hasError
-                                    ? lastErr_1
-                                    : new Error("Unexpected disconnection from joltron"));
+                                _this.emit('fatal', hasError ? lastErr_1 : new Error("Unexpected disconnection from joltron"));
                             }
                         })
                             .pipe(this.newJsonStream());
                         this.consumeSendQueue();
                         return [3 /*break*/, 5];
                     case 3:
-                        err_1 = _b.sent();
-                        console.log('Failed to connect in reconnector: ' + err_1.message);
-                        this.emit('fatal', err_1);
+                        err_2 = _b.sent();
+                        console.log('Failed to connect in reconnector: ' + err_2.message);
+                        this.emit('fatal', err_2);
                         return [3 /*break*/, 5];
                     case 4:
                         this.connectionLock = false;
@@ -400,7 +436,7 @@ var Controller = (function (_super) {
     Controller.prototype.consumeSendQueue = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var err_2;
+            var err_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -428,18 +464,21 @@ var Controller = (function (_super) {
                                     }
                                     resolve();
                                 });
-                            }).catch(function (err) { return _this.sentMessage.reject(err); })];
+                            }).catch(function (err) {
+                                _this.sentMessage.rejectSend(err);
+                            })];
                     case 2:
                         _a.sent();
+                        this.sentMessage.resolveSend();
                         _a.label = 3;
                     case 3:
                         _a.trys.push([3, 5, , 6]);
-                        return [4 /*yield*/, this.sentMessage.promise];
+                        return [4 /*yield*/, this.sentMessage.resultPromise];
                     case 4:
                         _a.sent();
                         return [3 /*break*/, 6];
                     case 5:
-                        err_2 = _a.sent();
+                        err_3 = _a.sent();
                         return [3 /*break*/, 6];
                     case 6:
                         this.sentMessage = null;
@@ -451,11 +490,11 @@ var Controller = (function (_super) {
             });
         });
     };
-    Controller.prototype.send = function (type, data, timeout) {
+    Controller.prototype.send = function (type, payload, timeout) {
         var msgData = {
             type: type,
             msgId: (this.nextMessageId++).toString(),
-            payload: data,
+            payload: payload,
         };
         console.log('Sending ' + JSON.stringify(msgData));
         var msg = new SentMessage(msgData, timeout);
@@ -473,7 +512,7 @@ var Controller = (function (_super) {
         return this.send('control', msg, timeout);
     };
     Controller.prototype.sendKillGame = function (timeout) {
-        return this.sendControl('kill', null, timeout).promise;
+        return this.sendControl('kill', null, timeout).resultPromise;
     };
     Controller.prototype.sendPause = function (options) {
         return __awaiter(this, void 0, void 0, function () {
@@ -484,7 +523,7 @@ var Controller = (function (_super) {
                 if (options.queue) {
                     this.expectingQueuePauseIds.push(msg.msgId);
                 }
-                return [2 /*return*/, msg.promise];
+                return [2 /*return*/, msg.resultPromise];
             });
         });
     };
@@ -504,34 +543,35 @@ var Controller = (function (_super) {
                 if (options.queue) {
                     this.expectingQueueResumeIds.push(msg.msgId);
                 }
-                return [2 /*return*/, msg.promise];
+                return [2 /*return*/, msg.resultPromise];
             });
         });
     };
-    Controller.prototype.sendCancel = function (timeout) {
-        return this.sendControl('cancel', null, timeout).promise;
+    Controller.prototype.sendCancel = function (timeout, waitOnlyForSend) {
+        var msg = this.sendControl('cancel', null, timeout);
+        return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
     };
     Controller.prototype.sendGetState = function (includePatchInfo, timeout) {
-        return this.send('state', { includePatchInfo: includePatchInfo }, timeout).promise;
+        return this.send('state', { includePatchInfo: includePatchInfo }, timeout).resultPromise;
     };
     Controller.prototype.sendCheckForUpdates = function (gameUID, platformURL, authToken, metadata, timeout) {
-        var data = { gameUID: gameUID, platformURL: platformURL };
+        var payload = { gameUID: gameUID, platformURL: platformURL };
         if (authToken) {
-            data.authToken = authToken;
+            payload.authToken = authToken;
         }
         if (metadata) {
-            data.metadata = metadata;
+            payload.metadata = metadata;
         }
-        return this.send('checkForUpdates', data, timeout).promise;
+        return this.send('checkForUpdates', payload, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateAvailable = function (updateMetadata, timeout) {
-        return this.send('updateAvailable', updateMetadata, timeout).promise;
+        return this.send('updateAvailable', updateMetadata, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateBegin = function (timeout) {
-        return this.send('updateBegin', {}, timeout).promise;
+        return this.send('updateBegin', {}, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateApply = function (env, args, timeout) {
-        return this.send('updateApply', { env: env, args: args }, timeout).promise;
+        return this.send('updateApply', { env: env, args: args }, timeout).resultPromise;
     };
     Controller.prototype.kill = function () {
         var _this = this;

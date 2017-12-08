@@ -45,7 +45,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("./fs");
+var fs_1 = require("./fs");
 var path = require("path");
 var controller_1 = require("./controller");
 var util = require("./util");
@@ -89,7 +89,12 @@ var Launcher = (function () {
                             'run',
                         ];
                         args.push.apply(args, executableArgs);
-                        controller = controller_1.Controller.launchNew(args);
+                        return [4 /*yield*/, controller_1.Controller.ensureMigrationFile(localPackage)];
+                    case 4:
+                        _a.sent();
+                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
+                    case 5:
+                        controller = _a.sent();
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 // tslint:disable-next-line:no-unused-expression
                                 new LaunchInstance(controller, function (err, inst) {
@@ -99,7 +104,7 @@ var Launcher = (function () {
                                     resolve(inst);
                                 });
                             })];
-                    case 4:
+                    case 6:
                         instance = _a.sent();
                         return [2 /*return*/, this.manageInstanceInQueue(instance)];
                 }
@@ -114,6 +119,7 @@ var Launcher = (function () {
                     case 0:
                         instance = null;
                         if (!(typeof runningPid !== 'string')) return [3 /*break*/, 2];
+                        console.log('Attaching to wrapper id: ' + runningPid.wrapperId);
                         return [4 /*yield*/, old_launcher_1.OldLauncher.attach(runningPid.wrapperId)];
                     case 1:
                         instance = _a.sent();
@@ -129,6 +135,7 @@ var Launcher = (function () {
                             throw new Error('Invalid or unsupported running pid: ' + runningPid);
                         }
                         parsedPid = JSON.parse(pidStr);
+                        console.log('Attaching to parsed pid: ' + pidStr);
                         controller_2 = new controller_1.Controller(parsedPid.port, parsedPid.pid);
                         controller_2.connect();
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
@@ -150,19 +157,30 @@ var Launcher = (function () {
     };
     Launcher.ensureCredentials = function (localPackage, credentials) {
         return __awaiter(this, void 0, void 0, function () {
-            var manifestStr, manifest, str;
+            var dir, executable, manifestStr, manifest, err_1, str;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, fs.readFileAsync(path.join(localPackage.install_dir, '.manifest'), 'utf8')];
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, fs_1.default.readFile(path.join(localPackage.install_dir, '.manifest'), 'utf8')];
                     case 1:
                         manifestStr = _a.sent();
                         manifest = JSON.parse(manifestStr);
+                        dir = manifest.gameInfo.dir;
+                        executable = manifest.launchOptions.executable;
+                        return [3 /*break*/, 3];
+                    case 2:
+                        err_1 = _a.sent();
+                        dir = '.';
+                        executable = localPackage.executablePath;
+                        return [3 /*break*/, 3];
+                    case 3:
                         str = "0.2.1\n" + credentials.username + "\n" + credentials.user_token + "\n";
                         return [4 /*yield*/, Promise.all([
-                                fs.writeFileAsync(path.join(localPackage.install_dir, '.gj-credentials'), str),
-                                fs.writeFileAsync(path.join(localPackage.install_dir, manifest.gameInfo.dir, manifest.launchOptions.executable, '..', '.gj-credentials'), str),
+                                fs_1.default.writeFile(path.join(localPackage.install_dir, '.gj-credentials'), str),
+                                fs_1.default.writeFile(path.join(localPackage.install_dir, dir, executable, '..', '.gj-credentials'), str),
                             ])];
-                    case 2:
+                    case 4:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -204,7 +222,7 @@ var LaunchInstance = (function (_super) {
     }
     Object.defineProperty(LaunchInstance.prototype, "pid", {
         get: function () {
-            return ('1:' + JSON.stringify({ port: this.controller.port, pid: this._pid }));
+            return '1:' + JSON.stringify({ port: this.controller.port, pid: this._pid });
         },
         enumerable: true,
         configurable: true

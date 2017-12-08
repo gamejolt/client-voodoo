@@ -19,7 +19,9 @@ export abstract class Uninstaller {
 			'uninstall',
 		];
 
-		return new UninstallInstance(Controller.launchNew(args));
+		await Controller.ensureMigrationFile(localPackage);
+		const controller = await Controller.launchNew(args);
+		return new UninstallInstance(controller);
 	}
 
 	static async uninstallReattach(port: number, pid: number) {

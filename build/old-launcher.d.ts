@@ -11,7 +11,6 @@ export declare type OldLauncherEvents = Events & {
 export declare class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents> {
     private _wrapperId;
     private _interval;
-    private _wrapperPort;
     private _stable;
     constructor(_wrapperId: string);
     readonly pid: IParsedWrapper;

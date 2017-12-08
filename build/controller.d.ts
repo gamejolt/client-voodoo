@@ -2,6 +2,7 @@
 import * as cp from 'child_process';
 import * as data from './data';
 import { TSEventEmitter } from './events';
+import * as GameJolt from './gamejolt';
 export declare function getExecutable(): string;
 export declare type Events = {
     'fatal': (err: Error) => void;
@@ -48,13 +49,14 @@ export declare class Controller extends TSEventEmitter<Events> {
     private expectingQueueResume;
     constructor(port: number, process?: cp.ChildProcess | number);
     private newJsonStream();
-    static launchNew(args: string[], options?: cp.SpawnOptions): Controller;
+    static ensureMigrationFile(localPackage: GameJolt.IGamePackage): Promise<void>;
+    static launchNew(args: string[], options?: cp.SpawnOptions): Promise<Controller>;
     readonly connected: boolean;
     connect(): Promise<void>;
     disconnect(): Promise<void>;
     dispose(): Promise<void>;
     private consumeSendQueue();
-    private send<T>(type, data, timeout?);
+    private send<T>(type, payload, timeout?);
     private sendControl(command, extraData?, timeout?);
     sendKillGame(timeout?: number): Promise<data.MsgResultResponse>;
     sendPause(options?: {
@@ -67,7 +69,7 @@ export declare class Controller extends TSEventEmitter<Events> {
         extraMetadata?: string;
         timeout?: number;
     }): Promise<data.MsgResultResponse>;
-    sendCancel(timeout?: number): Promise<data.MsgResultResponse>;
+    sendCancel(timeout?: number, waitOnlyForSend?: boolean): Promise<void> | Promise<data.MsgResultResponse>;
     sendGetState(includePatchInfo: boolean, timeout?: number): Promise<data.MsgStateResponse>;
     sendCheckForUpdates(gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number): Promise<{}>;
     sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number): Promise<{}>;

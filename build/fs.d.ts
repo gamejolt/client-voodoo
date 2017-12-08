@@ -1,13 +1,11 @@
-/// <reference types="node" />
-import * as fs_ from 'fs';
-declare const fs: typeof fs_ & {
-    writeFileAsync(filename: string, data: any, options?: {
+export default class FsAsync {
+    static writeFile(filename: string, data: any, options?: {
         encoding?: string;
         mode?: number;
         flag?: string;
     }): Promise<void>;
-    unlinkAsync(filename: string): Promise<void>;
-    existsAsync(filename: string): Promise<boolean>;
-    readFileAsync(filename: string, encoding: string): Promise<string>;
-};
-export = fs;
+    static unlink(filename: string): Promise<void>;
+    static exists(filename: string): Promise<boolean>;
+    static readFile(filename: string, encoding: string): Promise<string>;
+    static chmod(path: string, mode: number | string): Promise<void>;
+}

@@ -42,7 +42,7 @@ var Mutex = (function () {
     }
     Mutex.create = function (name) {
         return __awaiter(this, void 0, void 0, function () {
-            var port, args;
+            var port, args, controller;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, util.findFreePort()];
@@ -58,7 +58,10 @@ var Mutex = (function () {
                             name,
                             'noop',
                         ];
-                        return [2 /*return*/, new MutexInstance(controller_1.Controller.launchNew(args))];
+                        return [4 /*yield*/, controller_1.Controller.launchNew(args)];
+                    case 2:
+                        controller = _a.sent();
+                        return [2 /*return*/, new MutexInstance(controller)];
                 }
             });
         });

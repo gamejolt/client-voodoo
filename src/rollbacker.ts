@@ -19,7 +19,8 @@ export abstract class Rollbacker {
 			'rollback',
 		];
 
-		return new RollbackInstance(Controller.launchNew(args));
+		const controller = await Controller.launchNew(args);
+		return new RollbackInstance(controller);
 	}
 
 	static async rollbackReattach(port: number, pid: number) {

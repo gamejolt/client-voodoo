@@ -1,4 +1,4 @@
-import * as fs from './fs';
+import fs from './fs';
 import * as path from 'path';
 import { Controller, Events } from './controller';
 import * as util from './util';
@@ -40,7 +40,8 @@ export abstract class Launcher {
 		];
 		args.push(...executableArgs);
 
-		const controller = Controller.launchNew(args);
+		await Controller.ensureMigrationFile(localPackage);
+		const controller = await Controller.launchNew(args);
 		const instance = await new Promise<LaunchInstance>((resolve, reject) => {
 			// tslint:disable-next-line:no-unused-expression
 			new LaunchInstance(controller, (err, inst) => {
@@ -59,6 +60,7 @@ export abstract class Launcher {
 	): Promise<LaunchInstance | OldLaunchInstance> {
 		let instance: LaunchInstance | OldLaunchInstance = null;
 		if (typeof runningPid !== 'string') {
+			console.log('Attaching to wrapper id: ' + runningPid.wrapperId);
 			instance = await OldLauncher.attach(runningPid.wrapperId);
 		} else {
 			const index = runningPid.indexOf(':');
@@ -73,6 +75,7 @@ export abstract class Launcher {
 			}
 
 			const parsedPid = JSON.parse(pidStr);
+			console.log('Attaching to parsed pid: ' + pidStr);
 			const controller = new Controller(parsedPid.port, parsedPid.pid);
 			controller.connect();
 
@@ -94,34 +97,36 @@ export abstract class Launcher {
 		localPackage: GameJolt.IGamePackage,
 		credentials: GameJolt.IGameCredentials
 	) {
-		const manifestStr = await fs.readFileAsync(
-			path.join(localPackage.install_dir, '.manifest'),
-			'utf8'
-		);
-		const manifest: Manifest = JSON.parse(manifestStr);
+		let dir, executable: string;
+		// We try getting the data dir and executable path from the manifest,
+		// but the manifest might not exist if the package hasn't been migrated yet,
+		// and since joltron does the migration itself we fall back to placing the credentials
+		// in the old location - where the data dir doesn't exist and the game contents
+		// are located directly inside the installation dir.
+		try {
+			const manifestStr = await fs.readFile(
+				path.join(localPackage.install_dir, '.manifest'),
+				'utf8'
+			);
+			const manifest: Manifest = JSON.parse(manifestStr);
+			dir = manifest.gameInfo.dir;
+			executable = manifest.launchOptions.executable;
+		} catch (err) {
+			dir = '.';
+			executable = localPackage.executablePath;
+		}
 
 		const str = `0.2.1\n${credentials.username}\n${credentials.user_token}\n`;
 		await Promise.all([
-			fs.writeFileAsync(
-				path.join(localPackage.install_dir, '.gj-credentials'),
-				str
-			),
-			fs.writeFileAsync(
-				path.join(
-					localPackage.install_dir,
-					manifest.gameInfo.dir,
-					manifest.launchOptions.executable,
-					'..',
-					'.gj-credentials'
-				),
+			fs.writeFile(path.join(localPackage.install_dir, '.gj-credentials'), str),
+			fs.writeFile(
+				path.join(localPackage.install_dir, dir, executable, '..', '.gj-credentials'),
 				str
 			),
 		]);
 	}
 
-	private static manageInstanceInQueue<T extends TSEventEmitter<LaunchEvents>>(
-		instance: T
-	): T {
+	private static manageInstanceInQueue<T extends TSEventEmitter<LaunchEvents>>(instance: T): T {
 		Queue.setSlower();
 		instance.once('gameOver', () => Queue.setFaster());
 		return instance;
@@ -163,9 +168,7 @@ export class LaunchInstance extends ControllerWrapper<LaunchEvents> {
 	}
 
 	get pid() {
-		return (
-			'1:' + JSON.stringify({ port: this.controller.port, pid: this._pid })
-		);
+		return '1:' + JSON.stringify({ port: this.controller.port, pid: this._pid });
 	}
 
 	kill(): Promise<{ success: boolean; err?: string }> {

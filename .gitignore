@@ -4,4 +4,4 @@
 /build/**/*-spec.js
 /.nyc_output
 /coverage
-/src-old
+/bin

@@ -47,7 +47,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var net = require("net");
 var path = require("path");
-var fs = require("./fs");
+var fs_1 = require("./fs");
 var config_1 = require("./config");
 var events_1 = require("./events");
 var OldLauncher = (function () {
@@ -71,7 +71,7 @@ var OldLauncher = (function () {
                                     resolved = true;
                                     reject(new Error('Failed to connect to launch instance'));
                                 });
-                                setInterval(function () {
+                                setTimeout(function () {
                                     if (resolved) {
                                         return;
                                     }
@@ -108,18 +108,18 @@ var OldLaunchInstance = (function (_super) {
     });
     OldLaunchInstance.prototype.tick = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var port, wasStable, err_1;
+            var wasStable, err_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
                         return [4 /*yield*/, WrapperFinder.find(this._wrapperId)];
                     case 1:
-                        port = _a.sent();
+                        _a.sent();
                         wasStable = this._stable;
                         this._stable = true;
-                        this._wrapperPort = port;
                         if (!wasStable) {
+                            console.log('Managed to connect to old launcher');
                             this.emit('gameLaunched');
                         }
                         return [2 /*return*/, true];
@@ -135,6 +135,7 @@ var OldLaunchInstance = (function (_super) {
         });
     };
     OldLaunchInstance.prototype.abort = function () {
+        console.log('Old launcher detected to close. Emitting gameOVer');
         if (this._interval) {
             clearInterval(this._interval);
             this._interval = null;
@@ -154,7 +155,7 @@ var WrapperFinder = (function () {
                 switch (_a.label) {
                     case 0:
                         pidPath = path.join(config_1.Config.pid_dir, id);
-                        return [4 /*yield*/, fs.readFileAsync(pidPath, 'utf8')];
+                        return [4 /*yield*/, fs_1.default.readFile(pidPath, 'utf8')];
                     case 1:
                         port = _a.sent();
                         return [2 /*return*/, new Promise(function (resolve, reject) {
