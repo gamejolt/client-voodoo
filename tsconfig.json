@@ -9,7 +9,8 @@
 		"noImplicitThis": true,
 		"noUnusedLocals": true,
 		"declaration": true,
-		"typeRoots": ["node_modules/@types", "typings"]
+		"typeRoots": ["node_modules/@types", "typings"],
+		"newLine": "LF"
 	},
 	"include": ["./src/**/*"],
 	"exclude": ["node_modules", "typings", "build"]
