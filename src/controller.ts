@@ -306,6 +306,25 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(message);
 							case 'patcherState':
 								return this.emit(message, payload);
+							case 'log':
+								let logLevel = payload.level;
+								switch (logLevel) {
+									case 'fatal':
+										logLevel = 'error';
+
+									// tslint:disable-next-line:no-switch-case-fall-through
+									case 'error':
+									case 'warn':
+									case 'info':
+									case 'debug':
+									case 'trace':
+										console[logLevel](`[joltron - ${payload.level}] ${payload.message}`);
+										return;
+
+									default:
+										console.log(`[joltron - info] ${payload.message}`);
+										return;
+								}
 							case 'abort':
 								return this.emit('fatal', new Error(payload));
 							case 'error':
@@ -328,8 +347,8 @@ export class Controller extends TSEventEmitter<Events> {
 				}
 			})
 			.on('error', err => {
-				console.log('json stream encountered an error: ' + err.message);
-				console.log(err);
+				console.error('json stream encountered an error: ' + err.message);
+				console.error(err);
 				this.emit('fatal', err);
 				this.dispose();
 			});
