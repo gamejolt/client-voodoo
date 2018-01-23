@@ -250,6 +250,23 @@ var Controller = (function (_super) {
                             return _this.emit(message);
                         case 'patcherState':
                             return _this.emit(message, payload);
+                        case 'log':
+                            var logLevel = payload.level;
+                            switch (logLevel) {
+                                case 'fatal':
+                                    logLevel = 'error';
+                                // tslint:disable-next-line:no-switch-case-fall-through
+                                case 'error':
+                                case 'warn':
+                                case 'info':
+                                case 'debug':
+                                case 'trace':
+                                    console[logLevel]("[joltron - " + payload.level + "] " + payload.message);
+                                    return;
+                                default:
+                                    console.log("[joltron - info] " + payload.message);
+                                    return;
+                            }
                         case 'abort':
                             return _this.emit('fatal', new Error(payload));
                         case 'error':
@@ -264,8 +281,8 @@ var Controller = (function (_super) {
             }
         })
             .on('error', function (err) {
-            console.log('json stream encountered an error: ' + err.message);
-            console.log(err);
+            console.error('json stream encountered an error: ' + err.message);
+            console.error(err);
             _this.emit('fatal', err);
             _this.dispose();
         });
