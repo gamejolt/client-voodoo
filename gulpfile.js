@@ -21,19 +21,15 @@ gulp.task('clean-joltron', function() {
 gulp.task('js', shell.task(['tsc']));
 
 const joltronRepo = 'github.com/gamejolt/joltron';
-const gameRunnerRepo = path.join(
-	process.env.GOPATH,
-	'src',
-	...joltronRepo.split('/')
-);
+const gameRunnerRepo = path.join(process.env.GOPATH, 'src', ...joltronRepo.split('/'));
 function getExecutable() {
 	switch (process.platform) {
 		case 'win32':
-			return path.join(__dirname, 'bin', 'joltron_win32.exe');
+			return path.join(__dirname, 'bin', 'GameJoltRunner.exe');
 		case 'linux':
-			return path.join(__dirname, 'bin', 'joltron_linux');
+			return path.join(__dirname, 'bin', 'GameJoltRunner');
 		case 'darwin':
-			return path.join(__dirname, 'bin', 'joltron_osx');
+			return path.join(__dirname, 'bin', 'GameJoltRunner');
 		default:
 			throw new Error('Unsupported OS');
 	}
@@ -45,10 +41,7 @@ if (process.platform == 'win32') {
 		shell.task([
 			'cd ' + gameRunnerRepo + ' && build.bat',
 			'mkdir bin',
-			'copy ' +
-				path.join(gameRunnerRepo, 'joltron.exe') +
-				' ' +
-				getExecutable(),
+			'copy ' + path.join(gameRunnerRepo, 'joltron.exe') + ' ' + getExecutable(),
 		])
 	);
 } else {
