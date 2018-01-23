@@ -120,23 +120,34 @@ var Reconnector = (function (_super) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var lastErr = null;
+            // These are event handlers for the first connection event.
+            // If we couldn't even establish the first connection, we don't bother retrying
+            // since we only care about re-establishing a lost connection.
+            // We save them as functions instead of using them inline so that we could
+            // clear them specifically once a connection is made instead of removing all listeners for the socket.
+            var onError = function (err) { return (lastErr = err); };
+            var onClose = function (hasError) {
+                console.log('socket.close');
+                conn.removeListener('error', onError);
+                conn.removeListener('close', onClose);
+                if (hasError) {
+                    reject(lastErr);
+                }
+            };
             var conn = net
                 .connect(options)
                 .on('connect', function () {
-                conn.removeAllListeners();
+                conn.removeListener('error', onError);
+                conn.removeListener('close', onClose);
                 conn.on('close', function () {
+                    console.log('socket.connect.close');
                     _this.conn = null;
                     _this._connected = false;
                 });
                 resolve(conn);
             })
-                .on('error', function (err) { return (lastErr = err); })
-                .on('close', function (hasError) {
-                conn.removeAllListeners();
-                if (hasError) {
-                    reject(lastErr);
-                }
-            });
+                .once('error', onError)
+                .once('close', onClose);
         });
     };
     Reconnector.prototype.disconnect = function () {
@@ -152,6 +163,7 @@ var Reconnector = (function (_super) {
             _this.conn
                 .on('error', function (err) { return (lastErr = err); })
                 .on('close', function (hasError) {
+                console.log('disconnect.close');
                 _this.conn = null;
                 _this._connected = false;
                 _this.disconnectPromise = null;

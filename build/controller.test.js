@@ -96,17 +96,12 @@ describe('Joltron Controller', function () {
             .on('error', function (err) {
             throw err;
         })
-            .listen(1337, '127.0.0.1');
+            .listen(1337, 'localhost');
     }
     function disposeMockRunner() {
         return new Promise(function (resolve) {
             if (!currentMock) {
                 resolve();
-            }
-            console.log("disposing mock #" + currentMock.mockId + "...");
-            for (var _i = 0, currentConns_1 = currentConns; _i < currentConns_1.length; _i++) {
-                var conn = currentConns_1[_i];
-                conn.end();
             }
             currentMock.close(function () {
                 console.log("disposed mock #" + currentMock.mockId);
@@ -114,6 +109,11 @@ describe('Joltron Controller', function () {
                 currentConns = null;
                 resolve();
             });
+            console.log("disposing mock #" + currentMock.mockId + "...");
+            for (var _i = 0, currentConns_1 = currentConns; _i < currentConns_1.length; _i++) {
+                var conn = currentConns_1[_i];
+                conn.end();
+            }
         });
     }
     var nextMockId = 0;
@@ -121,7 +121,6 @@ describe('Joltron Controller', function () {
     var currentConns;
     beforeEach(mochaAsync(disposeMockRunner));
     it('should attach to running instance', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
-        var _this = this;
         var inst, resolve, waitForConnect;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -131,13 +130,10 @@ describe('Joltron Controller', function () {
                     waitForConnect = new Promise(function (_resolve) {
                         resolve = _resolve;
                     });
-                    mockRunner(function (socket) { return __awaiter(_this, void 0, void 0, function () {
-                        return __generator(this, function (_a) {
-                            // Connecting is enough
-                            resolve();
-                            return [2 /*return*/];
-                        });
-                    }); });
+                    mockRunner(function (socket) {
+                        // Connecting is enough
+                        resolve();
+                    });
                     inst.connect();
                     return [4 /*yield*/, waitForConnect];
                 case 1:
@@ -165,16 +161,24 @@ describe('Joltron Controller', function () {
                 case 0:
                     connected = false;
                     mockRunner(function (socket) {
+                        console.log('set the thing');
                         connected = true;
                     });
                     inst = new controller_1.Controller(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
-                    expect(connected, 'socket connection').to.equal(true);
                     expect(inst.connected, 'runner connection status').to.equal(true);
-                    return [4 /*yield*/, inst.dispose()];
+                    // There is a race condition between the mock firing the socket accepted callback and the connector firing the connection established event.
+                    // This is fine, usually the mock would be joltron and testing how it handles the connection is out of the scope of these tests.
+                    return [4 /*yield*/, sleep(0)];
                 case 2:
+                    // There is a race condition between the mock firing the socket accepted callback and the connector firing the connection established event.
+                    // This is fine, usually the mock would be joltron and testing how it handles the connection is out of the scope of these tests.
+                    _a.sent();
+                    expect(connected, 'socket connection').to.equal(true);
+                    return [4 /*yield*/, inst.dispose()];
+                case 3:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -196,10 +200,13 @@ describe('Joltron Controller', function () {
                     return [4 /*yield*/, inst.connect()];
                 case 2:
                     _a.sent();
-                    expect(connectCount, 'connection count').to.equal(1);
                     expect(inst.connected, 'runner connection status').to.equal(true);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 3:
+                    _a.sent();
+                    expect(connectCount, 'connection count').to.equal(1);
+                    return [4 /*yield*/, inst.dispose()];
+                case 4:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -222,10 +229,13 @@ describe('Joltron Controller', function () {
                     _a = _b.sent(), result1 = _a[0], result2 = _a[1];
                     expect(result1.success, 'first connection').to.equal(true);
                     expect(result2.success, 'second connection').to.equal(false);
-                    expect(connectCount, 'connection count').to.equal(1);
                     expect(inst.connected, 'runner connection status').to.equal(true);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 2:
+                    _b.sent();
+                    expect(connectCount, 'connection count').to.equal(1);
+                    return [4 /*yield*/, inst.dispose()];
+                case 3:
                     _b.sent();
                     return [2 /*return*/];
             }
@@ -261,10 +271,13 @@ describe('Joltron Controller', function () {
                     return [4 /*yield*/, inst.disconnect()];
                 case 3:
                     _a.sent();
-                    expect(connected, 'socket connection').to.equal(false);
                     expect(inst.connected, 'runner connection status').to.equal(false);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 4:
+                    _a.sent();
+                    expect(connected, 'socket connection').to.equal(false);
+                    return [4 /*yield*/, inst.dispose()];
+                case 5:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -303,10 +316,13 @@ describe('Joltron Controller', function () {
                     return [4 /*yield*/, inst.disconnect()];
                 case 4:
                     _a.sent();
-                    expect(disconnectCount, 'disconnection count').to.equal(1);
                     expect(inst.connected, 'runner connection status').to.equal(false);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 5:
+                    _a.sent();
+                    expect(disconnectCount, 'disconnection count').to.equal(1);
+                    return [4 /*yield*/, inst.dispose()];
+                case 6:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -346,10 +362,13 @@ describe('Joltron Controller', function () {
                     _a = _b.sent(), result1 = _a[0], result2 = _a[1];
                     expect(result1.success, 'first disconnection').to.equal(true);
                     expect(result2.success, 'second disconnection').to.equal(false);
-                    expect(disconnectCount, 'disconnection count').to.equal(1);
                     expect(inst.connected, 'runner connection status').to.equal(false);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 4:
+                    _b.sent();
+                    expect(disconnectCount, 'disconnection count').to.equal(1);
+                    return [4 /*yield*/, inst.dispose()];
+                case 5:
                     _b.sent();
                     return [2 /*return*/];
             }
@@ -372,10 +391,13 @@ describe('Joltron Controller', function () {
                     _a = _b.sent(), result1 = _a[0], result2 = _a[1];
                     expect(result1.success, 'first connection').to.equal(true);
                     expect(result2.success, 'second disconnection').to.equal(false);
-                    expect(wasConnected, 'was socket connected').to.equal(true);
                     expect(inst.connected, 'runner connection status').to.equal(true);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 2:
+                    _b.sent();
+                    expect(wasConnected, 'was socket connected').to.equal(true);
+                    return [4 /*yield*/, inst.dispose()];
+                case 3:
                     _b.sent();
                     return [2 /*return*/];
             }
@@ -410,10 +432,13 @@ describe('Joltron Controller', function () {
                     _a = _b.sent(), result1 = _a[0], result2 = _a[1];
                     expect(result1.success, 'first disconnection').to.equal(true);
                     expect(result2.success, 'second connection').to.equal(false);
-                    expect(connectionCount, 'connection count').to.equal(1);
                     expect(inst.connected, 'runner connection status').to.equal(false);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 4:
+                    _b.sent();
+                    expect(connectionCount, 'connection count').to.equal(1);
+                    return [4 /*yield*/, inst.dispose()];
+                case 5:
                     _b.sent();
                     return [2 /*return*/];
             }
@@ -434,10 +459,13 @@ describe('Joltron Controller', function () {
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
-                    expect(connected, 'socket connection').to.equal(true);
                     expect(inst.connected, 'runner connection status').to.equal(true);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 2:
+                    _a.sent();
+                    expect(connected, 'socket connection').to.equal(true);
+                    return [4 /*yield*/, inst.dispose()];
+                case 3:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -462,14 +490,17 @@ describe('Joltron Controller', function () {
                 case 1:
                     result = (_a.sent())[0];
                     expect(result.success, 'connection result').to.equal(false);
-                    expect(connected, 'socket connection').to.equal(false);
                     expect(inst.connected, 'runner connection status').to.equal(false);
-                    return [4 /*yield*/, inst.dispose()];
+                    return [4 /*yield*/, sleep(0)];
                 case 2:
+                    _a.sent();
+                    expect(connected, 'socket connection').to.equal(false);
+                    return [4 /*yield*/, inst.dispose()];
+                case 3:
                     _a.sent();
                     // Wait until the runner is actually created so that it can be cleaned up properly in the end of this test.
                     return [4 /*yield*/, runnerCreatePromise];
-                case 3:
+                case 4:
                     // Wait until the runner is actually created so that it can be cleaned up properly in the end of this test.
                     _a.sent();
                     return [2 /*return*/];
@@ -572,6 +603,7 @@ describe('Joltron Controller', function () {
                         msgId: '0',
                         payload: {
                             command: 'resume',
+                            extraData: {},
                         },
                     });
                     inst = new controller_1.Controller(1337);

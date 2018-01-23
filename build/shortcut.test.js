@@ -41,29 +41,43 @@ var util_1 = require("./util");
 var test_1 = require("./test");
 var shortcut_1 = require("./shortcut");
 chai.use(chaiAsPromised);
-// const expect = chai.expect;
+var expect = chai.expect;
 var clientPath = '/path/to/client';
 var iconPath = '/path/to/client-icon';
 describe('Shortcut', function () {
     var _this = this;
-    it('should work', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    console.log('Setting');
-                    return [4 /*yield*/, shortcut_1.Shortcut.create(clientPath, iconPath)];
-                case 1:
-                    _a.sent();
-                    console.log('Waiting');
-                    return [4 /*yield*/, util_1.sleep(5000)];
-                case 2:
-                    _a.sent();
-                    console.log('Unsetting');
-                    return [4 /*yield*/, shortcut_1.Shortcut.remove()];
-                case 3:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    }); }));
+    if (process.platform === 'linux') {
+        it('should work', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log('Setting');
+                        return [4 /*yield*/, shortcut_1.Shortcut.create(clientPath, iconPath)];
+                    case 1:
+                        _a.sent();
+                        console.log('Waiting');
+                        return [4 /*yield*/, util_1.sleep(5000)];
+                    case 2:
+                        _a.sent();
+                        console.log('Unsetting');
+                        return [4 /*yield*/, shortcut_1.Shortcut.remove()];
+                    case 3:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); }));
+    }
+    else {
+        it('should say operation is not supported', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, expect(shortcut_1.Shortcut.create(clientPath, iconPath)).to.eventually.rejectedWith('Not supported')];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); }));
+    }
 });

@@ -387,7 +387,7 @@ var Controller = (function (_super) {
                         err_2 = _b.sent();
                         console.log('Failed to connect in reconnector: ' + err_2.message);
                         this.emit('fatal', err_2);
-                        return [3 /*break*/, 5];
+                        throw err_2;
                     case 4:
                         this.connectionLock = false;
                         return [7 /*endfinally*/];

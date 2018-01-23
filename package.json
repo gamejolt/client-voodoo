@@ -12,7 +12,7 @@
 		"url": "https://github.com/gamejolt/client-voodoo.git"
 	},
 	"scripts": {
-		"test": "mocha -u tdd --timeout 999999 --colors \"./build/**/patcher.test.js\"",
+		"test": "mocha -u tdd --timeout 999999 --colors \"./build/**/*.test.js\"",
 		"cover": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --full-trace -u tdd --timeout 999999 --colors src/**/*.test.ts",
 		"build": "tsc",
 		"watch": "tsc -w",

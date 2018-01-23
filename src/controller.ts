@@ -427,7 +427,7 @@ export class Controller extends TSEventEmitter<Events> {
 						this.sentMessage.reject(
 							new Error(
 								`Disconnected before receiving message response` +
-									(hasError ? `: ${lastErr.message}` : '')
+								(hasError ? `: ${lastErr.message}` : '')
 							)
 						);
 					}
@@ -450,6 +450,7 @@ export class Controller extends TSEventEmitter<Events> {
 		} catch (err) {
 			console.log('Failed to connect in reconnector: ' + err.message);
 			this.emit('fatal', err);
+			throw err;
 		} finally {
 			this.connectionLock = false;
 		}
@@ -459,7 +460,6 @@ export class Controller extends TSEventEmitter<Events> {
 		if (this.connectionLock) {
 			throw new Error(`Can't disconnect while connection is transitioning`);
 		}
-
 		this.connectionLock = true;
 		try {
 			await this.reconnector.disconnect();
@@ -508,7 +508,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 			try {
 				await this.sentMessage.resultPromise;
-			} catch (err) {}
+			} catch (err) { }
 			this.sentMessage = null;
 		}
 

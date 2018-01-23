@@ -9,7 +9,7 @@ const expect = chai.expect;
 
 const JSONStream = require('JSONStream');
 
-describe('Joltron Controller', function() {
+describe('Joltron Controller', function () {
 	const mochaAsync = (fn: () => Promise<any>) => {
 		return async done => {
 			try {
@@ -57,7 +57,7 @@ describe('Joltron Controller', function() {
 			.on('error', err => {
 				throw err;
 			})
-			.listen(1337, '127.0.0.1');
+			.listen(1337, 'localhost');
 	}
 
 	function disposeMockRunner() {
@@ -66,17 +66,17 @@ describe('Joltron Controller', function() {
 				resolve();
 			}
 
-			console.log(`disposing mock #${(currentMock as any).mockId}...`);
-			for (let conn of currentConns) {
-				conn.end();
-			}
-
 			currentMock.close(() => {
 				console.log(`disposed mock #${(currentMock as any).mockId}`);
 				currentMock = null;
 				currentConns = null;
 				resolve();
 			});
+
+			console.log(`disposing mock #${(currentMock as any).mockId}...`);
+			for (let conn of currentConns) {
+				conn.end();
+			}
 		});
 	}
 
@@ -91,12 +91,12 @@ describe('Joltron Controller', function() {
 		mochaAsync(async () => {
 			const inst = new Controller(1337);
 
-			let resolve: any = null;
+			let resolve = null;
 			const waitForConnect = new Promise(_resolve => {
 				resolve = _resolve;
 			});
 
-			mockRunner(async socket => {
+			mockRunner(socket => {
 				// Connecting is enough
 				resolve();
 			});
@@ -115,15 +115,21 @@ describe('Joltron Controller', function() {
 	it(
 		'should wait until connection is made',
 		mochaAsync(async () => {
-			let connected: any = false;
+			let connected = false;
 			mockRunner(socket => {
+				console.log('set the thing');
 				connected = true;
 			});
 
 			const inst = new Controller(1337);
 			await inst.connect();
-			expect(connected, 'socket connection').to.equal(true);
 			expect(inst.connected, 'runner connection status').to.equal(true);
+
+			// There is a race condition between the mock firing the socket accepted callback and the connector firing the connection established event.
+			// This is fine, usually the mock would be joltron and testing how it handles the connection is out of the scope of these tests.
+			await sleep(0);
+			expect(connected, 'socket connection').to.equal(true);
+
 			await inst.dispose();
 		})
 	);
@@ -139,8 +145,10 @@ describe('Joltron Controller', function() {
 			const inst = new Controller(1337);
 			await inst.connect();
 			await inst.connect();
-			expect(connectCount, 'connection count').to.equal(1);
 			expect(inst.connected, 'runner connection status').to.equal(true);
+
+			await sleep(0);
+			expect(connectCount, 'connection count').to.equal(1);
 			await inst.dispose();
 		})
 	);
@@ -161,8 +169,11 @@ describe('Joltron Controller', function() {
 
 			expect(result1.success, 'first connection').to.equal(true);
 			expect(result2.success, 'second connection').to.equal(false);
-			expect(connectCount, 'connection count').to.equal(1);
 			expect(inst.connected, 'runner connection status').to.equal(true);
+
+			await sleep(0);
+			expect(connectCount, 'connection count').to.equal(1);
+
 			await inst.dispose();
 		})
 	);
@@ -190,8 +201,11 @@ describe('Joltron Controller', function() {
 
 			await inst.disconnect();
 
-			expect(connected, 'socket connection').to.equal(false);
 			expect(inst.connected, 'runner connection status').to.equal(false);
+
+			await sleep(0);
+			expect(connected, 'socket connection').to.equal(false);
+
 			await inst.dispose();
 		})
 	);
@@ -220,8 +234,11 @@ describe('Joltron Controller', function() {
 			await inst.disconnect();
 			await inst.disconnect();
 
-			expect(disconnectCount, 'disconnection count').to.equal(1);
 			expect(inst.connected, 'runner connection status').to.equal(false);
+
+			await sleep(0);
+			expect(disconnectCount, 'disconnection count').to.equal(1);
+
 			await inst.dispose();
 		})
 	);
@@ -253,8 +270,11 @@ describe('Joltron Controller', function() {
 
 			expect(result1.success, 'first disconnection').to.equal(true);
 			expect(result2.success, 'second disconnection').to.equal(false);
-			expect(disconnectCount, 'disconnection count').to.equal(1);
 			expect(inst.connected, 'runner connection status').to.equal(false);
+
+			await sleep(0);
+			expect(disconnectCount, 'disconnection count').to.equal(1);
+
 			await inst.dispose();
 		})
 	);
@@ -274,8 +294,11 @@ describe('Joltron Controller', function() {
 
 			expect(result1.success, 'first connection').to.equal(true);
 			expect(result2.success, 'second disconnection').to.equal(false);
-			expect(wasConnected, 'was socket connected').to.equal(true);
 			expect(inst.connected, 'runner connection status').to.equal(true);
+
+			await sleep(0);
+			expect(wasConnected, 'was socket connected').to.equal(true);
+
 			await inst.dispose();
 		})
 	);
@@ -302,8 +325,11 @@ describe('Joltron Controller', function() {
 
 			expect(result1.success, 'first disconnection').to.equal(true);
 			expect(result2.success, 'second connection').to.equal(false);
-			expect(connectionCount, 'connection count').to.equal(1);
 			expect(inst.connected, 'runner connection status').to.equal(false);
+
+			await sleep(0);
+			expect(connectionCount, 'connection count').to.equal(1);
+
 			await inst.dispose();
 		})
 	);
@@ -321,8 +347,11 @@ describe('Joltron Controller', function() {
 
 			const inst = new Controller(1337);
 			await inst.connect();
-			expect(connected, 'socket connection').to.equal(true);
 			expect(inst.connected, 'runner connection status').to.equal(true);
+
+			await sleep(0);
+			expect(connected, 'socket connection').to.equal(true);
+
 			await inst.dispose();
 		})
 	);
@@ -331,7 +360,7 @@ describe('Joltron Controller', function() {
 		'should timeout the connection attempt if over 5 seconds',
 		mochaAsync(async () => {
 			// Delay the mock runner creation by 7 seconds which is over the 5 second timeout.
-			let connected: any = false;
+			let connected = false;
 			const runnerCreatePromise = new Promise(resolve => {
 				setTimeout(() => {
 					mockRunner(socket => {
@@ -344,8 +373,11 @@ describe('Joltron Controller', function() {
 			const inst = new Controller(1337);
 			const [result] = await wrapAll([inst.connect()]);
 			expect(result.success, 'connection result').to.equal(false);
-			expect(connected, 'socket connection').to.equal(false);
 			expect(inst.connected, 'runner connection status').to.equal(false);
+
+			await sleep(0);
+			expect(connected, 'socket connection').to.equal(false);
+
 			await inst.dispose();
 
 			// Wait until the runner is actually created so that it can be cleaned up properly in the end of this test.
@@ -448,6 +480,7 @@ describe('Joltron Controller', function() {
 				msgId: '0',
 				payload: {
 					command: 'resume',
+					extraData: {},
 				},
 			});
 
