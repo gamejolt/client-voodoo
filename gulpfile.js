@@ -39,7 +39,9 @@ if (process.platform == 'win32') {
 	gulp.task(
 		'go-joltron',
 		shell.task([
+			'set CGO_ENABLED=0 && set GOARCH=386',
 			'cd ' + gameRunnerRepo + ' && build.bat',
+			'set CGO_ENABLED= && set GOARCH=',
 			'mkdir bin',
 			'copy ' + path.join(gameRunnerRepo, 'joltron.exe') + ' ' + getExecutable(),
 		])
@@ -48,7 +50,11 @@ if (process.platform == 'win32') {
 	gulp.task(
 		'go-joltron',
 		shell.task([
-			'cd ' + gameRunnerRepo + ' && ./build.sh',
+			'cd ' +
+				gameRunnerRepo +
+				' && CGO_ENABLED=0 GOOS=' +
+				process.platform +
+				' GOARCH=386 ./build.sh',
 			'mkdir bin',
 			'cp ' + path.join(gameRunnerRepo, 'joltron') + ' ' + getExecutable(),
 		])
