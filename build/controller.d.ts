@@ -15,6 +15,7 @@ export declare type Events = {
     'gameKilled': () => void;
     'gameRelaunchBegin': (dir: string, ...args: string[]) => void;
     'gameRelaunchFailed': (reason: string) => void;
+    'noUpdateAvailable': () => void;
     'updateAvailable': (metadata: data.UpdateMetadata) => void;
     'updateBegin': (dir: string, metadata: data.UpdateMetadata) => void;
     'updateFinished': () => void;
@@ -78,7 +79,7 @@ export declare class Controller extends TSEventEmitter<Events> {
     }): Promise<data.MsgResultResponse>;
     sendCancel(timeout?: number, waitOnlyForSend?: boolean): Promise<void> | Promise<data.MsgResultResponse>;
     sendGetState(includePatchInfo: boolean, timeout?: number): Promise<data.MsgStateResponse>;
-    sendCheckForUpdates(gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number): Promise<{}>;
+    sendCheckForUpdates(gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number): Promise<data.MsgResultResponse>;
     sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number): Promise<{}>;
     sendUpdateBegin(timeout?: number): Promise<{}>;
     sendUpdateApply(env: Object, args: string[], timeout?: number): Promise<{}>;

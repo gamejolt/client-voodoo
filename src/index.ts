@@ -9,6 +9,7 @@ export * from './autostarter';
 export * from './shortcut';
 export * from './rollbacker';
 export * from './mutex';
+export * from './selfupdater';
 
 import { Logger } from './logger';
 export * from './logger';

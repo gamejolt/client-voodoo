@@ -117,6 +117,8 @@ export type Events = {
 	'gameRelaunchBegin': (dir: string, ...args: string[]) => void;
 	// same as gameLaunchFailed only for relaunch
 	'gameRelaunchFailed': (reason: string) => void;
+	// called as a response for checking updates when theres no update available
+	'noUpdateAvailable': () => void;
 	// called when a new update is available to begin
 	'updateAvailable': (metadata: data.UpdateMetadata) => void;
 	// called when an update begins (either an install or update during run)
@@ -291,6 +293,8 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(message, payload.dir, ...payload.args);
 							case 'gameRelaunchFailed':
 								return this.emit(message, payload);
+							case 'noUpdateAvailable':
+								return this.emit(message);
 							case 'updateAvailable':
 								return this.emit(message, payload);
 							case 'updateBegin':
@@ -654,7 +658,7 @@ export class Controller extends TSEventEmitter<Events> {
 		if (metadata) {
 			payload.metadata = metadata;
 		}
-		return this.send('checkForUpdates', payload, timeout).resultPromise;
+		return this.send<data.MsgResultResponse>('checkForUpdates', payload, timeout).resultPromise;
 	}
 
 	sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number) {

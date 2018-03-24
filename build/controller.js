@@ -216,6 +216,8 @@ var Controller = (function (_super) {
                             return _this.emit.apply(_this, [message, payload.dir].concat(payload.args));
                         case 'gameRelaunchFailed':
                             return _this.emit(message, payload);
+                        case 'noUpdateAvailable':
+                            return _this.emit(message);
                         case 'updateAvailable':
                             return _this.emit(message, payload);
                         case 'updateBegin':
