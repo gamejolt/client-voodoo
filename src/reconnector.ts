@@ -95,7 +95,8 @@ export class Reconnector extends TSEventEmitter<Events> {
 						this.conn = null;
 						this._connected = false;
 
-						if (this.keepConnected) {
+						// Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
+						if (this.keepConnected && !this.disconnectPromise) {
 							this.connect(options);
 						}
 					});

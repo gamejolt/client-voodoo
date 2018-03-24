@@ -145,7 +145,8 @@ var Reconnector = (function (_super) {
                     console.log('socket.connect.close');
                     _this.conn = null;
                     _this._connected = false;
-                    if (_this.keepConnected) {
+                    // Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
+                    if (_this.keepConnected && !_this.disconnectPromise) {
                         _this.connect(options);
                     }
                 });
