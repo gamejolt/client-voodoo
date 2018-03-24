@@ -385,6 +385,140 @@ describe('Joltron Controller', function() {
 		})
 	);
 
+	it(
+		'should emit a "fatal" event when joltron disconnects unexpectedly',
+		mochaAsync(async () => {
+			const inst = new Controller(1337);
+
+			let resolveConnected = null;
+			const waitForConnect = new Promise(_resolve => {
+				resolveConnected = _resolve;
+			});
+
+			mockRunner(socket => {
+				resolveConnected();
+				socket.destroy();
+			});
+
+			inst.connect();
+
+			let resolveDisconnected = null;
+			const waitForDisconnect = new Promise(_resolve => {
+				resolveDisconnected = _resolve;
+			});
+			inst.once('fatal', (err: Error) => {
+				expect(err.message).to.equal('Unexpected disconnection from joltron');
+				resolveDisconnected();
+			});
+
+			await waitForConnect;
+			await waitForDisconnect;
+
+			// We sleep here so that the connection would fully go through before calling dispose.
+			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+			// and we resolve the connection promise before the transition is finished fully.
+			await sleep(10);
+			await inst.dispose();
+		})
+	);
+
+	it(
+		'should retry connection if the controller is set to keep connection alive',
+		mochaAsync(async () => {
+			const inst = new Controller(1337, { keepConnected: true });
+
+			let wasConnected = false;
+
+			let resolveConnected = null;
+			const waitForConnect = new Promise(_resolve => {
+				resolveConnected = _resolve;
+			});
+
+			let resolveConnectedAgain = null;
+			const waitForConnectAgain = new Promise(_resolve => {
+				resolveConnectedAgain = _resolve;
+			});
+
+			mockRunner(socket => {
+				if (!wasConnected) {
+					wasConnected = true;
+					resolveConnected();
+					socket.destroy();
+				} else {
+					resolveConnectedAgain();
+				}
+			});
+
+			inst.connect();
+
+			let resolveDisconnected = null;
+			const waitForDisconnect = new Promise(_resolve => {
+				resolveDisconnected = _resolve;
+			});
+			inst.once('fatal', (err: Error) => {
+				expect(err.message).to.equal('Unexpected disconnection from joltron');
+				resolveDisconnected();
+			});
+
+			await waitForConnect;
+			await waitForDisconnect;
+			await waitForConnectAgain;
+
+			// We sleep here so that the connection would fully go through before calling dispose.
+			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+			// and we resolve the connection promise before the transition is finished fully.
+			await sleep(10);
+			await inst.dispose();
+		})
+	);
+
+	it(
+		'should not retry connection if the controller is not set to keep connection alive',
+		mochaAsync(async () => {
+			const inst = new Controller(1337);
+
+			let connections = 0;
+
+			let resolveConnected = null;
+			const waitForConnect = new Promise(_resolve => {
+				resolveConnected = _resolve;
+			});
+
+			mockRunner(socket => {
+				if (connections == 0) {
+					resolveConnected();
+					socket.destroy();
+				}
+
+				connections++;
+			});
+
+			inst.connect();
+
+			let resolveDisconnected = null;
+			const waitForDisconnect = new Promise(_resolve => {
+				resolveDisconnected = _resolve;
+			});
+			inst.once('fatal', (err: Error) => {
+				expect(err.message).to.equal('Unexpected disconnection from joltron');
+				resolveDisconnected();
+			});
+
+			await waitForConnect;
+			await waitForDisconnect;
+
+			await sleep(10);
+			expect(inst.connected).to.equal(false, 'controller should not be connected');
+			expect(connections).to.equal(1, 'expected only 1 connection');
+
+			// We sleep here so that the connection would fully go through before calling dispose.
+			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+			// and we resolve the connection promise before the transition is finished fully.
+			await sleep(10);
+			await inst.dispose();
+		})
+	);
+
 	function getMockReaderPromise(
 		expectedData: Object | Object[],
 		expectedResult?: Object | Object[]

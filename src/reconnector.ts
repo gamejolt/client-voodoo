@@ -97,6 +97,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 
 						// Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
 						if (this.keepConnected && !this.disconnectPromise) {
+							// TODO handle failure to reconnect, make it try for longer, emit events so that controller can propogate them to the client
 							this.connect(options);
 						}
 					});

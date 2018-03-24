@@ -507,6 +507,164 @@ describe('Joltron Controller', function () {
             }
         });
     }); }));
+    it('should emit a "fatal" event when joltron disconnects unexpectedly', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        var inst, resolveConnected, waitForConnect, resolveDisconnected, waitForDisconnect;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    inst = new controller_1.Controller(1337);
+                    resolveConnected = null;
+                    waitForConnect = new Promise(function (_resolve) {
+                        resolveConnected = _resolve;
+                    });
+                    mockRunner(function (socket) {
+                        resolveConnected();
+                        socket.destroy();
+                    });
+                    inst.connect();
+                    resolveDisconnected = null;
+                    waitForDisconnect = new Promise(function (_resolve) {
+                        resolveDisconnected = _resolve;
+                    });
+                    inst.once('fatal', function (err) {
+                        expect(err.message).to.equal('Unexpected disconnection from joltron');
+                        resolveDisconnected();
+                    });
+                    return [4 /*yield*/, waitForConnect];
+                case 1:
+                    _a.sent();
+                    return [4 /*yield*/, waitForDisconnect];
+                case 2:
+                    _a.sent();
+                    // We sleep here so that the connection would fully go through before calling dispose.
+                    // This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+                    // and we resolve the connection promise before the transition is finished fully.
+                    return [4 /*yield*/, sleep(10)];
+                case 3:
+                    // We sleep here so that the connection would fully go through before calling dispose.
+                    // This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+                    // and we resolve the connection promise before the transition is finished fully.
+                    _a.sent();
+                    return [4 /*yield*/, inst.dispose()];
+                case 4:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    }); }));
+    it('should retry connection if the controller is set to keep connection alive', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        var inst, wasConnected, resolveConnected, waitForConnect, resolveConnectedAgain, waitForConnectAgain, resolveDisconnected, waitForDisconnect;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    inst = new controller_1.Controller(1337, { keepConnected: true });
+                    wasConnected = false;
+                    resolveConnected = null;
+                    waitForConnect = new Promise(function (_resolve) {
+                        resolveConnected = _resolve;
+                    });
+                    resolveConnectedAgain = null;
+                    waitForConnectAgain = new Promise(function (_resolve) {
+                        resolveConnectedAgain = _resolve;
+                    });
+                    mockRunner(function (socket) {
+                        if (!wasConnected) {
+                            wasConnected = true;
+                            resolveConnected();
+                            socket.destroy();
+                        }
+                        else {
+                            resolveConnectedAgain();
+                        }
+                    });
+                    inst.connect();
+                    resolveDisconnected = null;
+                    waitForDisconnect = new Promise(function (_resolve) {
+                        resolveDisconnected = _resolve;
+                    });
+                    inst.once('fatal', function (err) {
+                        expect(err.message).to.equal('Unexpected disconnection from joltron');
+                        resolveDisconnected();
+                    });
+                    return [4 /*yield*/, waitForConnect];
+                case 1:
+                    _a.sent();
+                    return [4 /*yield*/, waitForDisconnect];
+                case 2:
+                    _a.sent();
+                    return [4 /*yield*/, waitForConnectAgain];
+                case 3:
+                    _a.sent();
+                    // We sleep here so that the connection would fully go through before calling dispose.
+                    // This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+                    // and we resolve the connection promise before the transition is finished fully.
+                    return [4 /*yield*/, sleep(10)];
+                case 4:
+                    // We sleep here so that the connection would fully go through before calling dispose.
+                    // This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+                    // and we resolve the connection promise before the transition is finished fully.
+                    _a.sent();
+                    return [4 /*yield*/, inst.dispose()];
+                case 5:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    }); }));
+    it('should not retry connection if the controller is not set to keep connection alive', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        var inst, connections, resolveConnected, waitForConnect, resolveDisconnected, waitForDisconnect;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    inst = new controller_1.Controller(1337);
+                    connections = 0;
+                    resolveConnected = null;
+                    waitForConnect = new Promise(function (_resolve) {
+                        resolveConnected = _resolve;
+                    });
+                    mockRunner(function (socket) {
+                        if (connections == 0) {
+                            resolveConnected();
+                            socket.destroy();
+                        }
+                        connections++;
+                    });
+                    inst.connect();
+                    resolveDisconnected = null;
+                    waitForDisconnect = new Promise(function (_resolve) {
+                        resolveDisconnected = _resolve;
+                    });
+                    inst.once('fatal', function (err) {
+                        expect(err.message).to.equal('Unexpected disconnection from joltron');
+                        resolveDisconnected();
+                    });
+                    return [4 /*yield*/, waitForConnect];
+                case 1:
+                    _a.sent();
+                    return [4 /*yield*/, waitForDisconnect];
+                case 2:
+                    _a.sent();
+                    return [4 /*yield*/, sleep(10)];
+                case 3:
+                    _a.sent();
+                    expect(inst.connected).to.equal(false, 'controller should not be connected');
+                    expect(connections).to.equal(1, 'expected only 1 connection');
+                    // We sleep here so that the connection would fully go through before calling dispose.
+                    // This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+                    // and we resolve the connection promise before the transition is finished fully.
+                    return [4 /*yield*/, sleep(10)];
+                case 4:
+                    // We sleep here so that the connection would fully go through before calling dispose.
+                    // This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+                    // and we resolve the connection promise before the transition is finished fully.
+                    _a.sent();
+                    return [4 /*yield*/, inst.dispose()];
+                case 5:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    }); }));
     function getMockReaderPromise(expectedData, expectedResult) {
         return new Promise(function (resolve, reject) {
             var receive = Array.isArray(expectedData) ? expectedData : [expectedData];

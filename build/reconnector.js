@@ -147,6 +147,7 @@ var Reconnector = (function (_super) {
                     _this._connected = false;
                     // Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
                     if (_this.keepConnected && !_this.disconnectPromise) {
+                        // TODO handle failure to reconnect, make it try for longer, emit events so that controller can propogate them to the client
                         _this.connect(options);
                     }
                 });
