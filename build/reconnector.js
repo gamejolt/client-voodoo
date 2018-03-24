@@ -50,10 +50,11 @@ var events_1 = require("./events");
 var util_1 = require("./util");
 var Reconnector = (function (_super) {
     __extends(Reconnector, _super);
-    function Reconnector(interval, timeout) {
+    function Reconnector(interval, timeout, keepConnected) {
         var _this = _super.call(this) || this;
         _this.interval = interval;
         _this.timeout = timeout;
+        _this.keepConnected = keepConnected;
         _this._connected = false;
         return _this;
     }
@@ -101,6 +102,7 @@ var Reconnector = (function (_super) {
                         return [3 /*break*/, 5];
                     case 5:
                         if (Date.now() - startTime + this.interval > this.timeout) {
+                            this.connectPromise = null;
                             return [2 /*return*/, reject(new Error("Couldn't connect in time"))];
                         }
                         return [4 /*yield*/, util_1.sleep(this.interval)];
@@ -143,6 +145,9 @@ var Reconnector = (function (_super) {
                     console.log('socket.connect.close');
                     _this.conn = null;
                     _this._connected = false;
+                    if (_this.keepConnected) {
+                        _this.connect(options);
+                    }
                 });
                 resolve(conn);
             })

@@ -76,8 +76,7 @@ export abstract class Queue {
 		this._patches.forEach((patchState, patch) => {
 			if (
 				running !== patchState.queued &&
-				(typeof isDownloading !== 'boolean' ||
-					isDownloading === patch.isDownloading())
+				(typeof isDownloading !== 'boolean' || isDownloading === patch.isDownloading())
 			) {
 				patches.push({
 					patch: patch,
@@ -89,14 +88,12 @@ export abstract class Queue {
 			}
 		});
 
-		return patches
-			.sort((patch1, patch2) => patch1.sort - patch2.sort)
-			.map(value => {
-				return {
-					patch: value.patch,
-					state: value.state,
-				};
-			});
+		return patches.sort((patch1, patch2) => patch1.sort - patch2.sort).map(value => {
+			return {
+				patch: value.patch,
+				state: value.state,
+			};
+		});
 	}
 
 	private static applyProfile(profile: IQueueProfile) {
@@ -148,8 +145,7 @@ export abstract class Queue {
 			return;
 		}
 
-		state.timeLeft =
-			(progress.total - progress.current) / progress.sample.movingAverage;
+		state.timeLeft = (progress.total - progress.current) / progress.sample.movingAverage;
 	}
 
 	private static async onState(
@@ -170,20 +166,13 @@ export abstract class Queue {
 		let concurrentPatches = this.fetch(true, false);
 
 		// Use > and not >= because also counting self
-		if (
-			this._maxExtractions >= 0 &&
-			concurrentPatches.length > this._maxExtractions
-		) {
+		if (this._maxExtractions >= 0 && concurrentPatches.length > this._maxExtractions) {
 			await this.pausePatch(patch, state);
 		}
 		await this.tick(true);
 	}
 
-	private static onPaused(
-		patch: PatchInstance,
-		state: IQueueState,
-		queue: boolean
-	) {
+	private static onPaused(patch: PatchInstance, state: IQueueState, queue: boolean) {
 		if (!state.managed) {
 			return;
 		}
@@ -196,11 +185,7 @@ export abstract class Queue {
 		}
 	}
 
-	private static onResumed(
-		patch: PatchInstance,
-		state: IQueueState,
-		queue: boolean
-	) {
+	private static onResumed(patch: PatchInstance, state: IQueueState, queue: boolean) {
 		if (!state.managed) {
 			return;
 		}
@@ -217,11 +202,7 @@ export abstract class Queue {
 		this.unmanage(patch);
 	}
 
-	private static onDone(
-		patch: PatchInstance,
-		state: IQueueState,
-		errMessage?: string
-	) {
+	private static onDone(patch: PatchInstance, state: IQueueState, errMessage?: string) {
 		if (!state.managed) {
 			return;
 		}
@@ -234,11 +215,7 @@ export abstract class Queue {
 		this.unmanage(patch);
 	}
 
-	private static onFatalError(
-		patch: PatchInstance,
-		state: IQueueState,
-		err: Error
-	) {
+	private static onFatalError(patch: PatchInstance, state: IQueueState, err: Error) {
 		if (!state.managed) {
 			return;
 		}
@@ -250,15 +227,11 @@ export abstract class Queue {
 
 	static canResume(patch: PatchInstance) {
 		let isDownloading = patch.isDownloading();
-		let operationLimit = isDownloading
-			? this._maxDownloads
-			: this._maxExtractions;
+		let operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
 		let concurrentPatches = this.fetch(true, isDownloading);
 
 		this.log(
-			`Checking if patch can resume a ${isDownloading
-				? 'download'
-				: 'patch'} operation`
+			`Checking if patch can resume a ${isDownloading ? 'download' : 'patch'} operation`
 		);
 		// tslint:disable-next-line:max-line-length
 		this.log(
@@ -410,9 +383,7 @@ export abstract class Queue {
 	static async setMaxDownloads(newMaxDownloads: number) {
 		this.log('Setting max downloads to ' + newMaxDownloads);
 		if (this._settingDownloads) {
-			this.log(
-				`Can't set max downloads now because theres a setting in progress`
-			);
+			this.log(`Can't set max downloads now because theres a setting in progress`);
 			return false;
 		}
 		this._settingDownloads = true;
@@ -438,9 +409,7 @@ export abstract class Queue {
 	static async setMaxExtractions(newMaxExtractions: number) {
 		this.log('Setting max extraccions to ' + newMaxExtractions);
 		if (this._settingExtractions) {
-			this.log(
-				`Can't set max extractions now because theres a setting in progress`
-			);
+			this.log(`Can't set max extractions now because theres a setting in progress`);
 			return false;
 		}
 		this._settingExtractions = true;

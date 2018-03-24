@@ -25,7 +25,7 @@ export abstract class Uninstaller {
 	}
 
 	static async uninstallReattach(port: number, pid: number) {
-		return new UninstallInstance(new Controller(port, pid));
+		return new UninstallInstance(new Controller(port, { process: pid }));
 	}
 }
 

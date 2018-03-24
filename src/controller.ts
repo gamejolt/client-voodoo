@@ -154,6 +154,15 @@ export type Events = {
 	'progress': (progress: data.MsgProgress) => void;
 };
 
+export type Options = {
+	process?: cp.ChildProcess | number;
+	keepConnected?: boolean;
+};
+
+export type LaunchOptions = cp.SpawnOptions & {
+	keepConnected?: boolean;
+};
+
 export class Controller extends TSEventEmitter<Events> {
 	readonly port: number;
 	private process: cp.ChildProcess | number; // process or pid
@@ -170,14 +179,15 @@ export class Controller extends TSEventEmitter<Events> {
 	private expectingQueuePause = 0;
 	private expectingQueueResume = 0;
 
-	constructor(port: number, process?: cp.ChildProcess | number) {
+	constructor(port: number, options?: Options) {
 		super();
 		this.port = port;
-		if (process) {
-			this.process = process;
+		options = options || {};
+		if (options.process) {
+			this.process = options.process;
 		}
 
-		this.reconnector = new Reconnector(100, 3000);
+		this.reconnector = new Reconnector(100, 3000, !!options.keepConnected);
 	}
 
 	private newJsonStream() {
@@ -203,14 +213,20 @@ export class Controller extends TSEventEmitter<Events> {
 					payload = data_.payload;
 					if (!payload) {
 						return this.sentMessage.reject(
-							new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_))
+							new Error(
+								'Missing `payload` field in response' +
+									' in ' +
+									JSON.stringify(data_)
+							)
 						);
 					}
 
 					type = data_.type;
 					if (!type) {
 						return this.sentMessage.reject(
-							new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_))
+							new Error(
+								'Missing `type` field in response' + ' in ' + JSON.stringify(data_)
+							)
 						);
 					}
 
@@ -224,7 +240,12 @@ export class Controller extends TSEventEmitter<Events> {
 							return this.sentMessage.resolve(payload.err);
 						default:
 							return this.sentMessage.reject(
-								new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_))
+								new Error(
+									'Unexpected `type` value: ' +
+										type +
+										' in ' +
+										JSON.stringify(data_)
+								)
 							);
 					}
 				}
@@ -233,7 +254,9 @@ export class Controller extends TSEventEmitter<Events> {
 				if (!type) {
 					return this.emit(
 						'err',
-						new Error('Missing `type` field in response' + ' in ' + JSON.stringify(data_))
+						new Error(
+							'Missing `type` field in response' + ' in ' + JSON.stringify(data_)
+						)
 					);
 				}
 
@@ -241,7 +264,9 @@ export class Controller extends TSEventEmitter<Events> {
 				if (!payload) {
 					return this.emit(
 						'err',
-						new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_))
+						new Error(
+							'Missing `payload` field in response' + ' in ' + JSON.stringify(data_)
+						)
 					);
 				}
 
@@ -318,7 +343,9 @@ export class Controller extends TSEventEmitter<Events> {
 									case 'info':
 									case 'debug':
 									case 'trace':
-										console[logLevel](`[joltron - ${payload.level}] ${payload.message}`);
+										console[logLevel](
+											`[joltron - ${payload.level}] ${payload.message}`
+										);
 										return;
 
 									default:
@@ -333,7 +360,10 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(
 									'err',
 									new Error(
-										'Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data_)
+										'Unexpected update `message` value: ' +
+											message +
+											' in ' +
+											JSON.stringify(data_)
 									)
 								);
 						}
@@ -342,7 +372,9 @@ export class Controller extends TSEventEmitter<Events> {
 					default:
 						return this.emit(
 							'err',
-							new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_))
+							new Error(
+								'Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_)
+							)
 						);
 				}
 			})
@@ -373,13 +405,12 @@ export class Controller extends TSEventEmitter<Events> {
 				path.join(localPackage.install_dir, '..', '.migration'),
 				JSON.stringify(migration)
 			);
-		}
-		catch (err) {
+		} catch (err) {
 			// We don't care if this fails because if the game directory doesn't exist we don't need a .migration file.
 		}
 	}
 
-	static async launchNew(args: string[], options?: cp.SpawnOptions) {
+	static async launchNew(args: string[], options?: LaunchOptions) {
 		options = options || {
 			detached: true,
 			env: process.env,
@@ -406,7 +437,10 @@ export class Controller extends TSEventEmitter<Events> {
 		const runnerProc = cp.spawn(runnerExecutable, args, options);
 		runnerProc.unref();
 
-		const runnerInstance = new Controller(port, runnerProc.pid);
+		const runnerInstance = new Controller(port, {
+			process: runnerProc.pid,
+			keepConnected: !!options.keepConnected,
+		});
 		runnerInstance.connect();
 		return runnerInstance;
 
@@ -446,12 +480,14 @@ export class Controller extends TSEventEmitter<Events> {
 						this.sentMessage.reject(
 							new Error(
 								`Disconnected before receiving message response` +
-								(hasError ? `: ${lastErr.message}` : '')
+									(hasError ? `: ${lastErr.message}` : '')
 							)
 						);
 					}
 
-					console.log(`Disconnected from runner` + (hasError ? `: ${lastErr.message}` : ''));
+					console.log(
+						`Disconnected from runner` + (hasError ? `: ${lastErr.message}` : '')
+					);
 					if (hasError) {
 						console.log(lastErr);
 					}
@@ -527,7 +563,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 			try {
 				await this.sentMessage.resultPromise;
-			} catch (err) { }
+			} catch (err) {}
 			this.sentMessage = null;
 		}
 
@@ -600,7 +636,8 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendGetState(includePatchInfo: boolean, timeout?: number) {
-		return this.send<data.MsgStateResponse>('state', { includePatchInfo }, timeout).resultPromise;
+		return this.send<data.MsgStateResponse>('state', { includePatchInfo }, timeout)
+			.resultPromise;
 	}
 
 	sendCheckForUpdates(

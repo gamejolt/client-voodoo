@@ -23,7 +23,11 @@ export abstract class Shortcut {
 	}
 
 	private static async createLinux(program: string, icon: string) {
-		let desktopFile = path.join(xdgBasedir.data || '', 'applications', 'game-jolt-client.desktop');
+		let desktopFile = path.join(
+			xdgBasedir.data || '',
+			'applications',
+			'game-jolt-client.desktop'
+		);
 
 		let desktopContents = `[Desktop Entry]
 Version=1.0

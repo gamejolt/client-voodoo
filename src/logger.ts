@@ -64,9 +64,7 @@ export abstract class Logger {
 			this._file.write(str + '\n');
 		}
 		if (this._logLines.length > LOG_LINES) {
-			this._logLines = _.clone(
-				this._logLines.slice(this._logLines.length - LOG_LINES)
-			);
+			this._logLines = _.clone(this._logLines.slice(this._logLines.length - LOG_LINES));
 		}
 	}
 
@@ -96,9 +94,7 @@ export abstract class Logger {
 				console.log(typeof readLines);
 				this._logLines = readLines.split('\n');
 				if (this._logLines.length > LOG_LINES) {
-					this._logLines = this._logLines.slice(
-						this._logLines.length - LOG_LINES
-					);
+					this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
 				}
 			} catch (err) {
 				console.log(`${err.message}\n${err.stack}`);

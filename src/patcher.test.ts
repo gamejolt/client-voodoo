@@ -9,7 +9,7 @@ import * as GameJolt from './gamejolt';
 chai.use(chaiAsPromised);
 // const expect = chai.expect;
 
-describe('Patcher', function () {
+describe('Patcher', function() {
 	// function wrapAll( promises: Promise<any>[] )
 	// {
 	// 	const result: Promise<{ success: boolean, value: any }>[] = [];

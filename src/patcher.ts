@@ -25,6 +25,7 @@ export abstract class Patcher {
 	 * @param getAuthToken a callback that joltron will use to fetch a new game api token for the package it's patching.
 	 * @param options
 	 */
+
 	static async patch(
 		localPackage: GameJolt.IGamePackage,
 		getAuthToken: AuthTokenGetter,
@@ -63,18 +64,12 @@ export abstract class Patcher {
 		await Controller.ensureMigrationFile(localPackage);
 
 		const controller = await Controller.launchNew(args);
-		return this.manageInstanceInQueue(
-			new PatchInstance(controller, getAuthToken)
-		);
+		return this.manageInstanceInQueue(new PatchInstance(controller, getAuthToken));
 	}
 
-	static async patchReattach(
-		port: number,
-		pid: number,
-		authTokenGetter: AuthTokenGetter
-	) {
+	static async patchReattach(port: number, pid: number, authTokenGetter: AuthTokenGetter) {
 		return this.manageInstanceInQueue(
-			new PatchInstance(new Controller(port, pid), authTokenGetter)
+			new PatchInstance(new Controller(port, { process: pid }), authTokenGetter)
 		);
 	}
 
@@ -103,10 +98,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents> {
 	private _state: State;
 	private _isPaused: boolean;
 
-	constructor(
-		controller: Controller,
-		private authTokenGetter: AuthTokenGetter
-	) {
+	constructor(controller: Controller, private authTokenGetter: AuthTokenGetter) {
 		super(controller);
 		this.on('patcherState', (state: data.PatcherState) => {
 			console.log('patcher got state: ' + state);
@@ -195,11 +187,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents> {
 		return this.authTokenGetter();
 	}
 
-	async resume(options?: {
-		queue?: boolean;
-		authToken?: string;
-		extraMetadata?: string;
-	}) {
+	async resume(options?: { queue?: boolean; authToken?: string; extraMetadata?: string }) {
 		options = options || {};
 		if (
 			!options.authToken &&

@@ -15,11 +15,12 @@ export declare type Events = {
 export declare class Reconnector extends TSEventEmitter<Events> {
     private interval;
     private timeout;
+    private keepConnected;
     private _connected;
     private conn;
     private connectPromise;
     private disconnectPromise;
-    constructor(interval: number, timeout: number);
+    constructor(interval: number, timeout: number, keepConnected: boolean);
     readonly connected: boolean;
     connect(options: IConnectionOptions): Promise<net.Socket>;
     private attempt(options);

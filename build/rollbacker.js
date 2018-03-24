@@ -83,7 +83,7 @@ var Rollbacker = (function () {
     Rollbacker.rollbackReattach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, new RollbackInstance(new controller_1.Controller(port, pid))];
+                return [2 /*return*/, new RollbackInstance(new controller_1.Controller(port, { process: pid }))];
             });
         });
     };

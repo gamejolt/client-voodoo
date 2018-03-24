@@ -31,7 +31,9 @@ class WindowsAutostarter implements IAutostarter {
 
 	set(program: string, args: string[]) {
 		return new Promise<void>((resolve, reject) => {
-			const autoStartCommand = `"${program}"${args && args.length ? ` ${args.join(' ')}` : ''}`;
+			const autoStartCommand = `"${program}"${args && args.length
+				? ` ${args.join(' ')}`
+				: ''}`;
 			WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, autoStartCommand, err => {
 				if (err) {
 					return reject(err);

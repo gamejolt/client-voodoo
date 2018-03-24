@@ -24,7 +24,7 @@ export abstract class Rollbacker {
 	}
 
 	static async rollbackReattach(port: number, pid: number) {
-		return new RollbackInstance(new Controller(port, pid));
+		return new RollbackInstance(new Controller(port, { process: pid }));
 	}
 }
 

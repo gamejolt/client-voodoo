@@ -509,12 +509,8 @@ describe('Joltron Controller', function () {
     }); }));
     function getMockReaderPromise(expectedData, expectedResult) {
         return new Promise(function (resolve, reject) {
-            var receive = Array.isArray(expectedData)
-                ? expectedData
-                : [expectedData];
-            var expected = Array.isArray(expectedResult)
-                ? expectedResult
-                : [expectedResult];
+            var receive = Array.isArray(expectedData) ? expectedData : [expectedData];
+            var expected = Array.isArray(expectedResult) ? expectedResult : [expectedResult];
             if (receive.length !== expected.length) {
                 return reject(new Error('Receive and expected result should be the same for mock runner'));
             }
