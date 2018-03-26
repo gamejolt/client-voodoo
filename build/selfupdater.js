@@ -96,6 +96,32 @@ var SelfUpdaterInstance = (function (_super) {
             });
         });
     };
+    SelfUpdaterInstance.prototype.updateBegin = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.controller.sendUpdateBegin()];
+                    case 1:
+                        result = _a.sent();
+                        return [2 /*return*/, result.success];
+                }
+            });
+        });
+    };
+    SelfUpdaterInstance.prototype.updateApply = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.controller.sendUpdateApply(process.env, process.argv.slice(2))];
+                    case 1:
+                        result = _a.sent();
+                        return [2 /*return*/, result.success];
+                }
+            });
+        });
+    };
     return SelfUpdaterInstance;
 }(controller_wrapper_1.ControllerWrapper));
 exports.SelfUpdaterInstance = SelfUpdaterInstance;

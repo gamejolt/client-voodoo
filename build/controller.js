@@ -603,7 +603,8 @@ var Controller = (function (_super) {
         return this.send('updateBegin', {}, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateApply = function (env, args, timeout) {
-        return this.send('updateApply', { env: env, args: args }, timeout).resultPromise;
+        return this.send('updateApply', { env: env, args: args }, timeout)
+            .resultPromise;
     };
     Controller.prototype.kill = function () {
         var _this = this;

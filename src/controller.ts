@@ -666,11 +666,12 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendUpdateBegin(timeout?: number) {
-		return this.send('updateBegin', {}, timeout).resultPromise;
+		return this.send<data.MsgResultResponse>('updateBegin', {}, timeout).resultPromise;
 	}
 
 	sendUpdateApply(env: Object, args: string[], timeout?: number) {
-		return this.send('updateApply', { env, args }, timeout).resultPromise;
+		return this.send<data.MsgResultResponse>('updateApply', { env, args }, timeout)
+			.resultPromise;
 	}
 
 	kill() {

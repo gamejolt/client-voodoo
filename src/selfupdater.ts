@@ -39,4 +39,14 @@ export class SelfUpdaterInstance extends ControllerWrapper<SelfUpdaterEvents> {
 		);
 		return result.success;
 	}
+
+	async updateBegin() {
+		const result = await this.controller.sendUpdateBegin();
+		return result.success;
+	}
+
+	async updateApply() {
+		const result = await this.controller.sendUpdateApply(process.env, process.argv.slice(2));
+		return result.success;
+	}
 }

@@ -10,4 +10,6 @@ export declare class SelfUpdaterInstance extends ControllerWrapper<SelfUpdaterEv
         authToken?: string;
         metadata?: string;
     }): Promise<boolean>;
+    updateBegin(): Promise<boolean>;
+    updateApply(): Promise<boolean>;
 }
