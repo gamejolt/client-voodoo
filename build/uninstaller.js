@@ -70,6 +70,7 @@ var Uninstaller = (function () {
                             '--wait-for-connection',
                             '2',
                             '--symbiote',
+                            '--no-self-update',
                             'uninstall',
                         ];
                         return [4 /*yield*/, controller_1.Controller.ensureMigrationFile(localPackage)];

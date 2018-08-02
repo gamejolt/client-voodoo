@@ -56,6 +56,7 @@ var Mutex = (function () {
                             '--symbiote',
                             '--mutex',
                             name,
+                            '--no-self-update',
                             'noop',
                         ];
                         return [4 /*yield*/, controller_1.Controller.launchNew(args)];

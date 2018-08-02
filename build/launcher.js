@@ -86,6 +86,7 @@ var Launcher = (function () {
                             gameUid,
                             '--wait-for-connection',
                             '2',
+                            '--no-self-update',
                             'run',
                         ];
                         args.push.apply(args, executableArgs);

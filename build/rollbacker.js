@@ -70,6 +70,7 @@ var Rollbacker = (function () {
                             '--wait-for-connection',
                             '2',
                             '--symbiote',
+                            '--no-self-update',
                             'rollback',
                         ];
                         return [4 /*yield*/, controller_1.Controller.launchNew(args)];

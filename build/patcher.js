@@ -93,6 +93,7 @@ var Patcher = (function () {
                             '5',
                             '--symbiote',
                             '--no-loader',
+                            '--no-self-update',
                         ];
                         if (options.authToken) {
                             args.push('--auth-token', options.authToken);
