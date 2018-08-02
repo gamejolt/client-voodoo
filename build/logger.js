@@ -5,8 +5,7 @@ var os = require("os");
 var _ = require("lodash");
 var fs = require("fs");
 var LOG_LINES = 300;
-var CONSOLE_LOG = console.log;
-var CONSOLE_ERR = console.error;
+var CONSOLE = console;
 var Logger = (function () {
     function Logger() {
     }
@@ -22,7 +21,7 @@ var Logger = (function () {
             var str = this._logLines.join('\n') + '\n';
             fs.writeFileSync(this._filePath, str);
             var logLineLength = this._logLines.join('\n').length, logLineCount = this._logLines.length;
-            CONSOLE_LOG.apply(console, [
+            this._consoleLog.apply(this._console, [
                 "Flushing log file of length " + logLineLength + " with " + logLineCount + " rows",
             ]);
             this._file = fs.createWriteStream(this._filePath, {
@@ -31,7 +30,7 @@ var Logger = (function () {
             });
         }
         catch (err) {
-            CONSOLE_LOG.apply(console, [err.message + "\n" + err.stack]);
+            this._consoleLog.apply(this._console, [err.message + "\n" + err.stack]);
         }
     };
     Logger._log = function () {
@@ -39,8 +38,8 @@ var Logger = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        CONSOLE_LOG.apply(console, args);
-        var str = util.format.apply(console, args).split('\n');
+        this._consoleLog.apply(this._console, args);
+        var str = util.format.apply(this._console, args).split('\n');
         for (var _a = 0, str_1 = str; _a < str_1.length; _a++) {
             var strVal = str_1[_a];
             this._logLines.push(strVal);
@@ -57,8 +56,8 @@ var Logger = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        CONSOLE_ERR.apply(console, args);
-        var str = util.format.apply(console, args).split('\n');
+        this._consoleErr.apply(this._console, args);
+        var str = util.format.apply(this._console, args).split('\n');
         for (var _a = 0, str_2 = str; _a < str_2.length; _a++) {
             var strVal = str_2[_a];
             this._logLines.push(strVal);
@@ -70,10 +69,14 @@ var Logger = (function () {
             this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
         }
     };
-    Logger.hijack = function (file) {
+    Logger.hijack = function (newConsole, file) {
         if (this._hijacked) {
             return;
         }
+        this._console = newConsole;
+        this._consoleLog = newConsole.log;
+        this._consoleErr = newConsole.error;
+        console = this._console;
         this._filePath = file || 'client.log';
         if (fs.existsSync(this._filePath)) {
             try {
@@ -109,10 +112,14 @@ var Logger = (function () {
             this._file.close();
         }
         fs.writeFileSync(this._filePath, this._logLines.join('\n'));
-        console.log = CONSOLE_LOG;
-        console.info = CONSOLE_LOG;
-        console.warn = CONSOLE_ERR;
-        console.error = CONSOLE_ERR;
+        console.log = this._consoleLog;
+        console.info = this._consoleLog;
+        console.warn = this._consoleErr;
+        console.error = this._consoleErr;
+        console = CONSOLE;
+        this._console = console;
+        this._consoleLog = console.log;
+        this._consoleErr = console.error;
         this._hijacked = false;
     };
     Logger.getClientLog = function () {
@@ -129,6 +136,9 @@ var Logger = (function () {
             },
         };
     };
+    Logger._console = CONSOLE;
+    Logger._consoleLog = CONSOLE.log;
+    Logger._consoleErr = CONSOLE.error;
     Logger._logLines = [];
     Logger._hijacked = false;
     return Logger;

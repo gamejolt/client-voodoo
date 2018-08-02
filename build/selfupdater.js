@@ -91,6 +91,7 @@ var SelfUpdaterInstance = (function (_super) {
                         return [4 /*yield*/, this.controller.sendCheckForUpdates('', '', options.authToken, options.metadata)];
                     case 1:
                         result = _a.sent();
+                        console.log(result);
                         return [2 /*return*/, result.success];
                 }
             });
@@ -104,6 +105,7 @@ var SelfUpdaterInstance = (function (_super) {
                     case 0: return [4 /*yield*/, this.controller.sendUpdateBegin()];
                     case 1:
                         result = _a.sent();
+                        console.log(result);
                         return [2 /*return*/, result.success];
                 }
             });
@@ -117,6 +119,7 @@ var SelfUpdaterInstance = (function (_super) {
                     case 0: return [4 /*yield*/, this.controller.sendUpdateApply(process.env, process.argv.slice(2))];
                     case 1:
                         result = _a.sent();
+                        console.log(result);
                         return [2 /*return*/, result.success];
                 }
             });

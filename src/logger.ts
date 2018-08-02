@@ -4,8 +4,7 @@ import * as _ from 'lodash';
 import * as fs from 'fs';
 
 const LOG_LINES = 300;
-const CONSOLE_LOG = console.log;
-const CONSOLE_ERR = console.error;
+const CONSOLE = console;
 
 export interface IClientLog {
 	logLines: string[];
@@ -23,6 +22,10 @@ export interface IClientOSInfo {
 }
 
 export abstract class Logger {
+	private static _console = CONSOLE;
+	private static _consoleLog = CONSOLE.log;
+	private static _consoleErr = CONSOLE.error;
+
 	private static _logLines: string[] = [];
 	private static _hijacked = false;
 	private static _file: fs.WriteStream;
@@ -42,7 +45,7 @@ export abstract class Logger {
 			fs.writeFileSync(this._filePath, str);
 			let logLineLength = this._logLines.join('\n').length,
 				logLineCount = this._logLines.length;
-			CONSOLE_LOG.apply(console, [
+			this._consoleLog.apply(this._console, [
 				`Flushing log file of length ${logLineLength} with ${logLineCount} rows`,
 			]);
 			this._file = fs.createWriteStream(this._filePath, {
@@ -50,13 +53,13 @@ export abstract class Logger {
 				encoding: 'utf8',
 			});
 		} catch (err) {
-			CONSOLE_LOG.apply(console, [`${err.message}\n${err.stack}`]);
+			this._consoleLog.apply(this._console, [`${err.message}\n${err.stack}`]);
 		}
 	}
 
 	private static _log(...args: any[]) {
-		CONSOLE_LOG.apply(console, args);
-		let str = util.format.apply(console, args).split('\n');
+		this._consoleLog.apply(this._console, args);
+		let str = util.format.apply(this._console, args).split('\n');
 		for (let strVal of str) {
 			this._logLines.push(strVal);
 		}
@@ -69,8 +72,8 @@ export abstract class Logger {
 	}
 
 	private static _logErr(...args: any[]) {
-		CONSOLE_ERR.apply(console, args);
-		let str = util.format.apply(console, args).split('\n');
+		this._consoleErr.apply(this._console, args);
+		let str = util.format.apply(this._console, args).split('\n');
 		for (let strVal of str) {
 			this._logLines.push(strVal);
 		}
@@ -82,10 +85,15 @@ export abstract class Logger {
 		}
 	}
 
-	static hijack(file?: string) {
+	static hijack(newConsole: Console, file?: string) {
 		if (this._hijacked) {
 			return;
 		}
+
+		this._console = newConsole;
+		this._consoleLog = newConsole.log;
+		this._consoleErr = newConsole.error;
+		console = this._console;
 
 		this._filePath = file || 'client.log';
 		if (fs.existsSync(this._filePath)) {
@@ -126,10 +134,15 @@ export abstract class Logger {
 		}
 		fs.writeFileSync(this._filePath, this._logLines.join('\n'));
 
-		console.log = CONSOLE_LOG;
-		console.info = CONSOLE_LOG;
-		console.warn = CONSOLE_ERR;
-		console.error = CONSOLE_ERR;
+		console.log = this._consoleLog;
+		console.info = this._consoleLog;
+		console.warn = this._consoleErr;
+		console.error = this._consoleErr;
+
+		console = CONSOLE;
+		this._console = console;
+		this._consoleLog = console.log;
+		this._consoleErr = console.error;
 
 		this._hijacked = false;
 	}
