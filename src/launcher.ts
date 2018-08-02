@@ -36,6 +36,7 @@ export abstract class Launcher {
 			gameUid,
 			'--wait-for-connection',
 			'2',
+			'--no-self-update',
 			'run',
 		];
 		args.push(...executableArgs);

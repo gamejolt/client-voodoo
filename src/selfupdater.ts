@@ -9,7 +9,7 @@ export abstract class SelfUpdater {
 		const manifest: Manifest = JSON.parse(manifestStr);
 
 		if (!manifest.runningInfo) {
-			throw new Error("Manifest doesn't have a running info, cannot connect to self updater");
+			throw new Error(`Manifest doesn't have a running info, cannot connect to self updater`);
 		}
 
 		const controller = new Controller(manifest.runningInfo.port, {

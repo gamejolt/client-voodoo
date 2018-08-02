@@ -16,6 +16,7 @@ export abstract class Uninstaller {
 			'--wait-for-connection',
 			'2',
 			'--symbiote',
+			'--no-self-update',
 			'uninstall',
 		];
 

@@ -12,6 +12,7 @@ export abstract class Mutex {
 			'--symbiote',
 			'--mutex',
 			name,
+			'--no-self-update',
 			'noop',
 		];
 
