@@ -1,11 +1,10 @@
 /src
 /.vscode
 /test-files
-/typings
 /.editorconfig
 /.gitignore
 /gulpfile.js
-/jsconfig.json
-/tsd.json
-*.js.map
+/tsconfig.json
+/tslint.json
 *-spec.js
+*-spec.d.ts
