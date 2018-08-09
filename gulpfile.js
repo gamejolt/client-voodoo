@@ -40,7 +40,7 @@ if (process.platform == 'win32') {
 		'go-joltron',
 		shell.task([
 			'set CGO_ENABLED=0 && set GOARCH=386',
-			'cd ' + gameRunnerRepo + ' && build\\build.bat',
+			'cd ' + gameRunnerRepo + ' && build\\dev.bat',
 			'set CGO_ENABLED= && set GOARCH=',
 			'mkdir bin',
 			'copy ' + path.join(gameRunnerRepo, 'joltron.exe') + ' ' + getExecutable(),
@@ -54,7 +54,7 @@ if (process.platform == 'win32') {
 				gameRunnerRepo +
 				' && CGO_ENABLED=0 GOOS=' +
 				process.platform +
-				' GOARCH=386 ./build/build.sh',
+				' GOARCH=386 ./build/dev.sh',
 			'mkdir bin',
 			'cp ' + path.join(gameRunnerRepo, 'joltron') + ' ' + getExecutable(),
 		])

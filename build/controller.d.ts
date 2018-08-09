@@ -25,6 +25,7 @@ export declare type Events = {
     'paused': (queue: boolean) => void;
     'resumed': (unqueue: boolean) => void;
     'canceled': () => void;
+    'openRequested': () => void;
     'uninstallBegin': (dir: string) => void;
     'uninstallFailed': (reason: string) => void;
     'uninstallFinished': () => void;

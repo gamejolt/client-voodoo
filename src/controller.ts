@@ -7,6 +7,9 @@ import { Reconnector } from './reconnector';
 import fs from './fs';
 import * as GameJolt from './gamejolt';
 
+// Uncomment to debug joltron output
+// import * as _fs from 'fs';
+
 const JSONStream = require('JSONStream');
 const ps = require('ps-node');
 
@@ -137,6 +140,8 @@ export type Events = {
 	'resumed': (unqueue: boolean) => void;
 	// called when an update is canceled
 	'canceled': () => void;
+	// called when something requests the underlying game to open (while it's already open and managed by another joltron instance)
+	'openRequested': () => void;
 	// called when an uninstall operation begins
 	'uninstallBegin': (dir: string) => void;
 	// called when an uninstall operation failed for whatever reason
@@ -321,6 +326,8 @@ export class Controller extends TSEventEmitter<Events> {
 								return this.emit(message, false);
 							case 'canceled':
 								return this.emit(message);
+							case 'openRequested':
+								return this.emit(message);
 							case 'uninstallBegin':
 								return this.emit(message, payload);
 							case 'uninstallFailed':
@@ -419,11 +426,9 @@ export class Controller extends TSEventEmitter<Events> {
 			detached: true,
 			env: process.env,
 			stdio: 'ignore',
-			// stdio: [
-			// 	'ignore',
-			// 	fs.openSync('joltron.log', 'a'),
-			// 	fs.openSync('joltron.log', 'a'),
-			// ],
+
+			// Uncomment to debug joltron output
+			// stdio: ['ignore', _fs.openSync('joltron.log', 'a'), _fs.openSync('joltron.log', 'a')],
 		};
 
 		let runnerExecutable = getExecutable();

@@ -50,6 +50,8 @@ var path = require("path");
 var events_1 = require("./events");
 var reconnector_1 = require("./reconnector");
 var fs_1 = require("./fs");
+// Uncomment to debug joltron output
+// import * as _fs from 'fs';
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
@@ -243,6 +245,8 @@ var Controller = (function (_super) {
                             }
                             return _this.emit(message, false);
                         case 'canceled':
+                            return _this.emit(message);
+                        case 'openRequested':
                             return _this.emit(message);
                         case 'uninstallBegin':
                             return _this.emit(message, payload);
