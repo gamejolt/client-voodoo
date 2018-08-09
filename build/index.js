@@ -14,6 +14,5 @@ __export(require("./autostarter"));
 __export(require("./shortcut"));
 __export(require("./rollbacker"));
 __export(require("./mutex"));
-var logger_1 = require("./logger");
+__export(require("./selfupdater"));
 __export(require("./logger"));
-logger_1.Logger.hijack();

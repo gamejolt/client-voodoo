@@ -50,6 +50,8 @@ var path = require("path");
 var events_1 = require("./events");
 var reconnector_1 = require("./reconnector");
 var fs_1 = require("./fs");
+// Uncomment to debug joltron output
+// import * as _fs from 'fs';
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
@@ -125,7 +127,7 @@ var SentMessage = (function () {
 }());
 var Controller = (function (_super) {
     __extends(Controller, _super);
-    function Controller(port, process) {
+    function Controller(port, options) {
         var _this = _super.call(this) || this;
         _this.connectionLock = null;
         _this.conn = null;
@@ -138,10 +140,11 @@ var Controller = (function (_super) {
         _this.expectingQueuePause = 0;
         _this.expectingQueueResume = 0;
         _this.port = port;
-        if (process) {
-            _this.process = process;
+        options = options || {};
+        if (options.process) {
+            _this.process = options.process;
         }
-        _this.reconnector = new reconnector_1.Reconnector(100, 3000);
+        _this.reconnector = new reconnector_1.Reconnector(100, 3000, !!options.keepConnected);
         return _this;
     }
     Controller.prototype.newJsonStream = function () {
@@ -163,7 +166,9 @@ var Controller = (function (_super) {
                 }
                 payload = data_.payload;
                 if (!payload) {
-                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' + ' in ' + JSON.stringify(data_)));
+                    return _this.sentMessage.reject(new Error('Missing `payload` field in response' +
+                        ' in ' +
+                        JSON.stringify(data_)));
                 }
                 type = data_.type;
                 if (!type) {
@@ -178,7 +183,10 @@ var Controller = (function (_super) {
                         }
                         return _this.sentMessage.resolve(payload.err);
                     default:
-                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' + type + ' in ' + JSON.stringify(data_)));
+                        return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
+                            type +
+                            ' in ' +
+                            JSON.stringify(data_)));
                 }
             }
             type = data_.type;
@@ -210,6 +218,8 @@ var Controller = (function (_super) {
                             return _this.emit.apply(_this, [message, payload.dir].concat(payload.args));
                         case 'gameRelaunchFailed':
                             return _this.emit(message, payload);
+                        case 'noUpdateAvailable':
+                            return _this.emit(message);
                         case 'updateAvailable':
                             return _this.emit(message, payload);
                         case 'updateBegin':
@@ -235,6 +245,8 @@ var Controller = (function (_super) {
                             }
                             return _this.emit(message, false);
                         case 'canceled':
+                            return _this.emit(message);
+                        case 'openRequested':
                             return _this.emit(message);
                         case 'uninstallBegin':
                             return _this.emit(message, payload);
@@ -272,7 +284,10 @@ var Controller = (function (_super) {
                         case 'error':
                             return _this.emit('err', new Error(payload));
                         default:
-                            return _this.emit('err', new Error('Unexpected update `message` value: ' + message + ' in ' + JSON.stringify(data_)));
+                            return _this.emit('err', new Error('Unexpected update `message` value: ' +
+                                message +
+                                ' in ' +
+                                JSON.stringify(data_)));
                     }
                 case 'progress':
                     return _this.emit('progress', payload);
@@ -344,7 +359,10 @@ var Controller = (function (_super) {
                         console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
                         runnerProc = cp.spawn(runnerExecutable, args, options);
                         runnerProc.unref();
-                        runnerInstance = new Controller(port, runnerProc.pid);
+                        runnerInstance = new Controller(port, {
+                            process: runnerProc.pid,
+                            keepConnected: !!options.keepConnected,
+                        });
                         runnerInstance.connect();
                         return [2 /*return*/, runnerInstance];
                 }
@@ -569,7 +587,8 @@ var Controller = (function (_super) {
         return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
     };
     Controller.prototype.sendGetState = function (includePatchInfo, timeout) {
-        return this.send('state', { includePatchInfo: includePatchInfo }, timeout).resultPromise;
+        return this.send('state', { includePatchInfo: includePatchInfo }, timeout)
+            .resultPromise;
     };
     Controller.prototype.sendCheckForUpdates = function (gameUID, platformURL, authToken, metadata, timeout) {
         var payload = { gameUID: gameUID, platformURL: platformURL };
@@ -588,7 +607,8 @@ var Controller = (function (_super) {
         return this.send('updateBegin', {}, timeout).resultPromise;
     };
     Controller.prototype.sendUpdateApply = function (env, args, timeout) {
-        return this.send('updateApply', { env: env, args: args }, timeout).resultPromise;
+        return this.send('updateApply', { env: env, args: args }, timeout)
+            .resultPromise;
     };
     Controller.prototype.kill = function () {
         var _this = this;

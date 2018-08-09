@@ -15,6 +15,7 @@ export declare type Events = {
     'gameKilled': () => void;
     'gameRelaunchBegin': (dir: string, ...args: string[]) => void;
     'gameRelaunchFailed': (reason: string) => void;
+    'noUpdateAvailable': () => void;
     'updateAvailable': (metadata: data.UpdateMetadata) => void;
     'updateBegin': (dir: string, metadata: data.UpdateMetadata) => void;
     'updateFinished': () => void;
@@ -24,6 +25,7 @@ export declare type Events = {
     'paused': (queue: boolean) => void;
     'resumed': (unqueue: boolean) => void;
     'canceled': () => void;
+    'openRequested': () => void;
     'uninstallBegin': (dir: string) => void;
     'uninstallFailed': (reason: string) => void;
     'uninstallFinished': () => void;
@@ -32,6 +34,13 @@ export declare type Events = {
     'rollbackFinished': () => void;
     'patcherState': (state: data.PatcherState) => void;
     'progress': (progress: data.MsgProgress) => void;
+};
+export declare type Options = {
+    process?: cp.ChildProcess | number;
+    keepConnected?: boolean;
+};
+export declare type LaunchOptions = cp.SpawnOptions & {
+    keepConnected?: boolean;
 };
 export declare class Controller extends TSEventEmitter<Events> {
     readonly port: number;
@@ -47,10 +56,10 @@ export declare class Controller extends TSEventEmitter<Events> {
     private expectingQueueResumeIds;
     private expectingQueuePause;
     private expectingQueueResume;
-    constructor(port: number, process?: cp.ChildProcess | number);
+    constructor(port: number, options?: Options);
     private newJsonStream();
     static ensureMigrationFile(localPackage: GameJolt.IGamePackage): Promise<void>;
-    static launchNew(args: string[], options?: cp.SpawnOptions): Promise<Controller>;
+    static launchNew(args: string[], options?: LaunchOptions): Promise<Controller>;
     readonly connected: boolean;
     connect(): Promise<void>;
     disconnect(): Promise<void>;
@@ -71,9 +80,9 @@ export declare class Controller extends TSEventEmitter<Events> {
     }): Promise<data.MsgResultResponse>;
     sendCancel(timeout?: number, waitOnlyForSend?: boolean): Promise<void> | Promise<data.MsgResultResponse>;
     sendGetState(includePatchInfo: boolean, timeout?: number): Promise<data.MsgStateResponse>;
-    sendCheckForUpdates(gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number): Promise<{}>;
+    sendCheckForUpdates(gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number): Promise<data.MsgResultResponse>;
     sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number): Promise<{}>;
-    sendUpdateBegin(timeout?: number): Promise<{}>;
-    sendUpdateApply(env: Object, args: string[], timeout?: number): Promise<{}>;
+    sendUpdateBegin(timeout?: number): Promise<data.MsgResultResponse>;
+    sendUpdateApply(env: Object, args: string[], timeout?: number): Promise<data.MsgResultResponse>;
     kill(): Promise<void>;
 }

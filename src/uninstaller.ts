@@ -16,6 +16,7 @@ export abstract class Uninstaller {
 			'--wait-for-connection',
 			'2',
 			'--symbiote',
+			'--no-self-update',
 			'uninstall',
 		];
 
@@ -25,7 +26,7 @@ export abstract class Uninstaller {
 	}
 
 	static async uninstallReattach(port: number, pid: number) {
-		return new UninstallInstance(new Controller(port, pid));
+		return new UninstallInstance(new Controller(port, { process: pid }));
 	}
 }
 

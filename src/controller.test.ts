@@ -9,7 +9,7 @@ const expect = chai.expect;
 
 const JSONStream = require('JSONStream');
 
-describe('Joltron Controller', function () {
+describe('Joltron Controller', function() {
 	const mochaAsync = (fn: () => Promise<any>) => {
 		return async done => {
 			try {
@@ -385,22 +385,150 @@ describe('Joltron Controller', function () {
 		})
 	);
 
+	it(
+		'should emit a "fatal" event when joltron disconnects unexpectedly',
+		mochaAsync(async () => {
+			const inst = new Controller(1337);
+
+			let resolveConnected = null;
+			const waitForConnect = new Promise(_resolve => {
+				resolveConnected = _resolve;
+			});
+
+			mockRunner(socket => {
+				resolveConnected();
+				socket.destroy();
+			});
+
+			inst.connect();
+
+			let resolveDisconnected = null;
+			const waitForDisconnect = new Promise(_resolve => {
+				resolveDisconnected = _resolve;
+			});
+			inst.once('fatal', (err: Error) => {
+				expect(err.message).to.equal('Unexpected disconnection from joltron');
+				resolveDisconnected();
+			});
+
+			await waitForConnect;
+			await waitForDisconnect;
+
+			// We sleep here so that the connection would fully go through before calling dispose.
+			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+			// and we resolve the connection promise before the transition is finished fully.
+			await sleep(10);
+			await inst.dispose();
+		})
+	);
+
+	it(
+		'should retry connection if the controller is set to keep connection alive',
+		mochaAsync(async () => {
+			const inst = new Controller(1337, { keepConnected: true });
+
+			let wasConnected = false;
+
+			let resolveConnected = null;
+			const waitForConnect = new Promise(_resolve => {
+				resolveConnected = _resolve;
+			});
+
+			let resolveConnectedAgain = null;
+			const waitForConnectAgain = new Promise(_resolve => {
+				resolveConnectedAgain = _resolve;
+			});
+
+			mockRunner(socket => {
+				if (!wasConnected) {
+					wasConnected = true;
+					resolveConnected();
+					socket.destroy();
+				} else {
+					resolveConnectedAgain();
+				}
+			});
+
+			inst.connect();
+
+			let resolveDisconnected = null;
+			const waitForDisconnect = new Promise(_resolve => {
+				resolveDisconnected = _resolve;
+			});
+			inst.once('fatal', (err: Error) => {
+				expect(err.message).to.equal('Unexpected disconnection from joltron');
+				resolveDisconnected();
+			});
+
+			await waitForConnect;
+			await waitForDisconnect;
+			await waitForConnectAgain;
+
+			// We sleep here so that the connection would fully go through before calling dispose.
+			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+			// and we resolve the connection promise before the transition is finished fully.
+			await sleep(10);
+			await inst.dispose();
+		})
+	);
+
+	it(
+		'should not retry connection if the controller is not set to keep connection alive',
+		mochaAsync(async () => {
+			const inst = new Controller(1337);
+
+			let connections = 0;
+
+			let resolveConnected = null;
+			const waitForConnect = new Promise(_resolve => {
+				resolveConnected = _resolve;
+			});
+
+			mockRunner(socket => {
+				if (connections == 0) {
+					resolveConnected();
+					socket.destroy();
+				}
+
+				connections++;
+			});
+
+			inst.connect();
+
+			let resolveDisconnected = null;
+			const waitForDisconnect = new Promise(_resolve => {
+				resolveDisconnected = _resolve;
+			});
+			inst.once('fatal', (err: Error) => {
+				expect(err.message).to.equal('Unexpected disconnection from joltron');
+				resolveDisconnected();
+			});
+
+			await waitForConnect;
+			await waitForDisconnect;
+
+			await sleep(10);
+			expect(inst.connected).to.equal(false, 'controller should not be connected');
+			expect(connections).to.equal(1, 'expected only 1 connection');
+
+			// We sleep here so that the connection would fully go through before calling dispose.
+			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
+			// and we resolve the connection promise before the transition is finished fully.
+			await sleep(10);
+			await inst.dispose();
+		})
+	);
+
 	function getMockReaderPromise(
 		expectedData: Object | Object[],
 		expectedResult?: Object | Object[]
 	) {
 		return new Promise((resolve, reject) => {
-			const receive = Array.isArray(expectedData)
-				? expectedData
-				: [expectedData];
-			const expected = Array.isArray(expectedResult)
-				? expectedResult
-				: [expectedResult];
+			const receive = Array.isArray(expectedData) ? expectedData : [expectedData];
+			const expected = Array.isArray(expectedResult) ? expectedResult : [expectedResult];
 			if (receive.length !== expected.length) {
 				return reject(
-					new Error(
-						'Receive and expected result should be the same for mock runner'
-					)
+					new Error('Receive and expected result should be the same for mock runner')
 				);
 			}
 			let currentReceive = 0;
@@ -409,9 +537,7 @@ describe('Joltron Controller', function () {
 				const incomingJson: stream.Duplex = JSONStream.parse(true);
 				incomingJson
 					.on('data', data => {
-						expect(data, 'received json data').to.deep.equal(
-							receive[currentReceive]
-						);
+						expect(data, 'received json data').to.deep.equal(receive[currentReceive]);
 						const result = expected[currentReceive];
 						if (++currentReceive === receive.length) {
 							resolve(expectedResult);
@@ -427,10 +553,7 @@ describe('Joltron Controller', function () {
 				socket.pipe(incomingJson);
 			});
 
-			setTimeout(
-				() => reject(new Error('Did not receive any json data in time')),
-				2000
-			);
+			setTimeout(() => reject(new Error('Did not receive any json data in time')), 2000);
 		});
 	}
 
@@ -750,12 +873,8 @@ describe('Joltron Controller', function () {
 					return value;
 				}),
 			]);
-			expect(result1, 'response for message 1').to.deep.equal(
-				expectedResult[0]
-			);
-			expect(result2, 'response for message 2').to.deep.equal(
-				expectedResult[1]
-			);
+			expect(result1, 'response for message 1').to.deep.equal(expectedResult[0]);
+			expect(result2, 'response for message 2').to.deep.equal(expectedResult[1]);
 			await inst.dispose();
 		})
 	);
@@ -823,9 +942,7 @@ describe('Joltron Controller', function () {
 				}),
 			]);
 
-			await expect(race, 'send operation with timeout').to.eventually.be.an(
-				'Error'
-			);
+			await expect(race, 'send operation with timeout').to.eventually.be.an('Error');
 			const result = await race;
 			expect(result.message, 'result error message').to.equal(
 				'Message was not handled in time'
@@ -850,9 +967,7 @@ describe('Joltron Controller', function () {
 				sleep(2000).then(() => 'success'),
 			]);
 
-			await expect(race, 'send operation without timeout').to.eventually.equal(
-				'success'
-			);
+			await expect(race, 'send operation without timeout').to.eventually.equal('success');
 			await inst.dispose();
 		})
 	);
@@ -873,10 +988,7 @@ describe('Joltron Controller', function () {
 					});
 				});
 
-				setTimeout(
-					() => reject(new Error('Did not receive any data in time')),
-					2000
-				);
+				setTimeout(() => reject(new Error('Did not receive any data in time')), 2000);
 			});
 
 			const inst = new Controller(1337);

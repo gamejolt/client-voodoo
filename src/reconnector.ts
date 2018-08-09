@@ -20,7 +20,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 	private conn: net.Socket;
 	private connectPromise: Promise<net.Socket> | null;
 	private disconnectPromise: Promise<Error | void> | null;
-	constructor(private interval: number, private timeout: number) {
+	constructor(private interval: number, private timeout: number, private keepConnected: boolean) {
 		super();
 	}
 
@@ -50,9 +50,10 @@ export class Reconnector extends TSEventEmitter<Events> {
 					this._connected = true;
 					this.connectPromise = null;
 					return resolve(this.conn);
-				} catch (err) { }
+				} catch (err) {}
 
 				if (Date.now() - startTime + this.interval > this.timeout) {
+					this.connectPromise = null;
 					return reject(new Error(`Couldn't connect in time`));
 				}
 
@@ -81,7 +82,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 				if (hasError) {
 					reject(lastErr);
 				}
-			}
+			};
 
 			const conn = net
 				.connect(options)
@@ -93,6 +94,12 @@ export class Reconnector extends TSEventEmitter<Events> {
 						console.log('socket.connect.close');
 						this.conn = null;
 						this._connected = false;
+
+						// Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
+						if (this.keepConnected && !this.disconnectPromise) {
+							// TODO handle failure to reconnect, make it try for longer, emit events so that controller can propogate them to the client
+							this.connect(options);
+						}
 					});
 					resolve(conn);
 				})

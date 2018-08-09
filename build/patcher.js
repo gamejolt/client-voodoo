@@ -93,6 +93,7 @@ var Patcher = (function () {
                             '5',
                             '--symbiote',
                             '--no-loader',
+                            '--no-self-update',
                         ];
                         if (options.authToken) {
                             args.push('--auth-token', options.authToken);
@@ -117,7 +118,7 @@ var Patcher = (function () {
     Patcher.patchReattach = function (port, pid, authTokenGetter) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(new controller_1.Controller(port, pid), authTokenGetter))];
+                return [2 /*return*/, this.manageInstanceInQueue(new PatchInstance(new controller_1.Controller(port, { process: pid }), authTokenGetter))];
             });
         });
     };

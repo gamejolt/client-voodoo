@@ -1,8 +1,6 @@
 import { EventEmitter } from 'events';
 
-export class TSEventEmitter<
-	E extends { [event: string]: Function }
-> extends EventEmitter {
+export class TSEventEmitter<E extends { [event: string]: Function }> extends EventEmitter {
 	constructor() {
 		super();
 	}

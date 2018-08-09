@@ -68,8 +68,7 @@ var Queue = (function () {
         var patches = [];
         this._patches.forEach(function (patchState, patch) {
             if (running !== patchState.queued &&
-                (typeof isDownloading !== 'boolean' ||
-                    isDownloading === patch.isDownloading())) {
+                (typeof isDownloading !== 'boolean' || isDownloading === patch.isDownloading())) {
                 patches.push({
                     patch: patch,
                     state: patchState,
@@ -79,9 +78,7 @@ var Queue = (function () {
                 });
             }
         });
-        return patches
-            .sort(function (patch1, patch2) { return patch1.sort - patch2.sort; })
-            .map(function (value) {
+        return patches.sort(function (patch1, patch2) { return patch1.sort - patch2.sort; }).map(function (value) {
             return {
                 patch: value.patch,
                 state: value.state,
@@ -133,8 +130,7 @@ var Queue = (function () {
         if (!state.managed) {
             return;
         }
-        state.timeLeft =
-            (progress.total - progress.current) / progress.sample.movingAverage;
+        state.timeLeft = (progress.total - progress.current) / progress.sample.movingAverage;
     };
     Queue.onState = function (patch, state, patchState) {
         return __awaiter(this, void 0, void 0, function () {
@@ -150,8 +146,7 @@ var Queue = (function () {
                         }
                         this.log('Received patch unpacking', patch);
                         concurrentPatches = this.fetch(true, false);
-                        if (!(this._maxExtractions >= 0 &&
-                            concurrentPatches.length > this._maxExtractions)) return [3 /*break*/, 2];
+                        if (!(this._maxExtractions >= 0 && concurrentPatches.length > this._maxExtractions)) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.pausePatch(patch, state)];
                     case 1:
                         _a.sent();
@@ -212,13 +207,9 @@ var Queue = (function () {
     };
     Queue.canResume = function (patch) {
         var isDownloading = patch.isDownloading();
-        var operationLimit = isDownloading
-            ? this._maxDownloads
-            : this._maxExtractions;
+        var operationLimit = isDownloading ? this._maxDownloads : this._maxExtractions;
         var concurrentPatches = this.fetch(true, isDownloading);
-        this.log("Checking if patch can resume a " + (isDownloading
-            ? 'download'
-            : 'patch') + " operation");
+        this.log("Checking if patch can resume a " + (isDownloading ? 'download' : 'patch') + " operation");
         // tslint:disable-next-line:max-line-length
         this.log("Queue manager is currently handling: " + concurrentPatches.length + " concurrent operations and can handle: " + (operationLimit ===
             -1

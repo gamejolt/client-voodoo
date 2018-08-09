@@ -55,9 +55,7 @@ export abstract class Config {
 		}
 
 		if (!this.clientMutexPromise) {
-			this.clientMutexPromise = Mutex.create(
-				this.mutex_name
-			).then(mutexInst => {
+			this.clientMutexPromise = Mutex.create(this.mutex_name).then(mutexInst => {
 				this.clientMutex = mutexInst;
 				this.clientMutexPromise = null;
 				this.clientMutex.onReleased.then(() => {

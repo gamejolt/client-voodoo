@@ -101,7 +101,11 @@ abstract class WrapperFinder {
 							if (parsedData[2] === id) {
 								resolve(parseInt(port, 10));
 							} else {
-								reject(new Error(`Expecting wrapper id ${id}, received ${parsedData[2]}`));
+								reject(
+									new Error(
+										`Expecting wrapper id ${id}, received ${parsedData[2]}`
+									)
+								);
 							}
 							break;
 					}

@@ -66,7 +66,9 @@ var WindowsAutostarter = (function () {
     };
     WindowsAutostarter.prototype.set = function (program, args) {
         return new Promise(function (resolve, reject) {
-            var autoStartCommand = "\"" + program + "\"" + (args && args.length ? " " + args.join(' ') : '');
+            var autoStartCommand = "\"" + program + "\"" + (args && args.length
+                ? " " + args.join(' ')
+                : '');
             WindowsAutostarter.getKey().set(autostartId, Winreg.REG_SZ, autoStartCommand, function (err) {
                 if (err) {
                     return reject(err);

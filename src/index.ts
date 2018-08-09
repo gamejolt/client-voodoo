@@ -9,7 +9,5 @@ export * from './autostarter';
 export * from './shortcut';
 export * from './rollbacker';
 export * from './mutex';
-
-import { Logger } from './logger';
+export * from './selfupdater';
 export * from './logger';
-Logger.hijack();

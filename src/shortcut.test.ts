@@ -10,7 +10,7 @@ const expect = chai.expect;
 let clientPath = '/path/to/client';
 let iconPath = '/path/to/client-icon';
 
-describe('Shortcut', function () {
+describe('Shortcut', function() {
 	if (process.platform === 'linux') {
 		it(
 			'should work',
@@ -27,8 +27,10 @@ describe('Shortcut', function () {
 		it(
 			'should say operation is not supported',
 			mochaAsync(async () => {
-				await expect(Shortcut.create(clientPath, iconPath)).to.eventually.rejectedWith('Not supported');
+				await expect(Shortcut.create(clientPath, iconPath)).to.eventually.rejectedWith(
+					'Not supported'
+				);
 			})
-		)
+		);
 	}
 });

@@ -70,6 +70,7 @@ var Uninstaller = (function () {
                             '--wait-for-connection',
                             '2',
                             '--symbiote',
+                            '--no-self-update',
                             'uninstall',
                         ];
                         return [4 /*yield*/, controller_1.Controller.ensureMigrationFile(localPackage)];
@@ -86,7 +87,7 @@ var Uninstaller = (function () {
     Uninstaller.uninstallReattach = function (port, pid) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, new UninstallInstance(new controller_1.Controller(port, pid))];
+                return [2 /*return*/, new UninstallInstance(new controller_1.Controller(port, { process: pid }))];
             });
         });
     };

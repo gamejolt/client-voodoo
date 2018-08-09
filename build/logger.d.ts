@@ -12,6 +12,9 @@ export interface IClientOSInfo {
     cpuCount: number;
 }
 export declare abstract class Logger {
+    private static _console;
+    private static _consoleLog;
+    private static _consoleErr;
     private static _logLines;
     private static _hijacked;
     private static _file;
@@ -20,7 +23,7 @@ export declare abstract class Logger {
     private static _flushFile();
     private static _log(...args);
     private static _logErr(...args);
-    static hijack(file?: string): void;
+    static hijack(newConsole: Console, file?: string): void;
     static unhijack(): void;
     static getClientLog(): IClientLog;
 }
