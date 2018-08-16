@@ -1,6 +1,5 @@
 import * as util from 'util';
 import * as os from 'os';
-import * as _ from 'lodash';
 import * as fs from 'fs';
 
 const LOG_LINES = 300;
@@ -67,7 +66,7 @@ export abstract class Logger {
 			this._file.write(str + '\n');
 		}
 		if (this._logLines.length > LOG_LINES) {
-			this._logLines = _.clone(this._logLines.slice(this._logLines.length - LOG_LINES));
+			this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
 		}
 	}
 
@@ -149,7 +148,7 @@ export abstract class Logger {
 
 	static getClientLog(): IClientLog {
 		return {
-			logLines: _.clone(this._logLines),
+			logLines: this._logLines.slice(),
 			osInfo: {
 				os: os.platform(),
 				arch: os.arch(),

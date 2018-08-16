@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("util");
 var os = require("os");
-var _ = require("lodash");
 var fs = require("fs");
 var LOG_LINES = 300;
 var CONSOLE = console;
@@ -48,7 +47,7 @@ var Logger = (function () {
             this._file.write(str + '\n');
         }
         if (this._logLines.length > LOG_LINES) {
-            this._logLines = _.clone(this._logLines.slice(this._logLines.length - LOG_LINES));
+            this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
         }
     };
     Logger._logErr = function () {
@@ -124,7 +123,7 @@ var Logger = (function () {
     };
     Logger.getClientLog = function () {
         return {
-            logLines: _.clone(this._logLines),
+            logLines: this._logLines.slice(),
             osInfo: {
                 os: os.platform(),
                 arch: os.arch(),
