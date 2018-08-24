@@ -125,7 +125,8 @@ describe('Joltron Controller', function() {
 			await inst.connect();
 			expect(inst.connected, 'runner connection status').to.equal(true);
 
-			// There is a race condition between the mock firing the socket accepted callback and the connector firing the connection established event.
+			// There is a race condition between the mock firing, the socket accepted callback,
+			// and the connector firing the connection established event.
 			// This is fine, usually the mock would be joltron and testing how it handles the connection is out of the scope of these tests.
 			await sleep(0);
 			expect(connected, 'socket connection').to.equal(true);
@@ -485,7 +486,7 @@ describe('Joltron Controller', function() {
 			});
 
 			mockRunner(socket => {
-				if (connections == 0) {
+				if (connections === 0) {
 					resolveConnected();
 					socket.destroy();
 				}
@@ -523,7 +524,7 @@ describe('Joltron Controller', function() {
 		expectedData: Object | Object[],
 		expectedResult?: Object | Object[]
 	) {
-		return new Promise((resolve, reject) => {
+		return new Promise<any>((resolve, reject) => {
 			const receive = Array.isArray(expectedData) ? expectedData : [expectedData];
 			const expected = Array.isArray(expectedResult) ? expectedResult : [expectedResult];
 			if (receive.length !== expected.length) {
@@ -803,7 +804,7 @@ describe('Joltron Controller', function() {
 					return value;
 				}),
 			]);
-			expect(result, 'response for sent message').to.deep.equal(expectedResult);
+			expect(result, 'response for sent message').to.deep.equal(expectedResult.payload);
 			await inst.dispose();
 		})
 	);
@@ -873,8 +874,8 @@ describe('Joltron Controller', function() {
 					return value;
 				}),
 			]);
-			expect(result1, 'response for message 1').to.deep.equal(expectedResult[0]);
-			expect(result2, 'response for message 2').to.deep.equal(expectedResult[1]);
+			expect(result1, 'response for message 1').to.deep.equal(expectedResult[0].payload);
+			expect(result2, 'response for message 2').to.deep.equal(expectedResult[1].payload);
 			await inst.dispose();
 		})
 	);
@@ -924,7 +925,7 @@ describe('Joltron Controller', function() {
 			connected = true;
 
 			const [expectedResult, result] = await promises;
-			expect(result, 'response for sent message').to.deep.equal(expectedResult);
+			expect(result, 'response for sent message').to.deep.equal(expectedResult.payload);
 			await inst.dispose();
 		})
 	);

@@ -242,9 +242,9 @@ export class Controller extends TSEventEmitter<Events> {
 							return this.sentMessage.resolve(payload);
 						case 'result':
 							if (payload.success) {
-								return this.sentMessage.resolve(data_);
+								return this.sentMessage.resolve(payload);
 							}
-							return this.sentMessage.resolve(payload.err);
+							return this.sentMessage.reject(payload.err);
 						default:
 							return this.sentMessage.reject(
 								new Error(
