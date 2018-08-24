@@ -179,9 +179,9 @@ var Controller = (function (_super) {
                         return _this.sentMessage.resolve(payload);
                     case 'result':
                         if (payload.success) {
-                            return _this.sentMessage.resolve(data_);
+                            return _this.sentMessage.resolve(payload);
                         }
-                        return _this.sentMessage.resolve(payload.err);
+                        return _this.sentMessage.reject(payload.err);
                     default:
                         return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
                             type +

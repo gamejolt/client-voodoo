@@ -169,11 +169,13 @@ describe('Joltron Controller', function () {
                 case 1:
                     _a.sent();
                     expect(inst.connected, 'runner connection status').to.equal(true);
-                    // There is a race condition between the mock firing the socket accepted callback and the connector firing the connection established event.
+                    // There is a race condition between the mock firing, the socket accepted callback,
+                    // and the connector firing the connection established event.
                     // This is fine, usually the mock would be joltron and testing how it handles the connection is out of the scope of these tests.
                     return [4 /*yield*/, sleep(0)];
                 case 2:
-                    // There is a race condition between the mock firing the socket accepted callback and the connector firing the connection established event.
+                    // There is a race condition between the mock firing, the socket accepted callback,
+                    // and the connector firing the connection established event.
                     // This is fine, usually the mock would be joltron and testing how it handles the connection is out of the scope of these tests.
                     _a.sent();
                     expect(connected, 'socket connection').to.equal(true);
@@ -623,7 +625,7 @@ describe('Joltron Controller', function () {
                         resolveConnected = _resolve;
                     });
                     mockRunner(function (socket) {
-                        if (connections == 0) {
+                        if (connections === 0) {
                             resolveConnected();
                             socket.destroy();
                         }
@@ -1028,7 +1030,7 @@ describe('Joltron Controller', function () {
                         ])];
                 case 2:
                     _a = _b.sent(), expectedResult = _a[0], result = _a[1];
-                    expect(result, 'response for sent message').to.deep.equal(expectedResult);
+                    expect(result, 'response for sent message').to.deep.equal(expectedResult.payload);
                     return [4 /*yield*/, inst.dispose()];
                 case 3:
                     _b.sent();
@@ -1100,8 +1102,8 @@ describe('Joltron Controller', function () {
                         ])];
                 case 2:
                     _a = _b.sent(), expectedResult = _a[0], result1 = _a[1], result2 = _a[2];
-                    expect(result1, 'response for message 1').to.deep.equal(expectedResult[0]);
-                    expect(result2, 'response for message 2').to.deep.equal(expectedResult[1]);
+                    expect(result1, 'response for message 1').to.deep.equal(expectedResult[0].payload);
+                    expect(result2, 'response for message 2').to.deep.equal(expectedResult[1].payload);
                     return [4 /*yield*/, inst.dispose()];
                 case 3:
                     _b.sent();
@@ -1155,7 +1157,7 @@ describe('Joltron Controller', function () {
                     return [4 /*yield*/, promises];
                 case 3:
                     _a = _b.sent(), expectedResult = _a[0], result = _a[1];
-                    expect(result, 'response for sent message').to.deep.equal(expectedResult);
+                    expect(result, 'response for sent message').to.deep.equal(expectedResult.payload);
                     return [4 /*yield*/, inst.dispose()];
                 case 4:
                     _b.sent();
