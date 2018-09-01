@@ -413,7 +413,11 @@ export class Controller extends TSEventEmitter<Events> {
 
 		try {
 			await fs.writeFile(
-				path.join(localPackage.install_dir, '..', '.migration'),
+				path.join(
+					localPackage.install_dir,
+					'..',
+					'.migration-' + path.basename(localPackage.install_dir)
+				),
 				JSON.stringify(migration)
 			);
 		} catch (err) {
