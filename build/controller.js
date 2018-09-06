@@ -322,7 +322,7 @@ var Controller = (function (_super) {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, fs_1.default.writeFile(path.join(localPackage.install_dir, '..', '.migration'), JSON.stringify(migration))];
+                        return [4 /*yield*/, fs_1.default.writeFile(path.join(localPackage.install_dir, '..', '.migration-' + path.basename(localPackage.install_dir)), JSON.stringify(migration))];
                     case 2:
                         _a.sent();
                         return [3 /*break*/, 4];
