@@ -39,7 +39,7 @@ var fs = require("fs");
 var path = require("path");
 var mkdirp = require("mkdirp");
 var controller_1 = require("./controller");
-var joltronVersion = 'v2.1.2-beta';
+var joltronVersion = 'v2.2.0-beta';
 var https = require('follow-redirects').https;
 function doTheThing() {
     return __awaiter(this, void 0, void 0, function () {

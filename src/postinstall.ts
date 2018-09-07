@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 import { getExecutable } from './controller';
 
-const joltronVersion = 'v2.1.2-beta';
+const joltronVersion = 'v2.2.0-beta';
 const https = require('follow-redirects').https as typeof _https;
 
 async function doTheThing() {
@@ -42,9 +42,7 @@ async function doTheThing() {
 		https
 			.get(options, res => {
 				if (res.statusCode !== 200) {
-					throw new Error(
-						`Invalid status code. Expected 200 got ${res.statusCode}`
-					);
+					throw new Error(`Invalid status code. Expected 200 got ${res.statusCode}`);
 				}
 
 				res.pipe(file);
