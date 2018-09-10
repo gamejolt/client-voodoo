@@ -1,7 +1,7 @@
 {
   "name": "client-voodoo",
   "description": "This is an almighty package for anything that has to do with managing a library of games through the Game Jolt Client.",
-  "version": "2.2.7",
+  "version": "2.2.8",
   "bugs": {
     "url": "https://github.com/gamejolt/client-voodoo/issues"
   },
