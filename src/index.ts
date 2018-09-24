@@ -11,3 +11,4 @@ export * from './rollbacker';
 export * from './mutex';
 export * from './selfupdater';
 export * from './logger';
+export { getExecutable } from './controller';

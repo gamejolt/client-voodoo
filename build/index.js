@@ -16,3 +16,5 @@ __export(require("./rollbacker"));
 __export(require("./mutex"));
 __export(require("./selfupdater"));
 __export(require("./logger"));
+var controller_1 = require("./controller");
+exports.getExecutable = controller_1.getExecutable;
