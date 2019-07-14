@@ -38,7 +38,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var chai = require("chai");
 var chaiAsPromised = require("chai-as-promised");
 var util_1 = require("./util");
-var test_1 = require("./test");
 var autostarter_1 = require("./autostarter");
 chai.use(chaiAsPromised);
 // const expect = chai.expect;
@@ -46,7 +45,7 @@ var clientPath = '/path/to/client';
 var runnerPath = '/path/to/client-runner';
 describe('Autostarter', function () {
     var _this = this;
-    it('should work', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    it('should work', function () { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -65,5 +64,5 @@ describe('Autostarter', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
+    }); });
 });

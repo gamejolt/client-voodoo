@@ -12,28 +12,12 @@
     "url": "https://github.com/gamejolt/client-voodoo.git"
   },
   "scripts": {
-    "test": "mocha -u tdd --timeout 999999 --colors \"./build/**/*.test.js\"",
-    "cover": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --full-trace -u tdd --timeout 999999 --colors src/**/*.test.ts",
+    "test": "mocha --timeout 999999 --colors \"./build/**/*.test.js\"",
+    "cover": "nyc mocha --timeout 999999 --colors \"./build/**/*.test.js\"",
     "build": "tsc",
     "watch": "tsc -w",
     "dev": "gulp watch",
     "postinstall": "node ./build/postinstall.js"
-  },
-  "nyc": {
-    "include": [
-      "src/**/*.ts"
-    ],
-    "extension": [
-      ".ts"
-    ],
-    "exclude": [
-      "**/*.d.ts"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "sourceMap": true,
-    "instrument": true
   },
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -52,7 +36,6 @@
     "gulp-load-plugins": "2.0.0",
     "gulp-shell": "0.7.1",
     "mocha": "6.1.4",
-    "nyc": "14.1.1",
     "prettier": "1.18.2",
     "run-sequence": "2.2.1",
     "source-map-support": "0.5.12",

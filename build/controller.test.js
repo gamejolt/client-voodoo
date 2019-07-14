@@ -44,27 +44,6 @@ var expect = chai.expect;
 var JSONStream = require('JSONStream');
 describe('Joltron Controller', function () {
     var _this = this;
-    var mochaAsync = function (fn) {
-        return function (done) { return __awaiter(_this, void 0, void 0, function () {
-            var err_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, fn()];
-                    case 1:
-                        _a.sent();
-                        done();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        err_1 = _a.sent();
-                        done(err_1);
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); };
-    };
     function wrapAll(promises) {
         var result = [];
         for (var _i = 0, promises_1 = promises; _i < promises_1.length; _i++) {
@@ -119,8 +98,8 @@ describe('Joltron Controller', function () {
     var nextMockId = 0;
     var currentMock;
     var currentConns;
-    beforeEach(mochaAsync(disposeMockRunner));
-    it('should attach to running instance', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    beforeEach(disposeMockRunner);
+    it('should attach to running instance', function () { return __awaiter(_this, void 0, void 0, function () {
         var inst, resolve, waitForConnect;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -153,8 +132,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should wait until connection is made', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should wait until connection is made', function () { return __awaiter(_this, void 0, void 0, function () {
         var connected, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -185,8 +164,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should connect only once while connected', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should connect only once while connected', function () { return __awaiter(_this, void 0, void 0, function () {
         var connectCount, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -213,8 +192,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should fail connecting twice in parallel', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should fail connecting twice in parallel', function () { return __awaiter(_this, void 0, void 0, function () {
         var connectCount, inst, conn1, conn2, _a, result1, result2;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -242,8 +221,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should wait until disconnection is complete', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should wait until disconnection is complete', function () { return __awaiter(_this, void 0, void 0, function () {
         var connected, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -284,8 +263,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should disconnect only once', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should disconnect only once', function () { return __awaiter(_this, void 0, void 0, function () {
         var disconnectCount, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -329,8 +308,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should fail disconnecting twice in parallel', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should fail disconnecting twice in parallel', function () { return __awaiter(_this, void 0, void 0, function () {
         var disconnectCount, inst, conn1, conn2, _a, result1, result2;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -375,8 +354,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should fail connect and disconnect in parallel', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should fail connect and disconnect in parallel', function () { return __awaiter(_this, void 0, void 0, function () {
         var wasConnected, inst, conn1, conn2, _a, result1, result2;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -404,8 +383,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should disconnect and connect in quick succession', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should disconnect and connect in quick succession', function () { return __awaiter(_this, void 0, void 0, function () {
         var connectionCount, inst, conn1, conn2, _a, result1, result2;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -445,8 +424,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should retry the initial connection up to 5 seconds', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should retry the initial connection up to 5 seconds', function () { return __awaiter(_this, void 0, void 0, function () {
         var connected, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -472,8 +451,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should timeout the connection attempt if over 5 seconds', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should timeout the connection attempt if over 5 seconds', function () { return __awaiter(_this, void 0, void 0, function () {
         var connected, runnerCreatePromise, inst, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -508,8 +487,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should emit a "fatal" event when joltron disconnects unexpectedly', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should emit a "fatal" event when joltron disconnects unexpectedly', function () { return __awaiter(_this, void 0, void 0, function () {
         var inst, resolveConnected, waitForConnect, resolveDisconnected, waitForDisconnect;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -553,8 +532,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should retry connection if the controller is set to keep connection alive', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should retry connection if the controller is set to keep connection alive', function () { return __awaiter(_this, void 0, void 0, function () {
         var inst, wasConnected, resolveConnected, waitForConnect, resolveConnectedAgain, waitForConnectAgain, resolveDisconnected, waitForDisconnect;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -612,8 +591,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should not retry connection if the controller is not set to keep connection alive', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should not retry connection if the controller is not set to keep connection alive', function () { return __awaiter(_this, void 0, void 0, function () {
         var inst, connections, resolveConnected, waitForConnect, resolveDisconnected, waitForDisconnect;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -666,7 +645,7 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
+    }); });
     function getMockReaderPromise(expectedData, expectedResult) {
         return new Promise(function (resolve, reject) {
             var receive = Array.isArray(expectedData) ? expectedData : [expectedData];
@@ -695,7 +674,7 @@ describe('Joltron Controller', function () {
             setTimeout(function () { return reject(new Error('Did not receive any json data in time')); }, 2000);
         });
     }
-    it('should send kill command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    it('should send kill command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -721,8 +700,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send pause command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send pause command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -748,8 +727,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send resume command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send resume command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -776,8 +755,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send cancel command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send cancel command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -803,8 +782,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send get state command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send get state command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -830,8 +809,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send get state command (2)', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send get state command (2)', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -857,8 +836,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send check for updates command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send check for updates command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -885,8 +864,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send check for updates command (2)', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send check for updates command (2)', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -915,8 +894,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send update available command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send update available command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -942,8 +921,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send update begin command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send update begin command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -967,8 +946,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send update apply command', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send update apply command', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -995,8 +974,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should wait for send to get the response', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should wait for send to get the response', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst, resolvedMock, _a, expectedResult, result;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -1037,8 +1016,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send two messages one after the other', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send two messages one after the other', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst, resolvedMock, resolvedResult1, _a, expectedResult, result1, result2;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -1110,8 +1089,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should send the response as soon as connected', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should send the response as soon as connected', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst, connected, resolvedMock, promises, _a, expectedResult, result;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -1164,8 +1143,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should fail sending a message if not connected past the delay', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should fail sending a message if not connected past the delay', function () { return __awaiter(_this, void 0, void 0, function () {
         var inst, race, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -1192,8 +1171,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should not fail sending a message if not limited by a timeout', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should not fail sending a message if not limited by a timeout', function () { return __awaiter(_this, void 0, void 0, function () {
         var inst, race;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -1216,8 +1195,8 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
-    it('should fail receiving an invalid json', mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    }); });
+    it('should fail receiving an invalid json', function () { return __awaiter(_this, void 0, void 0, function () {
         var mockPromise, inst;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -1254,5 +1233,5 @@ describe('Joltron Controller', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
+    }); });
 });

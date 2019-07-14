@@ -9,18 +9,7 @@ const expect = chai.expect;
 
 const JSONStream = require('JSONStream');
 
-describe('Joltron Controller', function() {
-	const mochaAsync = (fn: () => Promise<any>) => {
-		return async done => {
-			try {
-				await fn();
-				done();
-			} catch (err) {
-				done(err);
-			}
-		};
-	};
-
+describe('Joltron Controller', function () {
 	function wrapAll(promises: Promise<any>[]) {
 		const result: Promise<{ success: boolean; value: any }>[] = [];
 		for (let p of promises) {
@@ -84,11 +73,11 @@ describe('Joltron Controller', function() {
 	let currentMock: net.Server;
 	let currentConns: net.Socket[];
 
-	beforeEach(mochaAsync(disposeMockRunner));
+	beforeEach(disposeMockRunner);
 
 	it(
 		'should attach to running instance',
-		mochaAsync(async () => {
+		async () => {
 			const inst = new Controller(1337);
 
 			let resolve = null;
@@ -109,12 +98,12 @@ describe('Joltron Controller', function() {
 			// and we resolve the connection promise before the transition is finished fully.
 			await sleep(10);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should wait until connection is made',
-		mochaAsync(async () => {
+		async () => {
 			let connected = false;
 			mockRunner(socket => {
 				console.log('set the thing');
@@ -132,12 +121,12 @@ describe('Joltron Controller', function() {
 			expect(connected, 'socket connection').to.equal(true);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should connect only once while connected',
-		mochaAsync(async () => {
+		async () => {
 			let connectCount = 0;
 			mockRunner(socket => {
 				connectCount++;
@@ -151,12 +140,12 @@ describe('Joltron Controller', function() {
 			await sleep(0);
 			expect(connectCount, 'connection count').to.equal(1);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should fail connecting twice in parallel',
-		mochaAsync(async () => {
+		async () => {
 			let connectCount = 0;
 			mockRunner(socket => {
 				connectCount++;
@@ -176,12 +165,12 @@ describe('Joltron Controller', function() {
 			expect(connectCount, 'connection count').to.equal(1);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should wait until disconnection is complete',
-		mochaAsync(async () => {
+		async () => {
 			let connected: any = true;
 			mockRunner(socket => {
 				socket.on('close', (hasError: boolean) => {
@@ -208,12 +197,12 @@ describe('Joltron Controller', function() {
 			expect(connected, 'socket connection').to.equal(false);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should disconnect only once',
-		mochaAsync(async () => {
+		async () => {
 			let disconnectCount = 0;
 			mockRunner(socket => {
 				socket.on('close', (hasError: boolean) => {
@@ -241,12 +230,12 @@ describe('Joltron Controller', function() {
 			expect(disconnectCount, 'disconnection count').to.equal(1);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should fail disconnecting twice in parallel',
-		mochaAsync(async () => {
+		async () => {
 			let disconnectCount = 0;
 			mockRunner(socket => {
 				socket.on('close', (hasError: boolean) => {
@@ -277,12 +266,12 @@ describe('Joltron Controller', function() {
 			expect(disconnectCount, 'disconnection count').to.equal(1);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should fail connect and disconnect in parallel',
-		mochaAsync(async () => {
+		async () => {
 			let wasConnected: any = false;
 			mockRunner(socket => {
 				wasConnected = true;
@@ -301,12 +290,12 @@ describe('Joltron Controller', function() {
 			expect(wasConnected, 'was socket connected').to.equal(true);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should disconnect and connect in quick succession',
-		mochaAsync(async () => {
+		async () => {
 			let connectionCount = 0;
 			mockRunner(socket => {
 				connectionCount++;
@@ -332,12 +321,12 @@ describe('Joltron Controller', function() {
 			expect(connectionCount, 'connection count').to.equal(1);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should retry the initial connection up to 5 seconds',
-		mochaAsync(async () => {
+		async () => {
 			// Delay the mock runner creation by 2 seconds.
 			let connected: any = false;
 			setTimeout(() => {
@@ -354,12 +343,12 @@ describe('Joltron Controller', function() {
 			expect(connected, 'socket connection').to.equal(true);
 
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should timeout the connection attempt if over 5 seconds',
-		mochaAsync(async () => {
+		async () => {
 			// Delay the mock runner creation by 7 seconds which is over the 5 second timeout.
 			let connected = false;
 			const runnerCreatePromise = new Promise(resolve => {
@@ -383,12 +372,12 @@ describe('Joltron Controller', function() {
 
 			// Wait until the runner is actually created so that it can be cleaned up properly in the end of this test.
 			await runnerCreatePromise;
-		})
+		}
 	);
 
 	it(
 		'should emit a "fatal" event when joltron disconnects unexpectedly',
-		mochaAsync(async () => {
+		async () => {
 			const inst = new Controller(1337);
 
 			let resolveConnected = null;
@@ -420,12 +409,12 @@ describe('Joltron Controller', function() {
 			// and we resolve the connection promise before the transition is finished fully.
 			await sleep(10);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should retry connection if the controller is set to keep connection alive',
-		mochaAsync(async () => {
+		async () => {
 			const inst = new Controller(1337, { keepConnected: true });
 
 			let wasConnected = false;
@@ -470,12 +459,12 @@ describe('Joltron Controller', function() {
 			// and we resolve the connection promise before the transition is finished fully.
 			await sleep(10);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should not retry connection if the controller is not set to keep connection alive',
-		mochaAsync(async () => {
+		async () => {
 			const inst = new Controller(1337);
 
 			let connections = 0;
@@ -517,7 +506,7 @@ describe('Joltron Controller', function() {
 			// and we resolve the connection promise before the transition is finished fully.
 			await sleep(10);
 			await inst.dispose();
-		})
+		}
 	);
 
 	function getMockReaderPromise(
@@ -560,7 +549,7 @@ describe('Joltron Controller', function() {
 
 	it(
 		'should send kill command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'control',
 				msgId: '0',
@@ -574,12 +563,12 @@ describe('Joltron Controller', function() {
 			inst.sendKillGame();
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send pause command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'control',
 				msgId: '0',
@@ -593,12 +582,12 @@ describe('Joltron Controller', function() {
 			inst.sendPause();
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send resume command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'control',
 				msgId: '0',
@@ -613,12 +602,12 @@ describe('Joltron Controller', function() {
 			inst.sendResume();
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send cancel command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'control',
 				msgId: '0',
@@ -632,12 +621,12 @@ describe('Joltron Controller', function() {
 			inst.sendCancel();
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send get state command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'state',
 				msgId: '0',
@@ -651,12 +640,12 @@ describe('Joltron Controller', function() {
 			inst.sendGetState(true);
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send get state command (2)',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'state',
 				msgId: '0',
@@ -670,12 +659,12 @@ describe('Joltron Controller', function() {
 			inst.sendGetState(false);
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send check for updates command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'checkForUpdates',
 				msgId: '0',
@@ -690,12 +679,12 @@ describe('Joltron Controller', function() {
 			inst.sendCheckForUpdates('1', '2');
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send check for updates command (2)',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'checkForUpdates',
 				msgId: '0',
@@ -712,12 +701,12 @@ describe('Joltron Controller', function() {
 			inst.sendCheckForUpdates('1', '2', '3', '4');
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send update available command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'updateAvailable',
 				msgId: '0',
@@ -731,12 +720,12 @@ describe('Joltron Controller', function() {
 			inst.sendUpdateAvailable({ test: true } as any);
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send update begin command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'updateBegin',
 				msgId: '0',
@@ -748,12 +737,12 @@ describe('Joltron Controller', function() {
 			inst.sendUpdateBegin();
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send update apply command',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise({
 				type: 'updateApply',
 				msgId: '0',
@@ -768,12 +757,12 @@ describe('Joltron Controller', function() {
 			inst.sendUpdateApply({ var1: true, var2: false }, ['1', '2', '3']);
 			await mockPromise;
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should wait for send to get the response',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise(
 				{
 					type: 'updateBegin',
@@ -806,12 +795,12 @@ describe('Joltron Controller', function() {
 			]);
 			expect(result, 'response for sent message').to.deep.equal(expectedResult.payload);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send two messages one after the other',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise(
 				[
 					{
@@ -877,12 +866,12 @@ describe('Joltron Controller', function() {
 			expect(result1, 'response for message 1').to.deep.equal(expectedResult[0].payload);
 			expect(result2, 'response for message 2').to.deep.equal(expectedResult[1].payload);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should send the response as soon as connected',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = getMockReaderPromise(
 				{
 					type: 'updateBegin',
@@ -927,12 +916,12 @@ describe('Joltron Controller', function() {
 			const [expectedResult, result] = await promises;
 			expect(result, 'response for sent message').to.deep.equal(expectedResult.payload);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should fail sending a message if not connected past the delay',
-		mochaAsync(async () => {
+		async () => {
 			const inst = new Controller(1337);
 			const race = Promise.race([
 				inst.sendUpdateBegin(1000).then(value => {
@@ -949,12 +938,12 @@ describe('Joltron Controller', function() {
 				'Message was not handled in time'
 			);
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should not fail sending a message if not limited by a timeout',
-		mochaAsync(async () => {
+		async () => {
 			const inst = new Controller(1337);
 			const race = Promise.race([
 				inst.sendUpdateBegin().then(
@@ -970,12 +959,12 @@ describe('Joltron Controller', function() {
 
 			await expect(race, 'send operation without timeout').to.eventually.equal('success');
 			await inst.dispose();
-		})
+		}
 	);
 
 	it(
 		'should fail receiving an invalid json',
-		mochaAsync(async () => {
+		async () => {
 			const mockPromise = new Promise((resolve, reject) => {
 				mockRunner(socket => {
 					socket.write('this is not a valid json', (err?: Error) => {
@@ -1001,6 +990,6 @@ describe('Joltron Controller', function() {
 
 			expect(inst.connected, 'runner connection status').to.equal(false);
 			await inst.dispose();
-		})
+		}
 	);
 });

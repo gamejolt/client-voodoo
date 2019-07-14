@@ -38,7 +38,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var chai = require("chai");
 var chaiAsPromised = require("chai-as-promised");
 var util_1 = require("./util");
-var test_1 = require("./test");
 var shortcut_1 = require("./shortcut");
 chai.use(chaiAsPromised);
 var expect = chai.expect;
@@ -47,7 +46,7 @@ var iconPath = '/path/to/client-icon';
 describe('Shortcut', function () {
     var _this = this;
     if (process.platform === 'linux') {
-        it('should work', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        it('should work', function () { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -66,10 +65,10 @@ describe('Shortcut', function () {
                         return [2 /*return*/];
                 }
             });
-        }); }));
+        }); });
     }
     else {
-        it('should say operation is not supported', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        it('should say operation is not supported', function () { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, expect(shortcut_1.Shortcut.create(clientPath, iconPath)).to.eventually.rejectedWith('Not supported')];
@@ -78,6 +77,6 @@ describe('Shortcut', function () {
                         return [2 /*return*/];
                 }
             });
-        }); }));
+        }); });
     }
 });

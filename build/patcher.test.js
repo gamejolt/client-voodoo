@@ -40,23 +40,10 @@ var chaiAsPromised = require("chai-as-promised");
 var patcher_1 = require("./patcher");
 var path = require("path");
 var launcher_1 = require("./launcher");
-var test_1 = require("./test");
 chai.use(chaiAsPromised);
-// const expect = chai.expect;
 describe('Patcher', function () {
-    // function wrapAll( promises: Promise<any>[] )
-    // {
-    // 	const result: Promise<{ success: boolean, value: any }>[] = [];
-    // 	for ( let p of promises ) {
-    // 		result.push( p
-    // 			.then( ( value ) => { return { success: true, value: value } } )
-    // 			.catch( ( err ) => { return { success: false, value: err } } )
-    // 		);
-    // 	}
-    // 	return Promise.all( result );
-    // }
     var _this = this;
-    it('should do a patch', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+    it('should do a patch', function () { return __awaiter(_this, void 0, void 0, function () {
         var localPackage, patchInstance, launcher;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -138,5 +125,5 @@ describe('Patcher', function () {
                     return [2 /*return*/];
             }
         });
-    }); }));
+    }); });
 });
