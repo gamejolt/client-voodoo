@@ -6,7 +6,13 @@ export async function findFreePort() {
 		let server = net.createServer();
 		server
 			.on('listening', () => {
-				port = server.address().port;
+				const addrInfo = server.address();
+				if (typeof addrInfo === 'string') {
+					// According to the docs this may only happen if listening on a pipe or unix domain socket.
+					// This should never be the case for us.
+					return reject(new Error('No address info returned'));
+				}
+				port = addrInfo.port;
 				server.close();
 			})
 			.on('close', () => {

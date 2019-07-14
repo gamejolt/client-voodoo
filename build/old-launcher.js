@@ -1,8 +1,11 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -24,8 +27,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -50,7 +53,7 @@ var path = require("path");
 var fs_1 = require("./fs");
 var config_1 = require("./config");
 var events_1 = require("./events");
-var OldLauncher = (function () {
+var OldLauncher = /** @class */ (function () {
     function OldLauncher() {
     }
     OldLauncher.attach = function (wrapperId) {
@@ -88,7 +91,7 @@ var OldLauncher = (function () {
     return OldLauncher;
 }());
 exports.OldLauncher = OldLauncher;
-var OldLaunchInstance = (function (_super) {
+var OldLaunchInstance = /** @class */ (function (_super) {
     __extends(OldLaunchInstance, _super);
     function OldLaunchInstance(_wrapperId) {
         var _this = _super.call(this) || this;
@@ -145,7 +148,7 @@ var OldLaunchInstance = (function (_super) {
     return OldLaunchInstance;
 }(events_1.TSEventEmitter));
 exports.OldLaunchInstance = OldLaunchInstance;
-var WrapperFinder = (function () {
+var WrapperFinder = /** @class */ (function () {
     function WrapperFinder() {
     }
     WrapperFinder.find = function (id) {

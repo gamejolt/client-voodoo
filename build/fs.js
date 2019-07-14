@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
-var FsAsync = (function () {
+var FsAsync = /** @class */ (function () {
     function FsAsync() {
     }
     FsAsync.writeFile = function (filename, data, options) {

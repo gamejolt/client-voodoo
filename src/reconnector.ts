@@ -2,15 +2,6 @@ import * as net from 'net';
 import { TSEventEmitter } from './events';
 import { sleep } from './util';
 
-export interface IConnectionOptions {
-	port: number;
-	host?: string;
-	localAddress?: string;
-	localPort?: string;
-	family?: number;
-	allowHalfOpen?: boolean;
-}
-
 export type Events = {
 	'attempt': (n: number) => void;
 };
@@ -28,7 +19,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 		return this._connected;
 	}
 
-	connect(options: IConnectionOptions): Promise<net.Socket> {
+	connect(options: net.TcpNetConnectOpts): Promise<net.Socket> {
 		// If already connected return the current connection.
 		// Note: This will also return if we're in the process of disconnecting.
 		if (this._connected) {
@@ -50,7 +41,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 					this._connected = true;
 					this.connectPromise = null;
 					return resolve(this.conn);
-				} catch (err) {}
+				} catch (err) { }
 
 				if (Date.now() - startTime + this.interval > this.timeout) {
 					this.connectPromise = null;
@@ -64,7 +55,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 		return this.connectPromise;
 	}
 
-	private attempt(options: IConnectionOptions): Promise<net.Socket> {
+	private attempt(options: net.TcpNetConnectOpts): Promise<net.Socket> {
 		return new Promise<net.Socket>((resolve, reject) => {
 			let lastErr: Error = null;
 

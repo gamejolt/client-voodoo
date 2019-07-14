@@ -5,7 +5,7 @@ var os = require("os");
 var fs = require("fs");
 var LOG_LINES = 300;
 var CONSOLE = console;
-var Logger = (function () {
+var Logger = /** @class */ (function () {
     function Logger() {
     }
     Logger._flushFile = function () {

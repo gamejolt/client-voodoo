@@ -20,9 +20,9 @@ export declare abstract class Logger {
     private static _file;
     private static _filePath;
     private static _flushInterval;
-    private static _flushFile();
-    private static _log(...args);
-    private static _logErr(...args);
+    private static _flushFile;
+    private static _log;
+    private static _logErr;
     static hijack(newConsole: Console, file?: string): void;
     static unhijack(): void;
     static getClientLog(): IClientLog;
