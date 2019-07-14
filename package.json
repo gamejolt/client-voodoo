@@ -53,6 +53,7 @@
     "JSONStream": "github:gamejolt/JSONStream#no-shebang",
     "follow-redirects": "1.7.0",
     "mkdirp": "0.5.1",
-    "shell-escape": "0.2.0"
+    "shell-escape": "0.2.0",
+    "winston": "3.2.1"
   }
 }

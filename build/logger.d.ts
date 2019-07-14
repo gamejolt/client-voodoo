@@ -11,19 +11,21 @@ export interface IClientOSInfo {
     totalMemory: number;
     cpuCount: number;
 }
-export declare abstract class Logger {
-    private static _console;
-    private static _consoleLog;
-    private static _consoleErr;
-    private static _logLines;
-    private static _hijacked;
-    private static _file;
-    private static _filePath;
-    private static _flushInterval;
-    private static _flushFile;
+export declare class Logger {
+    private static hijacked;
+    private static file;
+    private static logger;
+    private static oldConsole;
+    private static oldConsoleLog;
+    private static oldConsoleInfo;
+    private static oldConsoleWarn;
+    private static oldConsoleError;
     private static _log;
-    private static _logErr;
-    static hijack(newConsole: Console, file?: string): void;
+    static log(...args: any[]): void;
+    static info(...args: any[]): void;
+    static warn(...args: any[]): void;
+    static error(...args: any[]): void;
+    static hijack(file?: string): void;
     static unhijack(): void;
     static getClientLog(): IClientLog;
 }
