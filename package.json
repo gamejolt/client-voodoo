@@ -13,7 +13,6 @@
   },
   "scripts": {
     "test": "mocha --timeout 999999 --colors \"./build/**/patcher.test.js\"",
-    "cover": "nyc mocha --timeout 999999 --colors \"./build/**/*.test.js\"",
     "build": "tsc",
     "watch": "tsc -w",
     "dev": "gulp watch",
