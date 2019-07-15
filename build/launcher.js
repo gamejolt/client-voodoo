@@ -1,11 +1,8 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -27,8 +24,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -55,7 +52,7 @@ var util = require("./util");
 var controller_wrapper_1 = require("./controller-wrapper");
 var old_launcher_1 = require("./old-launcher");
 var queue_1 = require("./queue");
-var Launcher = /** @class */ (function () {
+var Launcher = (function () {
     function Launcher() {
     }
     // TODO(ylivay): Should set the credentials file for now.
@@ -199,7 +196,7 @@ var Launcher = /** @class */ (function () {
     return Launcher;
 }());
 exports.Launcher = Launcher;
-var LaunchInstance = /** @class */ (function (_super) {
+var LaunchInstance = (function (_super) {
     __extends(LaunchInstance, _super);
     function LaunchInstance(controller, onReady) {
         var _this = _super.call(this, controller) || this;

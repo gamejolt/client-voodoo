@@ -14,8 +14,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -44,13 +44,7 @@ function findFreePort() {
                     var server = net.createServer();
                     server
                         .on('listening', function () {
-                        var addrInfo = server.address();
-                        if (typeof addrInfo === 'string') {
-                            // According to the docs this may only happen if listening on a pipe or unix domain socket.
-                            // This should never be the case for us.
-                            return reject(new Error('No address info returned'));
-                        }
-                        port = addrInfo.port;
+                        port = server.address().port;
                         server.close();
                     })
                         .on('close', function () {

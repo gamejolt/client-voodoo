@@ -14,8 +14,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -55,7 +55,7 @@ if (process.platform === 'darwin') {
 }
 var shellEscape = require('shell-escape');
 var autostartId = 'GameJoltClient';
-var WindowsAutostarter = /** @class */ (function () {
+var WindowsAutostarter = (function () {
     function WindowsAutostarter() {
     }
     WindowsAutostarter.getKey = function () {
@@ -96,7 +96,7 @@ var WindowsAutostarter = /** @class */ (function () {
     };
     return WindowsAutostarter;
 }());
-var LinuxAutostarter = /** @class */ (function () {
+var LinuxAutostarter = (function () {
     function LinuxAutostarter() {
     }
     LinuxAutostarter.prototype.createRunner = function (program, runner, args) {
@@ -142,7 +142,7 @@ var LinuxAutostarter = /** @class */ (function () {
     LinuxAutostarter.desktopFilePath = path.join(xdgBasedir.config || '', 'autostart', autostartId + ".desktop");
     return LinuxAutostarter;
 }());
-var MacAutostarter = /** @class */ (function () {
+var MacAutostarter = (function () {
     function MacAutostarter() {
     }
     MacAutostarter.prototype.createRunner = function (program, runner, args) {
@@ -191,7 +191,7 @@ var MacAutostarter = /** @class */ (function () {
     };
     return MacAutostarter;
 }());
-var Autostarter = /** @class */ (function () {
+var Autostarter = (function () {
     function Autostarter() {
     }
     Object.defineProperty(Autostarter, "autostarter", {

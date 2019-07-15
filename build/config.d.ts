@@ -1,12 +1,12 @@
 export declare abstract class Config {
     static env: 'development' | 'production' | null;
-    static readonly mutex_name = "game-jolt-client";
+    static readonly mutex_name: string;
     private static pidDir;
     private static clientMutexPromise;
     private static clientMutex;
-    static readonly domain: "http://development.gamejolt.com" | "https://gamejolt.com";
+    static readonly domain: string;
     static readonly pid_dir: string;
-    static ensurePidDir(): Promise<unknown>;
+    static ensurePidDir(): Promise<{}>;
     static setPidDir(pidDir: string): boolean;
     static issetClientMutex(): boolean;
     static setClientMutex(): Promise<void>;

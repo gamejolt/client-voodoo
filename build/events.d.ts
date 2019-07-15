@@ -1,15 +1,13 @@
 /// <reference types="node" />
-import * as EventEmitter from 'events';
-declare type EventListener = (...args: any[]) => void;
+import { EventEmitter } from 'events';
 export declare class TSEventEmitter<E extends {
-    [event: string]: EventListener;
+    [event: string]: Function;
 }> extends EventEmitter {
     constructor();
-    addListener<T extends Extract<keyof E, string>>(event: T, listener: E[T]): this;
-    listeners(event: Extract<keyof E, string>): Function[];
-    on<T extends Extract<keyof E, string>>(event: T, listener: E[T]): this;
-    once<T extends Extract<keyof E, string>>(event: T, listener: E[T]): this;
-    removeAllListeners(event?: Extract<keyof E, string>): this;
-    removeListener<T extends Extract<keyof E, string>>(event: T, listener: E[T]): this;
+    addListener<T extends keyof E>(event: T, listener: E[T]): this;
+    listeners(event: keyof E): Function[];
+    on<T extends keyof E>(event: T, listener: E[T]): this;
+    once<T extends keyof E>(event: T, listener: E[T]): this;
+    removeAllListeners(event?: keyof E): this;
+    removeListener<T extends keyof E>(event: T, listener: E[T]): this;
 }
-export {};

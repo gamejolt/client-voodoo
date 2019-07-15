@@ -1,11 +1,8 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -27,8 +24,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -55,7 +52,7 @@ var data = require("./data");
 var config_1 = require("./config");
 var controller_wrapper_1 = require("./controller-wrapper");
 var queue_1 = require("./queue");
-var Patcher = /** @class */ (function () {
+var Patcher = (function () {
     function Patcher() {
     }
     /**
@@ -142,7 +139,7 @@ var State;
     State[State["Patching"] = 2] = "Patching";
     State[State["Finished"] = 3] = "Finished";
 })(State = exports.State || (exports.State = {}));
-var PatchInstance = /** @class */ (function (_super) {
+var PatchInstance = (function (_super) {
     __extends(PatchInstance, _super);
     function PatchInstance(controller, authTokenGetter) {
         var _this = _super.call(this, controller) || this;
@@ -198,7 +195,7 @@ var PatchInstance = /** @class */ (function (_super) {
             case data.PatcherState.Preparing:
                 return State.Starting;
             case data.PatcherState.Download:
-            case data.PatcherState.UpdateReady: // not really considered downloading, but it is the step right before extracting.
+            case data.PatcherState.UpdateReady:// not really considered downloading, but it is the step right before extracting.
                 return State.Downloading;
             case data.PatcherState.PrepareExtract:
             case data.PatcherState.Extract:

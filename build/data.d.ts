@@ -61,7 +61,7 @@ export declare enum PatcherState {
     Cleanup = 6,
     Uninstall = 7,
     Rollback = 8,
-    Finished = 9
+    Finished = 9,
 }
 export interface MsgStateResponse {
     version: string;
