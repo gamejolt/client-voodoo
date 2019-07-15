@@ -18,28 +18,28 @@ var Logger = /** @class */ (function () {
     });
     Object.defineProperty(Logger, "consoleLog", {
         get: function () {
-            return this.hijacked ? this.oldConsole.log : MY_CONSOLE.log;
+            return this.hijacked ? this.oldConsoleLog : MY_CONSOLE.log;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Logger, "consoleInfo", {
         get: function () {
-            return this.hijacked ? this.oldConsole.info : MY_CONSOLE.info;
+            return this.hijacked ? this.oldConsoleInfo : MY_CONSOLE.info;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Logger, "consoleWarn", {
         get: function () {
-            return this.hijacked ? this.oldConsole.warn : MY_CONSOLE.warn;
+            return this.hijacked ? this.oldConsoleWarn : MY_CONSOLE.warn;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Logger, "consoleError", {
         get: function () {
-            return this.hijacked ? this.oldConsole.error : MY_CONSOLE.error;
+            return this.hijacked ? this.oldConsoleError : MY_CONSOLE.error;
         },
         enumerable: true,
         configurable: true
@@ -104,9 +104,9 @@ var Logger = /** @class */ (function () {
         if (this.hijacked) {
             return;
         }
-        this.hijacked = true;
         console = c;
         c.log('Hijacking console log');
+        this.hijacked = true;
         this.oldConsole = c;
         this.oldConsoleLog = c.log;
         this.oldConsoleInfo = c.info;

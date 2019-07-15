@@ -37,19 +37,19 @@ export class Logger {
 	}
 
 	private static get consoleLog() {
-		return this.hijacked ? this.oldConsole.log : MY_CONSOLE.log;
+		return this.hijacked ? this.oldConsoleLog : MY_CONSOLE.log;
 	}
 
 	private static get consoleInfo() {
-		return this.hijacked ? this.oldConsole.info : MY_CONSOLE.info;
+		return this.hijacked ? this.oldConsoleInfo : MY_CONSOLE.info;
 	}
 
 	private static get consoleWarn() {
-		return this.hijacked ? this.oldConsole.warn : MY_CONSOLE.warn;
+		return this.hijacked ? this.oldConsoleWarn : MY_CONSOLE.warn;
 	}
 
 	private static get consoleError() {
-		return this.hijacked ? this.oldConsole.error : MY_CONSOLE.error;
+		return this.hijacked ? this.oldConsoleError : MY_CONSOLE.error;
 	}
 
 	private static _log(level: string, args: any[]) {
@@ -106,10 +106,10 @@ export class Logger {
 			return;
 		}
 
-		this.hijacked = true;
-
 		console = c;
 		c.log('Hijacking console log');
+
+		this.hijacked = true;
 
 		this.oldConsole = c;
 		this.oldConsoleLog = c.log;
