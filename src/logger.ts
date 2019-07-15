@@ -124,9 +124,19 @@ export class Logger {
 
 		this.file = file || 'client.log';
 		this.logger = winston.createLogger({
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				winston.format.printf((info) => {
+					// Not sure if this a bug in winston or me misusing it.
+					// For some reason the message is populated on key 0 for the info object.
+					info.message = info[0];
+
+					return `[${info.timestamp}] ${info.level}: ${info.message}`
+				}),
+			),
 			transports: [new winston.transports.File({
 				filename: this.file,
-				maxsize: 1024 * 1024, // 1 MB
+				maxsize: 500 * 1024, // 500 KB
 				maxFiles: 2,
 				tailable: true,
 			})],
