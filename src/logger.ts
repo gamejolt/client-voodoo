@@ -2,6 +2,9 @@ import * as os from 'os';
 import * as winston from 'winston';
 import * as util from 'util';
 import * as fs from 'fs';
+import { Tail } from 'tail';
+
+const MY_CONSOLE = console;
 
 export interface IClientLog {
 	logLines: string[];
@@ -29,37 +32,95 @@ export class Logger {
 	private static oldConsoleWarn: typeof Console.prototype.warn;
 	private static oldConsoleError: typeof Console.prototype.error;
 
+	private static get console() {
+		return this.hijacked ? this.oldConsole : MY_CONSOLE;
+	}
+
+	private static get consoleLog() {
+		return this.hijacked ? this.oldConsole.log : MY_CONSOLE.log;
+	}
+
+	private static get consoleInfo() {
+		return this.hijacked ? this.oldConsole.info : MY_CONSOLE.info;
+	}
+
+	private static get consoleWarn() {
+		return this.hijacked ? this.oldConsole.warn : MY_CONSOLE.warn;
+	}
+
+	private static get consoleError() {
+		return this.hijacked ? this.oldConsole.error : MY_CONSOLE.error;
+	}
+
 	private static _log(level: string, args: any[]) {
-		let str = util.format.apply(console, args).split('\n');
+		if (!this.hijacked) {
+			return;
+		}
+
+		let str = util.format.apply(this.console, args).split('\n');
 		this.logger.log(level, str);
 	}
 
 	static log(...args: any[]) {
-		this.oldConsoleLog.apply(console, args);
+		this.consoleLog.apply(this.console, args);
 		this._log('info', args);
 	}
 
 	static info(...args: any[]) {
-		this.oldConsoleInfo.apply(console, args);
+		this.consoleInfo.apply(this.console, args);
 		this._log('info', args);
 	}
 
 	static warn(...args: any[]) {
-		this.oldConsoleWarn.apply(console, args);
+		this.consoleWarn.apply(this.console, args);
 		this._log('warn', args);
 	}
 
 	static error(...args: any[]) {
-		this.oldConsoleError.apply(console, args);
+		this.consoleError.apply(this.console, args);
 		this._log('error', args);
 	}
 
-	static hijack(file?: string) {
+	static createLoggerFromFile(file: string, tag: string, level: string): Tail {
+		const tail = new Tail(file, {
+			encoding: "utf8",
+			fromBeginning: true,
+			separator: os.EOL,
+		});
+
+		tail.on('line', line => {
+			this.consoleLog.apply(this.console, [`[${tag}] [${level}] ${line}`]);
+			this._log(level, [`[${tag}] ${line}`]);
+		});
+
+		tail.on('error', err => {
+			this.consoleError.apply(this.console, [err]);
+			this._log('error', [`[${tag}] Error while tailing file: `, err])
+		})
+
+		return tail;
+	}
+
+	static hijack(c: Console, file?: string) {
 		if (this.hijacked) {
 			return;
 		}
 
 		this.hijacked = true;
+
+		console = c;
+		c.log('Hijacking console log');
+
+		this.oldConsole = c;
+		this.oldConsoleLog = c.log;
+		this.oldConsoleInfo = c.info;
+		this.oldConsoleWarn = c.warn;
+		this.oldConsoleError = c.error;
+
+		c.log = this.log.bind(this);
+		c.info = this.info.bind(this);
+		c.warn = this.warn.bind(this);
+		c.error = this.error.bind(this);
 
 		this.file = file || 'client.log';
 		this.logger = winston.createLogger({
@@ -70,18 +131,6 @@ export class Logger {
 				tailable: true,
 			})],
 		});
-
-		const c = console;
-		this.oldConsole = c;
-		this.oldConsoleLog = c.log;
-		this.oldConsoleInfo = c.info;
-		this.oldConsoleWarn = c.warn;
-		this.oldConsoleError = c.error;
-
-		c.log = this.log;
-		c.info = this.info;
-		c.warn = this.warn;
-		c.error = this.error;
 	}
 
 	static unhijack() {
@@ -91,16 +140,14 @@ export class Logger {
 
 		this.hijacked = false;
 
+		console = MY_CONSOLE;
 		const c = this.oldConsole;
-		this.oldConsoleLog = c.log;
-		this.oldConsoleInfo = c.info;
-		this.oldConsoleWarn = c.warn;
-		this.oldConsoleError = c.error;
-
 		c.log = this.oldConsoleLog;
 		c.info = this.oldConsoleInfo;
 		c.warn = this.oldConsoleWarn;
 		c.error = this.oldConsoleError;
+
+		c.log('Unhijacked console log');
 	}
 
 	static getClientLog(): IClientLog {

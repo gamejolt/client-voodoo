@@ -7,6 +7,7 @@ export declare function getExecutable(): string;
 export declare type Events = {
     'fatal': (err: Error) => void;
     'err': (err: Error) => void;
+    'close': () => void;
     'gameLaunchBegin': (dir: string, ...args: string[]) => void;
     'gameLaunchFinished': () => void;
     'gameLaunchFailed': (reason: string) => void;

@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
+var tmp = require("tmp");
+var os = require("os");
 var FsAsync = /** @class */ (function () {
     function FsAsync() {
     }
@@ -58,6 +60,24 @@ var FsAsync = /** @class */ (function () {
                     return reject(err);
                 }
                 return resolve();
+            });
+        });
+    };
+    FsAsync.tmpFile = function (prefix, ext) {
+        return new Promise(function (resolve, reject) {
+            var opts = {
+                dir: os.tmpdir(),
+                prefix: prefix,
+                postfix: "." + ext,
+                // Makes the application not remove the file on end and return it's fd.
+                detachDescriptor: true,
+                keep: true,
+            };
+            tmp.file(opts, function (err, name, fd) {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve({ name: name, fd: fd });
             });
         });
     };
