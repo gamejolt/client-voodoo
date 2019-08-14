@@ -68,7 +68,7 @@ export default class FsAsync {
 		});
 	}
 
-	static tmpFile(prefix: string, ext: string) {
+	static createTempFile(prefix: string, ext: string) {
 		return new Promise<{ name: string, fd: number }>((resolve, reject) => {
 			const opts: tmp.FileOptions = {
 				dir: os.tmpdir(),

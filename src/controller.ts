@@ -434,8 +434,8 @@ export class Controller extends TSEventEmitter<Events> {
 		let joltronErrLogger: Tail | null = null;
 
 		try {
-			joltronOut = await fs.tmpFile('joltron-', 'out');
-			joltronErr = await fs.tmpFile('joltron-', 'err');
+			joltronOut = await fs.createTempFile('joltron-', 'out');
+			joltronErr = await fs.createTempFile('joltron-', 'err');
 			joltronOutLogger = Logger.createLoggerFromFile(joltronOut.name, 'joltron', 'info');
 			joltronErrLogger = Logger.createLoggerFromFile(joltronErr.name, 'joltron', 'error');
 			console.log(`Logging joltron output to "${joltronOut.name}" and "${joltronErr.name}"`);
@@ -477,16 +477,9 @@ export class Controller extends TSEventEmitter<Events> {
 					joltronErrLogger.unwatch();
 					joltronLogs = false;
 				}
-			})
-			return runnerInstance;
+			});
 
-			// try {
-			// 	await runnerInstance.connect();
-			// 	return runnerInstance;
-			// } catch (err) {
-			// 	await runnerInstance.kill();
-			// 	throw err;
-			// }
+			return runnerInstance;
 		} catch (e) {
 			if (joltronLogs) {
 				joltronOutLogger.unwatch();
