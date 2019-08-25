@@ -1,129 +1,153 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var util = require("util");
 var os = require("os");
+var winston = require("winston");
+var util = require("util");
 var fs = require("fs");
-var LOG_LINES = 300;
-var CONSOLE = console;
-var Logger = (function () {
+var tail_1 = require("tail");
+var MY_CONSOLE = console;
+var Logger = /** @class */ (function () {
     function Logger() {
     }
-    Logger._flushFile = function () {
-        try {
-            if (this._file) {
-                this._file.close();
-            }
-            this._file = null;
-            if (fs.existsSync(this._filePath)) {
-                fs.unlinkSync(this._filePath);
-            }
-            var str = this._logLines.join('\n') + '\n';
-            fs.writeFileSync(this._filePath, str);
-            var logLineLength = this._logLines.join('\n').length, logLineCount = this._logLines.length;
-            this._consoleLog.apply(this._console, [
-                "Flushing log file of length " + logLineLength + " with " + logLineCount + " rows",
-            ]);
-            this._file = fs.createWriteStream(this._filePath, {
-                flags: 'a',
-                encoding: 'utf8',
-            });
-        }
-        catch (err) {
-            this._consoleLog.apply(this._console, [err.message + "\n" + err.stack]);
-        }
-    };
-    Logger._log = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._consoleLog.apply(this._console, args);
-        var str = util.format.apply(this._console, args).split('\n');
-        for (var _a = 0, str_1 = str; _a < str_1.length; _a++) {
-            var strVal = str_1[_a];
-            this._logLines.push(strVal);
-        }
-        if (this._file) {
-            this._file.write(str + '\n');
-        }
-        if (this._logLines.length > LOG_LINES) {
-            this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
-        }
-    };
-    Logger._logErr = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._consoleErr.apply(this._console, args);
-        var str = util.format.apply(this._console, args).split('\n');
-        for (var _a = 0, str_2 = str; _a < str_2.length; _a++) {
-            var strVal = str_2[_a];
-            this._logLines.push(strVal);
-        }
-        if (this._file) {
-            this._file.write(str + '\n');
-        }
-        if (this._logLines.length > LOG_LINES) {
-            this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
-        }
-    };
-    Logger.hijack = function (newConsole, file) {
-        if (this._hijacked) {
+    Object.defineProperty(Logger, "console", {
+        get: function () {
+            return this.hijacked ? this.oldConsole : MY_CONSOLE;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Logger, "consoleLog", {
+        get: function () {
+            return this.hijacked ? this.oldConsoleLog : MY_CONSOLE.log;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Logger, "consoleInfo", {
+        get: function () {
+            return this.hijacked ? this.oldConsoleInfo : MY_CONSOLE.info;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Logger, "consoleWarn", {
+        get: function () {
+            return this.hijacked ? this.oldConsoleWarn : MY_CONSOLE.warn;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Logger, "consoleError", {
+        get: function () {
+            return this.hijacked ? this.oldConsoleError : MY_CONSOLE.error;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Logger._log = function (level, args) {
+        if (!this.hijacked) {
             return;
         }
-        this._console = newConsole;
-        this._consoleLog = newConsole.log;
-        this._consoleErr = newConsole.error;
-        console = this._console;
-        this._filePath = file || 'client.log';
-        if (fs.existsSync(this._filePath)) {
-            try {
-                var readLines = fs.readFileSync(this._filePath, 'utf8');
-                console.log(typeof readLines);
-                this._logLines = readLines.split('\n');
-                if (this._logLines.length > LOG_LINES) {
-                    this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
-                }
-            }
-            catch (err) {
-                console.log(err.message + "\n" + err.stack);
-            }
+        var str = util.format.apply(this.console, args).split('\n');
+        this.logger.log(level, str);
+    };
+    Logger.log = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
         }
-        this._file = fs.createWriteStream(this._filePath, {
-            flags: 'a',
-            encoding: 'utf8',
+        this.consoleLog.apply(this.console, args);
+        this._log('info', args);
+    };
+    Logger.info = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        this.consoleInfo.apply(this.console, args);
+        this._log('info', args);
+    };
+    Logger.warn = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        this.consoleWarn.apply(this.console, args);
+        this._log('warn', args);
+    };
+    Logger.error = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        this.consoleError.apply(this.console, args);
+        this._log('error', args);
+    };
+    Logger.createLoggerFromFile = function (file, tag, level) {
+        var _this = this;
+        var tail = new tail_1.Tail(file, {
+            encoding: "utf8",
+            fromBeginning: true,
+            separator: os.EOL,
         });
-        var flushFunc = this._flushFile.bind(this);
-        this._flushInterval = setInterval(flushFunc, 10000);
-        console.log = this._log.bind(this);
-        console.info = this._log.bind(this);
-        console.warn = this._logErr.bind(this);
-        console.error = this._logErr.bind(this);
-        this._hijacked = true;
+        tail.on('line', function (line) {
+            _this.consoleLog.apply(_this.console, ["[" + tag + "] [" + level + "] " + line]);
+            _this._log(level, ["[" + tag + "] " + line]);
+        });
+        tail.on('error', function (err) {
+            _this.consoleError.apply(_this.console, [err]);
+            _this._log('error', ["[" + tag + "] Error while tailing file: ", err]);
+        });
+        return tail;
+    };
+    Logger.hijack = function (c, file) {
+        if (this.hijacked) {
+            return;
+        }
+        console = c;
+        c.log('Hijacking console log');
+        this.hijacked = true;
+        this.oldConsole = c;
+        this.oldConsoleLog = c.log;
+        this.oldConsoleInfo = c.info;
+        this.oldConsoleWarn = c.warn;
+        this.oldConsoleError = c.error;
+        c.log = this.log.bind(this);
+        c.info = this.info.bind(this);
+        c.warn = this.warn.bind(this);
+        c.error = this.error.bind(this);
+        this.file = file || 'client.log';
+        this.logger = winston.createLogger({
+            format: winston.format.combine(winston.format.timestamp(), winston.format.printf(function (info) {
+                // Not sure if this a bug in winston or me misusing it.
+                // For some reason the message is populated on key 0 for the info object.
+                info.message = info[0];
+                return "[" + info.timestamp + "] " + info.level + ": " + info.message;
+            })),
+            transports: [new winston.transports.File({
+                    filename: this.file,
+                    maxsize: 500 * 1024,
+                    maxFiles: 2,
+                    tailable: true,
+                })],
+        });
     };
     Logger.unhijack = function () {
-        if (!this._hijacked) {
+        if (!this.hijacked) {
             return;
         }
-        clearInterval(this._flushInterval);
-        if (this._file) {
-            this._file.close();
-        }
-        fs.writeFileSync(this._filePath, this._logLines.join('\n'));
-        console.log = this._consoleLog;
-        console.info = this._consoleLog;
-        console.warn = this._consoleErr;
-        console.error = this._consoleErr;
-        console = CONSOLE;
-        this._console = console;
-        this._consoleLog = console.log;
-        this._consoleErr = console.error;
-        this._hijacked = false;
+        this.hijacked = false;
+        console = MY_CONSOLE;
+        var c = this.oldConsole;
+        c.log = this.oldConsoleLog;
+        c.info = this.oldConsoleInfo;
+        c.warn = this.oldConsoleWarn;
+        c.error = this.oldConsoleError;
+        c.log('Unhijacked console log');
     };
     Logger.getClientLog = function () {
         return {
-            logLines: this._logLines.slice(),
+            logLines: fs.readFileSync(this.file, { encoding: 'utf8' }).toString().split(os.EOL),
             osInfo: {
                 os: os.platform(),
                 arch: os.arch(),
@@ -135,11 +159,7 @@ var Logger = (function () {
             },
         };
     };
-    Logger._console = CONSOLE;
-    Logger._consoleLog = CONSOLE.log;
-    Logger._consoleErr = CONSOLE.error;
-    Logger._logLines = [];
-    Logger._hijacked = false;
+    Logger.hijacked = false;
     return Logger;
 }());
 exports.Logger = Logger;

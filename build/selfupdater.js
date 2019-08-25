@@ -1,8 +1,11 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -24,8 +27,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -48,7 +51,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var fs_1 = require("./fs");
 var controller_1 = require("./controller");
 var controller_wrapper_1 = require("./controller-wrapper");
-var SelfUpdater = (function () {
+var SelfUpdater = /** @class */ (function () {
     function SelfUpdater() {
     }
     SelfUpdater.attach = function (manifestFile) {
@@ -76,7 +79,7 @@ var SelfUpdater = (function () {
     return SelfUpdater;
 }());
 exports.SelfUpdater = SelfUpdater;
-var SelfUpdaterInstance = (function (_super) {
+var SelfUpdaterInstance = /** @class */ (function (_super) {
     __extends(SelfUpdaterInstance, _super);
     function SelfUpdaterInstance(controller) {
         return _super.call(this, controller) || this;

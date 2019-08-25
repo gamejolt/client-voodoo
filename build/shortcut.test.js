@@ -14,8 +14,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -38,7 +38,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var chai = require("chai");
 var chaiAsPromised = require("chai-as-promised");
 var util_1 = require("./util");
-var test_1 = require("./test");
 var shortcut_1 = require("./shortcut");
 chai.use(chaiAsPromised);
 var expect = chai.expect;
@@ -47,7 +46,7 @@ var iconPath = '/path/to/client-icon';
 describe('Shortcut', function () {
     var _this = this;
     if (process.platform === 'linux') {
-        it('should work', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        it('should work', function () { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -66,10 +65,10 @@ describe('Shortcut', function () {
                         return [2 /*return*/];
                 }
             });
-        }); }));
+        }); });
     }
     else {
-        it('should say operation is not supported', test_1.mochaAsync(function () { return __awaiter(_this, void 0, void 0, function () {
+        it('should say operation is not supported', function () { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, expect(shortcut_1.Shortcut.create(clientPath, iconPath)).to.eventually.rejectedWith('Not supported')];
@@ -78,6 +77,6 @@ describe('Shortcut', function () {
                         return [2 /*return*/];
                 }
             });
-        }); }));
+        }); });
     }
 });

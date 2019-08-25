@@ -8,7 +8,7 @@ export declare abstract class Rollbacker {
 export declare enum RollbackState {
     Starting = 0,
     Rollback = 1,
-    Finished = 2,
+    Finished = 2
 }
 export declare type RollbackEvents = Events & {
     'state': (state: RollbackState) => void;
@@ -17,8 +17,8 @@ export declare class RollbackInstance extends ControllerWrapper<RollbackEvents> 
     private _state;
     private _isPaused;
     constructor(controller: Controller);
-    private getState();
-    private _getState(state);
+    private getState;
+    private _getState;
     readonly state: RollbackState;
     isFinished(): boolean;
     isRunning(): boolean;

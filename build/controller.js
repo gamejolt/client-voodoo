@@ -1,8 +1,11 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -24,8 +27,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -50,8 +53,7 @@ var path = require("path");
 var events_1 = require("./events");
 var reconnector_1 = require("./reconnector");
 var fs_1 = require("./fs");
-// Uncomment to debug joltron output
-// import * as _fs from 'fs';
+var logger_1 = require("./logger");
 var JSONStream = require('JSONStream');
 var ps = require('ps-node');
 function getExecutable() {
@@ -62,7 +64,7 @@ function getExecutable() {
     return path.resolve(__dirname, '..', 'bin', executable);
 }
 exports.getExecutable = getExecutable;
-var SentMessage = (function () {
+var SentMessage = /** @class */ (function () {
     function SentMessage(msg, timeout) {
         var _this = this;
         this.msg = JSON.stringify(msg);
@@ -125,7 +127,7 @@ var SentMessage = (function () {
     };
     return SentMessage;
 }());
-var Controller = (function (_super) {
+var Controller = /** @class */ (function (_super) {
     __extends(Controller, _super);
     function Controller(port, options) {
         var _this = _super.call(this) || this;
@@ -336,19 +338,44 @@ var Controller = (function (_super) {
     };
     Controller.launchNew = function (args, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var runnerExecutable, portArg, port, runnerProc, runnerInstance;
+            var joltronLogs, joltronOut, joltronErr, joltronOutLogger, joltronErrLogger, e_1, runnerExecutable, portArg, port, runnerProc, runnerInstance, e_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        joltronLogs = true;
+                        joltronOut = null;
+                        joltronErr = null;
+                        joltronOutLogger = null;
+                        joltronErrLogger = null;
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 4, , 5]);
+                        return [4 /*yield*/, fs_1.default.createTempFile('joltron-', 'out')];
+                    case 2:
+                        joltronOut = _a.sent();
+                        return [4 /*yield*/, fs_1.default.createTempFile('joltron-', 'err')];
+                    case 3:
+                        joltronErr = _a.sent();
+                        joltronOutLogger = logger_1.Logger.createLoggerFromFile(joltronOut.name, 'joltron', 'info');
+                        joltronErrLogger = logger_1.Logger.createLoggerFromFile(joltronErr.name, 'joltron', 'error');
+                        console.log("Logging joltron output to \"" + joltronOut.name + "\" and \"" + joltronErr.name + "\"");
+                        return [3 /*break*/, 5];
+                    case 4:
+                        e_1 = _a.sent();
+                        console.warn('Failed to make temp log files for joltron. Logs from joltron will be disabled:', e_1);
+                        joltronLogs = false;
+                        return [3 /*break*/, 5];
+                    case 5:
+                        _a.trys.push([5, 7, , 8]);
                         options = options || {
                             detached: true,
                             env: process.env,
-                            stdio: 'ignore',
+                            stdio: joltronLogs ? ['ignore', joltronOut.fd, joltronErr.fd] : 'ignore',
                         };
                         runnerExecutable = getExecutable();
                         // Ensure that the runner is executable.
                         return [4 /*yield*/, fs_1.default.chmod(runnerExecutable, '0755')];
-                    case 1:
+                    case 6:
                         // Ensure that the runner is executable.
                         _a.sent();
                         portArg = args.indexOf('--port');
@@ -364,7 +391,23 @@ var Controller = (function (_super) {
                             keepConnected: !!options.keepConnected,
                         });
                         runnerInstance.connect();
+                        runnerInstance.on('close', function () {
+                            if (joltronLogs) {
+                                joltronOutLogger.unwatch();
+                                joltronErrLogger.unwatch();
+                                joltronLogs = false;
+                            }
+                        });
                         return [2 /*return*/, runnerInstance];
+                    case 7:
+                        e_2 = _a.sent();
+                        if (joltronLogs) {
+                            joltronOutLogger.unwatch();
+                            joltronErrLogger.unwatch();
+                            joltronLogs = false;
+                        }
+                        throw e_2;
+                    case 8: return [2 /*return*/];
                 }
             });
         });
@@ -378,8 +421,8 @@ var Controller = (function (_super) {
     });
     Controller.prototype.connect = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
             var _a, lastErr_1, err_2;
+            var _this = this;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -414,6 +457,7 @@ var Controller = (function (_super) {
                             if (!_this.connectionLock) {
                                 _this.emit('fatal', hasError ? lastErr_1 : new Error("Unexpected disconnection from joltron"));
                             }
+                            _this.emit('close');
                         })
                             .pipe(this.newJsonStream());
                         this.consumeSendQueue();
@@ -422,6 +466,7 @@ var Controller = (function (_super) {
                         err_2 = _b.sent();
                         console.log('Failed to connect in reconnector: ' + err_2.message);
                         this.emit('fatal', err_2);
+                        this.emit('close');
                         throw err_2;
                     case 4:
                         this.connectionLock = false;
@@ -470,8 +515,8 @@ var Controller = (function (_super) {
     };
     Controller.prototype.consumeSendQueue = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
             var err_3;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:

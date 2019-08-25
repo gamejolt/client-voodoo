@@ -7,6 +7,7 @@ export declare function getExecutable(): string;
 export declare type Events = {
     'fatal': (err: Error) => void;
     'err': (err: Error) => void;
+    'close': () => void;
     'gameLaunchBegin': (dir: string, ...args: string[]) => void;
     'gameLaunchFinished': () => void;
     'gameLaunchFailed': (reason: string) => void;
@@ -57,16 +58,16 @@ export declare class Controller extends TSEventEmitter<Events> {
     private expectingQueuePause;
     private expectingQueueResume;
     constructor(port: number, options?: Options);
-    private newJsonStream();
+    private newJsonStream;
     static ensureMigrationFile(localPackage: GameJolt.IGamePackage): Promise<void>;
     static launchNew(args: string[], options?: LaunchOptions): Promise<Controller>;
     readonly connected: boolean;
     connect(): Promise<void>;
     disconnect(): Promise<void>;
     dispose(): Promise<void>;
-    private consumeSendQueue();
-    private send<T>(type, payload, timeout?);
-    private sendControl(command, extraData?, timeout?);
+    private consumeSendQueue;
+    private send;
+    private sendControl;
     sendKillGame(timeout?: number): Promise<data.MsgResultResponse>;
     sendPause(options?: {
         queue?: boolean;
@@ -81,7 +82,7 @@ export declare class Controller extends TSEventEmitter<Events> {
     sendCancel(timeout?: number, waitOnlyForSend?: boolean): Promise<void> | Promise<data.MsgResultResponse>;
     sendGetState(includePatchInfo: boolean, timeout?: number): Promise<data.MsgStateResponse>;
     sendCheckForUpdates(gameUID: string, platformURL: string, authToken?: string, metadata?: string, timeout?: number): Promise<data.MsgResultResponse>;
-    sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number): Promise<{}>;
+    sendUpdateAvailable(updateMetadata: data.UpdateMetadata, timeout?: number): Promise<unknown>;
     sendUpdateBegin(timeout?: number): Promise<data.MsgResultResponse>;
     sendUpdateApply(env: Object, args: string[], timeout?: number): Promise<data.MsgResultResponse>;
     kill(): Promise<void>;

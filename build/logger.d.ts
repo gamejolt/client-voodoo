@@ -1,3 +1,4 @@
+import { Tail } from 'tail';
 export interface IClientLog {
     logLines: string[];
     osInfo: IClientOSInfo;
@@ -11,19 +12,27 @@ export interface IClientOSInfo {
     totalMemory: number;
     cpuCount: number;
 }
-export declare abstract class Logger {
-    private static _console;
-    private static _consoleLog;
-    private static _consoleErr;
-    private static _logLines;
-    private static _hijacked;
-    private static _file;
-    private static _filePath;
-    private static _flushInterval;
-    private static _flushFile();
-    private static _log(...args);
-    private static _logErr(...args);
-    static hijack(newConsole: Console, file?: string): void;
+export declare class Logger {
+    private static hijacked;
+    private static file;
+    private static logger;
+    private static oldConsole;
+    private static oldConsoleLog;
+    private static oldConsoleInfo;
+    private static oldConsoleWarn;
+    private static oldConsoleError;
+    private static readonly console;
+    private static readonly consoleLog;
+    private static readonly consoleInfo;
+    private static readonly consoleWarn;
+    private static readonly consoleError;
+    private static _log;
+    static log(...args: any[]): void;
+    static info(...args: any[]): void;
+    static warn(...args: any[]): void;
+    static error(...args: any[]): void;
+    static createLoggerFromFile(file: string, tag: string, level: string): Tail;
+    static hijack(c: Console, file?: string): void;
     static unhijack(): void;
     static getClientLog(): IClientLog;
 }

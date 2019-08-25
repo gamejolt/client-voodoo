@@ -8,8 +8,8 @@ export interface IParsedWrapper {
 export declare abstract class Launcher {
     static launch(localPackage: GameJolt.IGamePackage, credentials: GameJolt.IGameCredentials | null, ...executableArgs: string[]): Promise<LaunchInstance>;
     static attach(runningPid: string | IParsedWrapper): Promise<LaunchInstance | OldLaunchInstance>;
-    private static ensureCredentials(localPackage, credentials);
-    private static manageInstanceInQueue<T>(instance);
+    private static ensureCredentials;
+    private static manageInstanceInQueue;
 }
 export declare type LaunchEvents = Events & {
     'gameOver': (errMessage?: string) => void;
