@@ -6,9 +6,8 @@ import { TSEventEmitter } from './events';
 import { Reconnector } from './reconnector';
 import fs from './fs';
 import * as GameJolt from './gamejolt';
-
-// Uncomment to debug joltron output
-// import * as _fs from 'fs';
+import { Logger } from './logger';
+import { Tail } from 'tail';
 
 const JSONStream = require('JSONStream');
 const ps = require('ps-node');
@@ -104,6 +103,8 @@ export type Events = {
 	'fatal': (err: Error) => void;
 	// called when an error happens which isn't severe enough to prevent future operations on the controller
 	'err': (err: Error) => void;
+	// called when the controller is closed (after connection was permanently closed or a fatal error)
+	'close': () => void;
 	// called when a launch operation begins
 	'gameLaunchBegin': (dir: string, ...args: string[]) => void;
 	// called when the launch operation ends completely
@@ -222,8 +223,8 @@ export class Controller extends TSEventEmitter<Events> {
 						return this.sentMessage.reject(
 							new Error(
 								'Missing `payload` field in response' +
-									' in ' +
-									JSON.stringify(data_)
+								' in ' +
+								JSON.stringify(data_)
 							)
 						);
 					}
@@ -249,9 +250,9 @@ export class Controller extends TSEventEmitter<Events> {
 							return this.sentMessage.reject(
 								new Error(
 									'Unexpected `type` value: ' +
-										type +
-										' in ' +
-										JSON.stringify(data_)
+									type +
+									' in ' +
+									JSON.stringify(data_)
 								)
 							);
 					}
@@ -372,9 +373,9 @@ export class Controller extends TSEventEmitter<Events> {
 									'err',
 									new Error(
 										'Unexpected update `message` value: ' +
-											message +
-											' in ' +
-											JSON.stringify(data_)
+										message +
+										' in ' +
+										JSON.stringify(data_)
 									)
 								);
 						}
@@ -426,44 +427,67 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	static async launchNew(args: string[], options?: LaunchOptions) {
-		options = options || {
-			detached: true,
-			env: process.env,
-			stdio: 'ignore',
+		let joltronLogs = true;
+		let joltronOut: { name: string, fd: number } | null = null;
+		let joltronErr: { name: string, fd: number } | null = null;
+		let joltronOutLogger: Tail | null = null;
+		let joltronErrLogger: Tail | null = null;
 
-			// Uncomment to debug joltron output
-			// stdio: ['ignore', _fs.openSync('joltron.log', 'a'), _fs.openSync('joltron.log', 'a')],
-		};
-
-		let runnerExecutable = getExecutable();
-
-		// Ensure that the runner is executable.
-		await fs.chmod(runnerExecutable, '0755');
-
-		const portArg = args.indexOf('--port');
-		if (portArg === -1) {
-			throw new Error(`Can't launch a new instance without specifying a port number`);
+		try {
+			joltronOut = await fs.createTempFile('joltron-', 'out');
+			joltronErr = await fs.createTempFile('joltron-', 'err');
+			joltronOutLogger = Logger.createLoggerFromFile(joltronOut.name, 'joltron', 'info');
+			joltronErrLogger = Logger.createLoggerFromFile(joltronErr.name, 'joltron', 'error');
+			console.log(`Logging joltron output to "${joltronOut.name}" and "${joltronErr.name}"`);
+		} catch (e) {
+			console.warn('Failed to make temp log files for joltron. Logs from joltron will be disabled:', e);
+			joltronLogs = false;
 		}
-		const port = parseInt(args[portArg + 1], 10);
 
-		console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
-		const runnerProc = cp.spawn(runnerExecutable, args, options);
-		runnerProc.unref();
+		try {
+			options = options || {
+				detached: true,
+				env: process.env,
+				stdio: joltronLogs ? ['ignore', joltronOut.fd, joltronErr.fd] : 'ignore',
+			};
 
-		const runnerInstance = new Controller(port, {
-			process: runnerProc.pid,
-			keepConnected: !!options.keepConnected,
-		});
-		runnerInstance.connect();
-		return runnerInstance;
+			let runnerExecutable = getExecutable();
 
-		// try {
-		// 	await runnerInstance.connect();
-		// 	return runnerInstance;
-		// } catch (err) {
-		// 	await runnerInstance.kill();
-		// 	throw err;
-		// }
+			// Ensure that the runner is executable.
+			await fs.chmod(runnerExecutable, '0755');
+
+			const portArg = args.indexOf('--port');
+			if (portArg === -1) {
+				throw new Error(`Can't launch a new instance without specifying a port number`);
+			}
+			const port = parseInt(args[portArg + 1], 10);
+
+			console.log('Spawning ' + runnerExecutable + ' "' + args.join('" "') + '"');
+			const runnerProc = cp.spawn(runnerExecutable, args, options);
+			runnerProc.unref();
+
+			const runnerInstance = new Controller(port, {
+				process: runnerProc.pid,
+				keepConnected: !!options.keepConnected,
+			});
+			runnerInstance.connect();
+			runnerInstance.on('close', () => {
+				if (joltronLogs) {
+					joltronOutLogger.unwatch();
+					joltronErrLogger.unwatch();
+					joltronLogs = false;
+				}
+			});
+
+			return runnerInstance;
+		} catch (e) {
+			if (joltronLogs) {
+				joltronOutLogger.unwatch();
+				joltronErrLogger.unwatch();
+				joltronLogs = false;
+			}
+			throw e;
+		}
 	}
 
 	get connected() {
@@ -493,7 +517,7 @@ export class Controller extends TSEventEmitter<Events> {
 						this.sentMessage.reject(
 							new Error(
 								`Disconnected before receiving message response` +
-									(hasError ? `: ${lastErr.message}` : '')
+								(hasError ? `: ${lastErr.message}` : '')
 							)
 						);
 					}
@@ -511,6 +535,8 @@ export class Controller extends TSEventEmitter<Events> {
 							hasError ? lastErr : new Error(`Unexpected disconnection from joltron`)
 						);
 					}
+
+					this.emit('close');
 				})
 				.pipe(this.newJsonStream());
 
@@ -518,6 +544,7 @@ export class Controller extends TSEventEmitter<Events> {
 		} catch (err) {
 			console.log('Failed to connect in reconnector: ' + err.message);
 			this.emit('fatal', err);
+			this.emit('close');
 			throw err;
 		} finally {
 			this.connectionLock = false;
@@ -576,7 +603,7 @@ export class Controller extends TSEventEmitter<Events> {
 
 			try {
 				await this.sentMessage.resultPromise;
-			} catch (err) {}
+			} catch (err) { }
 			this.sentMessage = null;
 		}
 

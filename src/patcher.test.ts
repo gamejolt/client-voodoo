@@ -3,28 +3,15 @@ import * as chaiAsPromised from 'chai-as-promised';
 import { Patcher } from './patcher';
 import * as path from 'path';
 import { Launcher } from './launcher';
-import { mochaAsync } from './test';
 import * as GameJolt from './gamejolt';
 
 chai.use(chaiAsPromised);
-// const expect = chai.expect;
 
-describe('Patcher', function() {
-	// function wrapAll( promises: Promise<any>[] )
-	// {
-	// 	const result: Promise<{ success: boolean, value: any }>[] = [];
-	// 	for ( let p of promises ) {
-	// 		result.push( p
-	// 			.then( ( value ) => { return { success: true, value: value } } )
-	// 			.catch( ( err ) => { return { success: false, value: err } } )
-	// 		);
-	// 	}
-	// 	return Promise.all( result );
-	// }
+describe('Patcher', function () {
 
 	it(
 		'should do a patch',
-		mochaAsync(async () => {
+		async () => {
 			let localPackage: GameJolt.IGamePackage = {
 				id: 119886,
 				game_id: 42742,
@@ -101,6 +88,6 @@ describe('Patcher', function() {
 					resolve();
 				});
 			});
-		})
+		}
 	);
 });

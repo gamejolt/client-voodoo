@@ -1,9 +1,10 @@
-import * as util from 'util';
 import * as os from 'os';
+import * as winston from 'winston';
+import * as util from 'util';
 import * as fs from 'fs';
+import { Tail } from 'tail';
 
-const LOG_LINES = 300;
-const CONSOLE = console;
+const MY_CONSOLE = console;
 
 export interface IClientLog {
 	logLines: string[];
@@ -20,135 +21,148 @@ export interface IClientOSInfo {
 	cpuCount: number;
 }
 
-export abstract class Logger {
-	private static _console = CONSOLE;
-	private static _consoleLog = CONSOLE.log;
-	private static _consoleErr = CONSOLE.error;
+export class Logger {
+	private static hijacked = false;
+	private static file: string;
+	private static logger: winston.Logger;
 
-	private static _logLines: string[] = [];
-	private static _hijacked = false;
-	private static _file: fs.WriteStream;
-	private static _filePath: string;
-	private static _flushInterval: NodeJS.Timer;
+	private static oldConsole: Console;
+	private static oldConsoleLog: typeof Console.prototype.log;
+	private static oldConsoleInfo: typeof Console.prototype.info;
+	private static oldConsoleWarn: typeof Console.prototype.warn;
+	private static oldConsoleError: typeof Console.prototype.error;
 
-	private static _flushFile() {
-		try {
-			if (this._file) {
-				this._file.close();
-			}
-			this._file = null;
-			if (fs.existsSync(this._filePath)) {
-				fs.unlinkSync(this._filePath);
-			}
-			let str = this._logLines.join('\n') + '\n';
-			fs.writeFileSync(this._filePath, str);
-			let logLineLength = this._logLines.join('\n').length,
-				logLineCount = this._logLines.length;
-			this._consoleLog.apply(this._console, [
-				`Flushing log file of length ${logLineLength} with ${logLineCount} rows`,
-			]);
-			this._file = fs.createWriteStream(this._filePath, {
-				flags: 'a',
-				encoding: 'utf8',
-			});
-		} catch (err) {
-			this._consoleLog.apply(this._console, [`${err.message}\n${err.stack}`]);
-		}
+	private static get console() {
+		return this.hijacked ? this.oldConsole : MY_CONSOLE;
 	}
 
-	private static _log(...args: any[]) {
-		this._consoleLog.apply(this._console, args);
-		let str = util.format.apply(this._console, args).split('\n');
-		for (let strVal of str) {
-			this._logLines.push(strVal);
-		}
-		if (this._file) {
-			this._file.write(str + '\n');
-		}
-		if (this._logLines.length > LOG_LINES) {
-			this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
-		}
+	private static get consoleLog() {
+		return this.hijacked ? this.oldConsoleLog : MY_CONSOLE.log;
 	}
 
-	private static _logErr(...args: any[]) {
-		this._consoleErr.apply(this._console, args);
-		let str = util.format.apply(this._console, args).split('\n');
-		for (let strVal of str) {
-			this._logLines.push(strVal);
-		}
-		if (this._file) {
-			this._file.write(str + '\n');
-		}
-		if (this._logLines.length > LOG_LINES) {
-			this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
-		}
+	private static get consoleInfo() {
+		return this.hijacked ? this.oldConsoleInfo : MY_CONSOLE.info;
 	}
 
-	static hijack(newConsole: Console, file?: string) {
-		if (this._hijacked) {
+	private static get consoleWarn() {
+		return this.hijacked ? this.oldConsoleWarn : MY_CONSOLE.warn;
+	}
+
+	private static get consoleError() {
+		return this.hijacked ? this.oldConsoleError : MY_CONSOLE.error;
+	}
+
+	private static _log(level: string, args: any[]) {
+		if (!this.hijacked) {
 			return;
 		}
 
-		this._console = newConsole;
-		this._consoleLog = newConsole.log;
-		this._consoleErr = newConsole.error;
-		console = this._console;
+		let str = util.format.apply(this.console, args).split('\n');
+		this.logger.log(level, str);
+	}
 
-		this._filePath = file || 'client.log';
-		if (fs.existsSync(this._filePath)) {
-			try {
-				let readLines = fs.readFileSync(this._filePath, 'utf8');
-				console.log(typeof readLines);
-				this._logLines = readLines.split('\n');
-				if (this._logLines.length > LOG_LINES) {
-					this._logLines = this._logLines.slice(this._logLines.length - LOG_LINES);
-				}
-			} catch (err) {
-				console.log(`${err.message}\n${err.stack}`);
-			}
-		}
-		this._file = fs.createWriteStream(this._filePath, {
-			flags: 'a',
-			encoding: 'utf8',
+	static log(...args: any[]) {
+		this.consoleLog.apply(this.console, args);
+		this._log('info', args);
+	}
+
+	static info(...args: any[]) {
+		this.consoleInfo.apply(this.console, args);
+		this._log('info', args);
+	}
+
+	static warn(...args: any[]) {
+		this.consoleWarn.apply(this.console, args);
+		this._log('warn', args);
+	}
+
+	static error(...args: any[]) {
+		this.consoleError.apply(this.console, args);
+		this._log('error', args);
+	}
+
+	static createLoggerFromFile(file: string, tag: string, level: string): Tail {
+		const tail = new Tail(file, {
+			encoding: "utf8",
+			fromBeginning: true,
+			separator: os.EOL,
 		});
-		let flushFunc: typeof Logger._flushFile = this._flushFile.bind(this);
-		this._flushInterval = setInterval(flushFunc, 10000);
 
-		console.log = this._log.bind(this);
-		console.info = this._log.bind(this);
-		console.warn = this._logErr.bind(this);
-		console.error = this._logErr.bind(this);
+		tail.on('line', line => {
+			this.consoleLog.apply(this.console, [`[${tag}] [${level}] ${line}`]);
+			this._log(level, [`[${tag}] ${line}`]);
+		});
 
-		this._hijacked = true;
+		tail.on('error', err => {
+			this.consoleError.apply(this.console, [err]);
+			this._log('error', [`[${tag}] Error while tailing file: `, err])
+		})
+
+		return tail;
+	}
+
+	static hijack(c: Console, file?: string) {
+		if (this.hijacked) {
+			return;
+		}
+
+		console = c;
+		c.log('Hijacking console log');
+
+		this.hijacked = true;
+
+		this.oldConsole = c;
+		this.oldConsoleLog = c.log;
+		this.oldConsoleInfo = c.info;
+		this.oldConsoleWarn = c.warn;
+		this.oldConsoleError = c.error;
+
+		c.log = this.log.bind(this);
+		c.info = this.info.bind(this);
+		c.warn = this.warn.bind(this);
+		c.error = this.error.bind(this);
+
+		this.file = file || 'client.log';
+		this.logger = winston.createLogger({
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				winston.format.printf((info) => {
+					// Not sure if this a bug in winston or me misusing it.
+					// For some reason the message is populated on key 0 for the info object.
+					info.message = info[0];
+
+					return `[${info.timestamp}] ${info.level}: ${info.message}`
+				}),
+			),
+			transports: [new winston.transports.File({
+				filename: this.file,
+				maxsize: 500 * 1024, // 500 KB
+				maxFiles: 2,
+				tailable: true,
+			})],
+		});
 	}
 
 	static unhijack() {
-		if (!this._hijacked) {
+		if (!this.hijacked) {
 			return;
 		}
 
-		clearInterval(this._flushInterval);
-		if (this._file) {
-			this._file.close();
-		}
-		fs.writeFileSync(this._filePath, this._logLines.join('\n'));
+		this.hijacked = false;
 
-		console.log = this._consoleLog;
-		console.info = this._consoleLog;
-		console.warn = this._consoleErr;
-		console.error = this._consoleErr;
+		console = MY_CONSOLE;
+		const c = this.oldConsole;
+		c.log = this.oldConsoleLog;
+		c.info = this.oldConsoleInfo;
+		c.warn = this.oldConsoleWarn;
+		c.error = this.oldConsoleError;
 
-		console = CONSOLE;
-		this._console = console;
-		this._consoleLog = console.log;
-		this._consoleErr = console.error;
-
-		this._hijacked = false;
+		c.log('Unhijacked console log');
 	}
 
 	static getClientLog(): IClientLog {
 		return {
-			logLines: this._logLines.slice(),
+			logLines: fs.readFileSync(this.file, { encoding: 'utf8' }).toString().split(os.EOL),
 			osInfo: {
 				os: os.platform(),
 				arch: os.arch(),

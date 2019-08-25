@@ -1,31 +1,33 @@
-import { EventEmitter } from 'events';
+import * as EventEmitter from 'events';
 
-export class TSEventEmitter<E extends { [event: string]: Function }> extends EventEmitter {
+type EventListener = (...args: any[]) => void;
+
+export class TSEventEmitter<E extends { [event: string]: EventListener }> extends EventEmitter {
 	constructor() {
 		super();
 	}
 
-	addListener<T extends keyof E>(event: T, listener: E[T]) {
+	addListener<T extends Extract<keyof E, string>>(event: T, listener: E[T]) {
 		return super.addListener(event + '', listener);
 	}
 
-	listeners(event: keyof E) {
+	listeners(event: Extract<keyof E, string>) {
 		return super.listeners(event + '');
 	}
 
-	on<T extends keyof E>(event: T, listener: E[T]) {
+	on<T extends Extract<keyof E, string>>(event: T, listener: E[T]) {
 		return super.on(event + '', listener);
 	}
 
-	once<T extends keyof E>(event: T, listener: E[T]) {
+	once<T extends Extract<keyof E, string>>(event: T, listener: E[T]) {
 		return super.once(event + '', listener);
 	}
 
-	removeAllListeners(event?: keyof E) {
+	removeAllListeners(event?: Extract<keyof E, string>) {
 		return super.removeAllListeners(event + '');
 	}
 
-	removeListener<T extends keyof E>(event: T, listener: E[T]) {
+	removeListener<T extends Extract<keyof E, string>>(event: T, listener: E[T]) {
 		return super.removeListener(event + '', listener);
 	}
 }

@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as tmp from 'tmp';
+import * as os from 'os';
 
 export default class FsAsync {
 	static writeFile(
@@ -62,6 +64,27 @@ export default class FsAsync {
 					return reject(err);
 				}
 				return resolve();
+			});
+		});
+	}
+
+	static createTempFile(prefix: string, ext: string) {
+		return new Promise<{ name: string, fd: number }>((resolve, reject) => {
+			const opts: tmp.FileOptions = {
+				dir: os.tmpdir(),
+				prefix: prefix,
+				postfix: `.${ext}`,
+
+				// Makes the application not remove the file on end and return it's fd.
+				detachDescriptor: true,
+				keep: true,
+			};
+
+			tmp.file(opts, (err: any, name: string, fd: number) => {
+				if (err) {
+					return reject(err);
+				}
+				return resolve({ name, fd });
 			});
 		});
 	}

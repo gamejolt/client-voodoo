@@ -15,7 +15,7 @@ export abstract class Config {
 	private static clientMutex: IMutexInstance = null;
 
 	static get domain() {
-		const isDev = this.env === 'development' || process.env === 'development';
+		const isDev = this.env === 'development' || process.env['env'] === 'development' || process.env['ENV'] === 'development';
 		return isDev ? 'http://development.gamejolt.com' : 'https://gamejolt.com';
 	}
 	static get pid_dir() {
