@@ -142,6 +142,7 @@ var Reconnector = /** @class */ (function (_super) {
             var conn = net
                 .connect(options)
                 .on('connect', function () {
+                console.log('socket.connect.open');
                 conn.removeListener('error', onError);
                 conn.removeListener('close', onClose);
                 conn.on('close', function () {
