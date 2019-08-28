@@ -78,6 +78,8 @@ export class Reconnector extends TSEventEmitter<Events> {
 			const conn = net
 				.connect(options)
 				.on('connect', () => {
+					console.log('socket.connect.open');
+
 					conn.removeListener('error', onError);
 					conn.removeListener('close', onClose);
 
