@@ -4,7 +4,9 @@ import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 import { getExecutable } from './controller';
 
-const joltronVersion = 'v2.2.4-beta';
+const packageJson = require('../package.json');
+const joltronVersion = packageJson.joltronVersion;
+
 const https = require('follow-redirects').https as typeof _https;
 
 async function doTheThing() {
