@@ -133,7 +133,8 @@ var Controller = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.connectionLock = null;
         _this.conn = null;
-        _this.nextMessageId = 0;
+        _this._nextMessageId = -1;
+        _this.sequentialMessageId = false;
         _this.sendQueue = [];
         _this.sentMessage = null;
         _this.consumingQueue = false;
@@ -146,9 +147,21 @@ var Controller = /** @class */ (function (_super) {
         if (options.process) {
             _this.process = options.process;
         }
+        if (options.sequentialMessageId) {
+            _this.sequentialMessageId = true;
+        }
         _this.reconnector = new reconnector_1.Reconnector(100, 3000, !!options.keepConnected);
         return _this;
     }
+    Controller.prototype.nextMessageId = function () {
+        if (this.sequentialMessageId) {
+            this._nextMessageId++;
+        }
+        else {
+            this._nextMessageId = Math.trunc(Math.random() * Number.MAX_SAFE_INTEGER);
+        }
+        return this._nextMessageId.toString();
+    };
     Controller.prototype.newJsonStream = function () {
         var _this = this;
         return JSONStream.parse()
@@ -573,7 +586,7 @@ var Controller = /** @class */ (function (_super) {
     Controller.prototype.send = function (type, payload, timeout) {
         var msgData = {
             type: type,
-            msgId: (this.nextMessageId++).toString(),
+            msgId: this.nextMessageId(),
             payload: payload,
         };
         console.log('Sending ' + JSON.stringify(msgData));

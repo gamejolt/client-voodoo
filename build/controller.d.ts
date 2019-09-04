@@ -39,6 +39,7 @@ export declare type Events = {
 export declare type Options = {
     process?: cp.ChildProcess | number;
     keepConnected?: boolean;
+    sequentialMessageId?: boolean;
 };
 export declare type LaunchOptions = cp.SpawnOptions & {
     keepConnected?: boolean;
@@ -49,7 +50,8 @@ export declare class Controller extends TSEventEmitter<Events> {
     private reconnector;
     private connectionLock;
     private conn;
-    private nextMessageId;
+    private _nextMessageId;
+    private sequentialMessageId;
     private sendQueue;
     private sentMessage;
     private consumingQueue;
@@ -58,6 +60,7 @@ export declare class Controller extends TSEventEmitter<Events> {
     private expectingQueuePause;
     private expectingQueueResume;
     constructor(port: number, options?: Options);
+    private nextMessageId;
     private newJsonStream;
     static ensureMigrationFile(localPackage: GameJolt.IGamePackage): Promise<void>;
     static launchNew(args: string[], options?: LaunchOptions): Promise<Controller>;

@@ -61,6 +61,13 @@ describe('Joltron Controller', function () {
     function sleep(ms) {
         return new Promise(function (resolve) { return setTimeout(resolve, ms); });
     }
+    // Creates a newController suitable for testing.
+    // We need sequential message ids to mock responses reliably.
+    function newController(port, options) {
+        options = options || {};
+        options.sequentialMessageId = true;
+        return new controller_1.Controller(port, options);
+    }
     function mockRunner(onConnection) {
         var mockId = nextMockId++;
         console.log("created mock #" + mockId);
@@ -104,7 +111,7 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     resolve = null;
                     waitForConnect = new Promise(function (_resolve) {
                         resolve = _resolve;
@@ -143,7 +150,7 @@ describe('Joltron Controller', function () {
                         console.log('set the thing');
                         connected = true;
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -174,7 +181,7 @@ describe('Joltron Controller', function () {
                     mockRunner(function (socket) {
                         connectCount++;
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -202,7 +209,7 @@ describe('Joltron Controller', function () {
                     mockRunner(function (socket) {
                         connectCount++;
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     conn1 = inst.connect();
                     conn2 = inst.connect();
                     return [4 /*yield*/, wrapAll([conn1, conn2])];
@@ -236,7 +243,7 @@ describe('Joltron Controller', function () {
                             connected = false;
                         });
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -278,7 +285,7 @@ describe('Joltron Controller', function () {
                             disconnectCount++;
                         });
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -323,7 +330,7 @@ describe('Joltron Controller', function () {
                             disconnectCount++;
                         });
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -364,7 +371,7 @@ describe('Joltron Controller', function () {
                     mockRunner(function (socket) {
                         wasConnected = true;
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     conn1 = inst.connect();
                     conn2 = inst.disconnect();
                     return [4 /*yield*/, wrapAll([conn1, conn2])];
@@ -393,7 +400,7 @@ describe('Joltron Controller', function () {
                     mockRunner(function (socket) {
                         connectionCount++;
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -436,7 +443,7 @@ describe('Joltron Controller', function () {
                             connected = true;
                         });
                     }, 2000);
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -466,7 +473,7 @@ describe('Joltron Controller', function () {
                             resolve();
                         }, 7000);
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, wrapAll([inst.connect()])];
                 case 1:
                     result = (_a.sent())[0];
@@ -493,7 +500,7 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     resolveConnected = null;
                     waitForConnect = new Promise(function (_resolve) {
                         resolveConnected = _resolve;
@@ -538,7 +545,7 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new controller_1.Controller(1337, { keepConnected: true });
+                    inst = newController(1337, { keepConnected: true });
                     wasConnected = false;
                     resolveConnected = null;
                     waitForConnect = new Promise(function (_resolve) {
@@ -597,7 +604,7 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     connections = 0;
                     resolveConnected = null;
                     waitForConnect = new Promise(function (_resolve) {
@@ -686,7 +693,7 @@ describe('Joltron Controller', function () {
                             command: 'kill',
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -713,7 +720,7 @@ describe('Joltron Controller', function () {
                             command: 'pause',
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -741,7 +748,7 @@ describe('Joltron Controller', function () {
                             extraData: {},
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -768,7 +775,7 @@ describe('Joltron Controller', function () {
                             command: 'cancel',
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -795,7 +802,7 @@ describe('Joltron Controller', function () {
                             includePatchInfo: true,
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -822,7 +829,7 @@ describe('Joltron Controller', function () {
                             includePatchInfo: false,
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -850,7 +857,7 @@ describe('Joltron Controller', function () {
                             platformURL: '2',
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -880,7 +887,7 @@ describe('Joltron Controller', function () {
                             metadata: '4',
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -907,7 +914,7 @@ describe('Joltron Controller', function () {
                             test: true,
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -932,7 +939,7 @@ describe('Joltron Controller', function () {
                         msgId: '0',
                         payload: {},
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -960,7 +967,7 @@ describe('Joltron Controller', function () {
                             args: ['1', '2', '3'],
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
@@ -991,7 +998,7 @@ describe('Joltron Controller', function () {
                             success: true,
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -1052,7 +1059,7 @@ describe('Joltron Controller', function () {
                             },
                         },
                     ]);
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _b.sent();
@@ -1106,7 +1113,7 @@ describe('Joltron Controller', function () {
                             success: true,
                         },
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     connected = false;
                     resolvedMock = false;
                     promises = Promise.all([
@@ -1149,7 +1156,7 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     race = Promise.race([
                         inst.sendUpdateBegin(1000).then(function (value) {
                             throw new Error('Sending message somehow worked');
@@ -1177,7 +1184,7 @@ describe('Joltron Controller', function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     race = Promise.race([
                         inst.sendUpdateBegin().then(function () {
                             throw new Error('send should not have finished');
@@ -1214,7 +1221,7 @@ describe('Joltron Controller', function () {
                         });
                         setTimeout(function () { return reject(new Error('Did not receive any data in time')); }, 2000);
                     });
-                    inst = new controller_1.Controller(1337);
+                    inst = newController(1337);
                     return [4 /*yield*/, inst.connect()];
                 case 1:
                     _a.sent();
