@@ -165,6 +165,7 @@ export type Events = {
 export type Options = {
 	process?: cp.ChildProcess | number;
 	keepConnected?: boolean;
+	sequentialMessageId?: boolean;
 };
 
 export type LaunchOptions = cp.SpawnOptions & {
@@ -177,7 +178,8 @@ export class Controller extends TSEventEmitter<Events> {
 	private reconnector: Reconnector;
 	private connectionLock: boolean = null;
 	private conn: net.Socket | null = null;
-	private nextMessageId = 0;
+	private _nextMessageId = -1;
+	private sequentialMessageId = false;
 	private sendQueue: SentMessage<any>[] = [];
 	private sentMessage: SentMessage<any> | null = null;
 	private consumingQueue = false;
@@ -194,8 +196,21 @@ export class Controller extends TSEventEmitter<Events> {
 		if (options.process) {
 			this.process = options.process;
 		}
+		if (options.sequentialMessageId) {
+			this.sequentialMessageId = true;
+		}
 
 		this.reconnector = new Reconnector(100, 3000, !!options.keepConnected);
+	}
+
+	private nextMessageId() {
+		if (this.sequentialMessageId) {
+			this._nextMessageId++;
+		} else {
+			this._nextMessageId = Math.trunc(Math.random() * Number.MAX_SAFE_INTEGER);
+		}
+
+		return this._nextMessageId.toString();
 	}
 
 	private newJsonStream() {
@@ -613,7 +628,7 @@ export class Controller extends TSEventEmitter<Events> {
 	private send<T>(type: string, payload: Object, timeout?: number) {
 		const msgData = {
 			type: type,
-			msgId: (this.nextMessageId++).toString(),
+			msgId: this.nextMessageId(),
 			payload: payload,
 		};
 		console.log('Sending ' + JSON.stringify(msgData));

@@ -1,5 +1,5 @@
 import * as net from 'net';
-import { Controller } from './controller';
+import { Controller, Options } from './controller';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as stream from 'stream';
@@ -28,6 +28,14 @@ describe('Joltron Controller', function () {
 
 	function sleep(ms: number) {
 		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	// Creates a newController suitable for testing.
+	// We need sequential message ids to mock responses reliably.
+	function newController(port: number, options?: Options) {
+		options = options || {};
+		options.sequentialMessageId = true;
+		return new Controller(port, options);
 	}
 
 	function mockRunner(onConnection: (socket: net.Socket) => void) {
@@ -78,7 +86,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should attach to running instance',
 		async () => {
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 
 			let resolve = null;
 			const waitForConnect = new Promise(_resolve => {
@@ -110,7 +118,7 @@ describe('Joltron Controller', function () {
 				connected = true;
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			expect(inst.connected, 'runner connection status').to.equal(true);
 
@@ -132,7 +140,7 @@ describe('Joltron Controller', function () {
 				connectCount++;
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			await inst.connect();
 			expect(inst.connected, 'runner connection status').to.equal(true);
@@ -151,7 +159,7 @@ describe('Joltron Controller', function () {
 				connectCount++;
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 
 			const conn1 = inst.connect();
 			const conn2 = inst.connect();
@@ -181,7 +189,7 @@ describe('Joltron Controller', function () {
 				});
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 
 			// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -213,7 +221,7 @@ describe('Joltron Controller', function () {
 				});
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 
 			// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -246,7 +254,7 @@ describe('Joltron Controller', function () {
 				});
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 
 			// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -277,7 +285,7 @@ describe('Joltron Controller', function () {
 				wasConnected = true;
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			const conn1 = inst.connect();
 			const conn2 = inst.disconnect();
 			const [result1, result2] = await wrapAll([conn1, conn2]);
@@ -301,7 +309,7 @@ describe('Joltron Controller', function () {
 				connectionCount++;
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 
 			// Sleep is just to ensure the test would be accurate to the disconnect itself.
@@ -335,7 +343,7 @@ describe('Joltron Controller', function () {
 				});
 			}, 2000);
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			expect(inst.connected, 'runner connection status').to.equal(true);
 
@@ -360,7 +368,7 @@ describe('Joltron Controller', function () {
 				}, 7000);
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			const [result] = await wrapAll([inst.connect()]);
 			expect(result.success, 'connection result').to.equal(false);
 			expect(inst.connected, 'runner connection status').to.equal(false);
@@ -378,7 +386,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should emit a "fatal" event when joltron disconnects unexpectedly',
 		async () => {
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 
 			let resolveConnected = null;
 			const waitForConnect = new Promise(_resolve => {
@@ -415,7 +423,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should retry connection if the controller is set to keep connection alive',
 		async () => {
-			const inst = new Controller(1337, { keepConnected: true });
+			const inst = newController(1337, { keepConnected: true });
 
 			let wasConnected = false;
 
@@ -465,7 +473,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should not retry connection if the controller is not set to keep connection alive',
 		async () => {
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 
 			let connections = 0;
 
@@ -558,7 +566,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendKillGame();
 			await mockPromise;
@@ -577,7 +585,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendPause();
 			await mockPromise;
@@ -597,7 +605,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendResume();
 			await mockPromise;
@@ -616,7 +624,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendCancel();
 			await mockPromise;
@@ -635,7 +643,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendGetState(true);
 			await mockPromise;
@@ -654,7 +662,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendGetState(false);
 			await mockPromise;
@@ -674,7 +682,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendCheckForUpdates('1', '2');
 			await mockPromise;
@@ -696,7 +704,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendCheckForUpdates('1', '2', '3', '4');
 			await mockPromise;
@@ -715,7 +723,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendUpdateAvailable({ test: true } as any);
 			await mockPromise;
@@ -732,7 +740,7 @@ describe('Joltron Controller', function () {
 				payload: {},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendUpdateBegin();
 			await mockPromise;
@@ -752,7 +760,7 @@ describe('Joltron Controller', function () {
 				},
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			inst.sendUpdateApply({ var1: true, var2: false }, ['1', '2', '3']);
 			await mockPromise;
@@ -778,7 +786,7 @@ describe('Joltron Controller', function () {
 				}
 			);
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 
 			let resolvedMock = false;
@@ -835,7 +843,7 @@ describe('Joltron Controller', function () {
 				]
 			);
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 
 			// The mock is expected to resolve right BEFORE sending the last message, and after sending the previous ones.
@@ -887,7 +895,7 @@ describe('Joltron Controller', function () {
 				}
 			);
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 
 			let connected = false;
 			let resolvedMock = false;
@@ -922,7 +930,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should fail sending a message if not connected past the delay',
 		async () => {
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			const race = Promise.race([
 				inst.sendUpdateBegin(1000).then(value => {
 					throw new Error('Sending message somehow worked');
@@ -944,7 +952,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should not fail sending a message if not limited by a timeout',
 		async () => {
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			const race = Promise.race([
 				inst.sendUpdateBegin().then(
 					() => {
@@ -981,7 +989,7 @@ describe('Joltron Controller', function () {
 				setTimeout(() => reject(new Error('Did not receive any data in time')), 2000);
 			});
 
-			const inst = new Controller(1337);
+			const inst = newController(1337);
 			await inst.connect();
 			await mockPromise;
 
