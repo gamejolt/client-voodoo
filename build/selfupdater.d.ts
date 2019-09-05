@@ -9,7 +9,7 @@ export declare class SelfUpdaterInstance extends ControllerWrapper<SelfUpdaterEv
     checkForUpdates(options?: {
         authToken?: string;
         metadata?: string;
-    }): Promise<boolean>;
-    updateBegin(): Promise<boolean>;
-    updateApply(): Promise<boolean>;
+    }): Promise<import("client-voodoo/src/data").MsgResultResponse>;
+    updateBegin(): Promise<import("client-voodoo/src/data").MsgResultResponse>;
+    updateApply(): Promise<import("client-voodoo/src/data").MsgResultResponse>;
 }
