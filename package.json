@@ -20,7 +20,7 @@
   },
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "joltronVersion": "v2.2.5-beta",
+  "joltronVersion": "v2.2.7-beta",
   "devDependencies": {
     "@types/chai": "4.1.7",
     "@types/chai-as-promised": "7.1.0",
