@@ -37,16 +37,16 @@ export class SelfUpdaterInstance extends ControllerWrapper<SelfUpdaterEvents> {
 			options.authToken,
 			options.metadata
 		);
-		return result.success;
+		return result;
 	}
 
 	async updateBegin() {
 		const result = await this.controller.sendUpdateBegin();
-		return result.success;
+		return result;
 	}
 
 	async updateApply() {
 		const result = await this.controller.sendUpdateApply(process.env, process.argv.slice(2));
-		return result.success;
+		return result;
 	}
 }
