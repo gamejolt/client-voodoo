@@ -196,7 +196,7 @@ var Controller = /** @class */ (function (_super) {
                         if (payload.success) {
                             return _this.sentMessage.resolve(payload);
                         }
-                        return _this.sentMessage.reject(payload.err);
+                        return _this.sentMessage.reject(new Error(payload.err));
                     default:
                         return _this.sentMessage.reject(new Error('Unexpected `type` value: ' +
                             type +
