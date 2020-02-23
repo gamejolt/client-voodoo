@@ -37,7 +37,7 @@ async function doTheThing() {
 	}
 	const options: _https.RequestOptions = {
 		host: 'github.com',
-		path: `/gamejolt/joltron/releases/download/${joltronVersion}/${remoteExecutable}`,
+		path: `/gamejolt/joltron-builds/releases/download/${joltronVersion}/${remoteExecutable}`,
 	};
 
 	await new Promise<void>((resolve, reject) => {
