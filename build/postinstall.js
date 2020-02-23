@@ -74,7 +74,7 @@ function doTheThing() {
                     }
                     options = {
                         host: 'github.com',
-                        path: "/gamejolt/joltron/releases/download/" + joltronVersion + "/" + remoteExecutable,
+                        path: "/gamejolt/joltron-builds/releases/download/" + joltronVersion + "/" + remoteExecutable,
                     };
                     return [4 /*yield*/, new Promise(function (resolve, reject) {
                             https
