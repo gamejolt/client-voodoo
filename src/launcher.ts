@@ -59,7 +59,7 @@ export abstract class Launcher {
 	static async attach(
 		runningPid: string | IParsedWrapper
 	): Promise<LaunchInstance | OldLaunchInstance> {
-		let instance: LaunchInstance | OldLaunchInstance = null;
+		let instance: LaunchInstance | OldLaunchInstance | null = null;
 		if (typeof runningPid !== 'string') {
 			console.log('Attaching to wrapper id: ' + runningPid.wrapperId);
 			instance = await OldLauncher.attach(runningPid.wrapperId);

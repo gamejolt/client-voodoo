@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as net from 'net';
 import * as data from './data';
 import { TSEventEmitter } from './events';
-import { Reconnector } from './reconnector';
+import { Reconnector } from './reconnector2';
 import fs from './fs';
 import * as GameJolt from './gamejolt';
 import { Logger } from './logger';
@@ -176,7 +176,6 @@ export class Controller extends TSEventEmitter<Events> {
 	readonly port: number;
 	private process: cp.ChildProcess | number; // process or pid
 	private reconnector: Reconnector;
-	private connectionLock: boolean = null;
 	private conn: net.Socket | null = null;
 	private _nextMessageId = -1;
 	private sequentialMessageId = false;
@@ -200,7 +199,60 @@ export class Controller extends TSEventEmitter<Events> {
 			this.sequentialMessageId = true;
 		}
 
-		this.reconnector = new Reconnector(100, 3000, !!options.keepConnected);
+		this.reconnector = new Reconnector({interval: 100, timeout: 3000, reconnect: !!options.keepConnected});
+		this.reconnector.on('connected', conn => {
+			this.conn = conn;
+
+			// Its possible the connection was aborted. If this is the case, do nothing.
+			// TODO: add unit tests?
+			if (!conn) {
+				console.log('controller.connect connection aborted.')
+				return;
+			}
+
+			conn.setKeepAlive(true, 1000);
+			conn.setEncoding('utf8');
+			conn.setNoDelay(true);
+
+			let lastError: Error | null = null;
+			conn
+				.on('error', (err: Error) => lastError = err)
+				.on('close', (hasError: boolean) => {
+					// Avoid managing the connection if it is not the current connection.
+					if (this.conn !== conn && this.conn !== null) {
+						return;
+					}
+
+					this.conn = null;
+					if (this.sentMessage) {
+						this.sentMessage.reject(
+							new Error(
+								`Disconnected before receiving message response` +
+								(hasError ? `: ${lastError?.message ?? 'Unknown error'}` : '')
+							)
+						);
+					}
+
+					console.log(
+						`Disconnected from runner` + (hasError ? `: ${lastError?.message || 'Unknown error'}` : '')
+					);
+					if (hasError) {
+						console.log(lastError!);
+					}
+
+					if (this.reconnector.wantsConnection) {
+						this.emit(
+							'fatal',
+							hasError
+								? (lastError || new Error('Unknown error while receiving unexpected disconnection'))
+								: new Error(`Unexpected disconnection from joltron`)
+						);
+					}
+
+					this.emit('close');
+				})
+				.pipe(this.newJsonStream());
+		});
 	}
 
 	private nextMessageId() {
@@ -463,7 +515,7 @@ export class Controller extends TSEventEmitter<Events> {
 			options = options || {
 				detached: true,
 				env: process.env,
-				stdio: joltronLogs ? ['ignore', joltronOut.fd, joltronErr.fd] : 'ignore',
+				stdio: joltronLogs ? ['ignore', joltronOut!.fd, joltronErr!.fd] : 'ignore',
 			};
 
 			let runnerExecutable = getExecutable();
@@ -488,8 +540,8 @@ export class Controller extends TSEventEmitter<Events> {
 			runnerInstance.connect();
 			runnerInstance.on('close', () => {
 				if (joltronLogs) {
-					joltronOutLogger.unwatch();
-					joltronErrLogger.unwatch();
+					joltronOutLogger!.unwatch();
+					joltronErrLogger!.unwatch();
 					joltronLogs = false;
 				}
 			});
@@ -497,8 +549,8 @@ export class Controller extends TSEventEmitter<Events> {
 			return runnerInstance;
 		} catch (e) {
 			if (joltronLogs) {
-				joltronOutLogger.unwatch();
-				joltronErrLogger.unwatch();
+				joltronOutLogger!.unwatch();
+				joltronErrLogger!.unwatch();
 				joltronLogs = false;
 			}
 			throw e;
@@ -510,50 +562,10 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	async connect() {
-		if (this.connectionLock) {
-			throw new Error(`Can't connect while connection is transitioning`);
-		}
-
-		this.connectionLock = true;
 		try {
-			this.conn = await this.reconnector.connect({ port: this.port });
-			this.connectionLock = false;
-
-			this.conn.setKeepAlive(true, 1000);
-			this.conn.setEncoding('utf8');
-			this.conn.setNoDelay(true);
-
-			let lastErr: Error = null;
-			this.conn
-				.on('error', (err: Error) => (lastErr = err))
-				.on('close', (hasError: boolean) => {
-					this.conn = null;
-					if (this.sentMessage) {
-						this.sentMessage.reject(
-							new Error(
-								`Disconnected before receiving message response` +
-								(hasError ? `: ${lastErr.message}` : '')
-							)
-						);
-					}
-
-					console.log(
-						`Disconnected from runner` + (hasError ? `: ${lastErr.message}` : '')
-					);
-					if (hasError) {
-						console.log(lastErr);
-					}
-
-					if (!this.connectionLock) {
-						this.emit(
-							'fatal',
-							hasError ? lastErr : new Error(`Unexpected disconnection from joltron`)
-						);
-					}
-
-					this.emit('close');
-				})
-				.pipe(this.newJsonStream());
+			console.log('controller.connect waiting for reconnector.connect');
+			await this.reconnector.connect({ port: this.port });
+			console.log('controller.connect is connected');
 
 			this.consumeSendQueue();
 		} catch (err) {
@@ -561,24 +573,16 @@ export class Controller extends TSEventEmitter<Events> {
 			this.emit('fatal', err);
 			this.emit('close');
 			throw err;
-		} finally {
-			this.connectionLock = false;
 		}
 	}
 
-	async disconnect() {
-		if (this.connectionLock) {
-			throw new Error(`Can't disconnect while connection is transitioning`);
-		}
-		this.connectionLock = true;
-		try {
-			await this.reconnector.disconnect();
-		} finally {
-			this.connectionLock = false;
-		}
+	disconnect() {
+		console.log('doing reconnector.disconnect');
+		return this.reconnector.disconnect();
 	}
 
 	async dispose() {
+		console.log('waiting for disconnect');
 		await this.disconnect();
 		this.reconnector.removeAllListeners();
 	}
@@ -590,21 +594,26 @@ export class Controller extends TSEventEmitter<Events> {
 
 		this.consumingQueue = true;
 
-		while (this.sendQueue.length !== 0) {
-			this.sentMessage = this.sendQueue.shift();
+		while ((this.sentMessage = this.sendQueue.shift() ?? null)) {
 			if (this.sentMessage.resolved) {
 				this.sentMessage = null;
 				continue;
 			}
 
-			if (!this.connected || this.connectionLock) {
+			// TODO: original code was checking connectionLock. why?
+			// if (!this.connected || this.connectionLock) {
+			if (!this.connected) {
 				this.sentMessage.reject(new Error('Not connected'));
 				this.sentMessage = null;
 				continue;
 			}
 
 			await new Promise<void>((resolve, reject) => {
-				this.conn.write(this.sentMessage.msg, (err?: Error) => {
+				if (!this.conn) {
+					throw new Error('Connection closed before we could consume the send queue');
+				}
+
+				this.conn.write(this.sentMessage!.msg, (err?: Error) => {
 					if (err) {
 						return reject(err);
 					}
@@ -612,7 +621,7 @@ export class Controller extends TSEventEmitter<Events> {
 					resolve();
 				});
 			}).catch(err => {
-				this.sentMessage.rejectSend(err);
+				this.sentMessage!.rejectSend(err);
 			});
 			this.sentMessage.resolveSend();
 
@@ -645,19 +654,19 @@ export class Controller extends TSEventEmitter<Events> {
 
 	private sendControl(command: string, extraData?: { [key: string]: string }, timeout?: number) {
 		const msg: any = { command };
-		if (extraData && extraData !== {}) {
+		if (extraData && Object.keys(extraData).length !== 0) {
 			msg.extraData = extraData;
 		}
 		return this.send<data.MsgResultResponse>('control', msg, timeout);
 	}
 
 	sendKillGame(timeout?: number) {
-		return this.sendControl('kill', null, timeout).resultPromise;
+		return this.sendControl('kill', undefined, timeout).resultPromise;
 	}
 
 	async sendPause(options?: { queue?: boolean; timeout?: number }) {
 		options = options || {};
-		const msg = this.sendControl('pause', null, options.timeout);
+		const msg = this.sendControl('pause', undefined, options.timeout);
 		if (options.queue) {
 			this.expectingQueuePauseIds.push(msg.msgId);
 		}
@@ -686,7 +695,7 @@ export class Controller extends TSEventEmitter<Events> {
 	}
 
 	sendCancel(timeout?: number, waitOnlyForSend?: boolean) {
-		const msg = this.sendControl('cancel', null, timeout);
+		const msg = this.sendControl('cancel', undefined, timeout);
 		return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
 	}
 

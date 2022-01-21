@@ -6,7 +6,7 @@ export default class FsAsync {
 	static writeFile(
 		filename: string,
 		data: any,
-		options?: { encoding?: string; mode?: number; flag?: string }
+		options?: { encoding?: BufferEncoding; mode?: number; flag?: string }
 	): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			if (options) {

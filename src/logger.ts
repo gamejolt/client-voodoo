@@ -26,11 +26,11 @@ export class Logger {
 	private static file: string;
 	private static logger: winston.Logger;
 
-	private static oldConsole: Console;
-	private static oldConsoleLog: typeof Console.prototype.log;
-	private static oldConsoleInfo: typeof Console.prototype.info;
-	private static oldConsoleWarn: typeof Console.prototype.warn;
-	private static oldConsoleError: typeof Console.prototype.error;
+	private static oldConsole: typeof console;
+	private static oldConsoleLog: typeof console.log;
+	private static oldConsoleInfo: typeof console.info;
+	private static oldConsoleWarn: typeof console.warn;
+	private static oldConsoleError: typeof console.error;
 
 	private static get console() {
 		return this.hijacked ? this.oldConsole : MY_CONSOLE;

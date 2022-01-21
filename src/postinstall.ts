@@ -34,6 +34,8 @@ async function doTheThing() {
 		case 'darwin':
 			remoteExecutable = 'joltron_osx';
 			break;
+		default:
+			throw new Error('Unsupported platform');
 	}
 	const options: _https.RequestOptions = {
 		host: 'github.com',

@@ -33,9 +33,11 @@ export declare abstract class Queue {
         state: IQueueState;
     }[];
     private static applyProfile;
-    static faster: IQueueProfile;
+    static get faster(): IQueueProfile;
+    static set faster(profile: IQueueProfile);
     static setFaster(): void;
-    static slower: IQueueProfile;
+    static get slower(): IQueueProfile;
+    static set slower(profile: IQueueProfile);
     static setSlower(): void;
     private static onProgress;
     private static onState;
@@ -45,13 +47,13 @@ export declare abstract class Queue {
     private static onDone;
     private static onFatalError;
     static canResume(patch: PatchInstance): boolean;
-    static manage(patch: PatchInstance): Promise<IQueueState>;
+    static manage(patch: PatchInstance): Promise<IQueueState | null | undefined>;
     static unmanage(patch: PatchInstance, noTick?: boolean): void;
     private static resumePatch;
     private static pausePatch;
     static tick(downloads?: boolean): void;
-    static readonly maxDownloads: number;
-    static readonly maxExtractions: number;
+    static get maxDownloads(): number;
+    static get maxExtractions(): number;
     static setMaxDownloads(newMaxDownloads: number): Promise<boolean>;
     static setMaxExtractions(newMaxExtractions: number): Promise<boolean>;
 }

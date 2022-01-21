@@ -1,42 +1,31 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var EventEmitter = require("events");
-var TSEventEmitter = /** @class */ (function (_super) {
-    __extends(TSEventEmitter, _super);
-    function TSEventEmitter() {
-        return _super.call(this) || this;
+exports.TSEventEmitter = void 0;
+const EventEmitter = require("events");
+class TSEventEmitter extends EventEmitter {
+    constructor() {
+        super();
     }
-    TSEventEmitter.prototype.addListener = function (event, listener) {
-        return _super.prototype.addListener.call(this, event + '', listener);
-    };
-    TSEventEmitter.prototype.listeners = function (event) {
-        return _super.prototype.listeners.call(this, event + '');
-    };
-    TSEventEmitter.prototype.on = function (event, listener) {
-        return _super.prototype.on.call(this, event + '', listener);
-    };
-    TSEventEmitter.prototype.once = function (event, listener) {
-        return _super.prototype.once.call(this, event + '', listener);
-    };
-    TSEventEmitter.prototype.removeAllListeners = function (event) {
-        return _super.prototype.removeAllListeners.call(this, event + '');
-    };
-    TSEventEmitter.prototype.removeListener = function (event, listener) {
-        return _super.prototype.removeListener.call(this, event + '', listener);
-    };
-    return TSEventEmitter;
-}(EventEmitter));
+    addListener(event, listener) {
+        return super.addListener(event + '', listener);
+    }
+    listeners(event) {
+        return super.listeners(event + '');
+    }
+    on(event, listener) {
+        return super.on(event + '', listener);
+    }
+    once(event, listener) {
+        return super.once(event + '', listener);
+    }
+    removeAllListeners(event) {
+        return super.removeAllListeners(event + '');
+    }
+    removeListener(event, listener) {
+        return super.removeListener(event + '', listener);
+    }
+    emit(event, ...args) {
+        return super.emit(event, args);
+    }
+}
 exports.TSEventEmitter = TSEventEmitter;

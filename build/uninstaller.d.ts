@@ -19,7 +19,7 @@ export declare class UninstallInstance extends ControllerWrapper<UninstallEvents
     constructor(controller: Controller);
     private getState;
     private _getState;
-    readonly state: UninstallState;
+    get state(): UninstallState;
     isFinished(): boolean;
     isRunning(): boolean;
 }

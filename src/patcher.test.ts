@@ -63,7 +63,7 @@ describe('Patcher', function () {
 				}
 			);
 
-			await new Promise((resolve, reject) => {
+			await new Promise<void>((resolve, reject) => {
 				patchInstance
 					.on('done', err => {
 						if (err) {
@@ -80,7 +80,7 @@ describe('Patcher', function () {
 				username: 'test',
 				user_token: '123',
 			});
-			await new Promise((resolve, reject) => {
+			await new Promise<void>((resolve, reject) => {
 				launcher.on('gameOver', err => {
 					if (err) {
 						return reject(err);

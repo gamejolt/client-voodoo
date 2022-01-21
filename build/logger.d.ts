@@ -21,11 +21,11 @@ export declare class Logger {
     private static oldConsoleInfo;
     private static oldConsoleWarn;
     private static oldConsoleError;
-    private static readonly console;
-    private static readonly consoleLog;
-    private static readonly consoleInfo;
-    private static readonly consoleWarn;
-    private static readonly consoleError;
+    private static get console();
+    private static get consoleLog();
+    private static get consoleInfo();
+    private static get consoleWarn();
+    private static get consoleError();
     private static _log;
     static log(...args: any[]): void;
     static info(...args: any[]): void;

@@ -1,6 +1,7 @@
+/// <reference types="node" />
 export default class FsAsync {
     static writeFile(filename: string, data: any, options?: {
-        encoding?: string;
+        encoding?: BufferEncoding;
         mode?: number;
         flag?: string;
     }): Promise<void>;

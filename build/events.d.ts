@@ -11,5 +11,6 @@ export declare class TSEventEmitter<E extends {
     once<T extends Extract<keyof E, string>>(event: T, listener: E[T]): this;
     removeAllListeners(event?: Extract<keyof E, string>): this;
     removeListener<T extends Extract<keyof E, string>>(event: T, listener: E[T]): this;
+    emit<T extends Extract<keyof E, string>>(event: T, ...args: Parameters<E[T]>): boolean;
 }
 export {};

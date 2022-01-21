@@ -48,7 +48,6 @@ export declare class Controller extends TSEventEmitter<Events> {
     readonly port: number;
     private process;
     private reconnector;
-    private connectionLock;
     private conn;
     private _nextMessageId;
     private sequentialMessageId;
@@ -64,9 +63,9 @@ export declare class Controller extends TSEventEmitter<Events> {
     private newJsonStream;
     static ensureMigrationFile(localPackage: GameJolt.IGamePackage): Promise<void>;
     static launchNew(args: string[], options?: LaunchOptions): Promise<Controller>;
-    readonly connected: boolean;
+    get connected(): boolean;
     connect(): Promise<void>;
-    disconnect(): Promise<void>;
+    disconnect(): Promise<Error | null>;
     dispose(): Promise<void>;
     private consumeSendQueue;
     private send;
