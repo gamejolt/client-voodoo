@@ -53,7 +53,7 @@ export class UninstallInstance extends ControllerWrapper<UninstallEvents> {
 
 			// Only emit state if it's changed
 			if (oldState !== this._state) {
-				this.controller.emit('state', this._state);
+				this.controller.emit('state' as any, this._state);
 			}
 		});
 

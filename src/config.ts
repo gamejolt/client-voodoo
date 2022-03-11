@@ -79,4 +79,6 @@ export abstract class Config {
 	}
 }
 
-Config.setClientMutex();
+// TODO: DO NOT DO THIS WHAT THE HELL??
+// gamejolt should call setClientMutex when its ready to do so.
+// Config.setClientMutex();

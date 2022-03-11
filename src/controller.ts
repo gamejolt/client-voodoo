@@ -63,9 +63,9 @@ class SentMessage<T> {
 		if (timeout && timeout !== Infinity) {
 			setTimeout(() => {
 				if (!this._requestResolved) {
-					this.rejectSend(new Error('Message was not sent in time'));
+					this.rejectSend(new Error('Message was not sent in time: ' + this.msg));
 				} else if (!this._resultResolved) {
-					this.reject(new MessageNotHandledError('Message was not handled in time'));
+					this.reject(new MessageNotHandledError('Message was not handled in time: ' + this.msg));
 				}
 			}, timeout);
 		}
@@ -541,7 +541,6 @@ export class Controller extends TSEventEmitter<Events> {
 				process: runnerProc.pid,
 				keepConnected: !!options.keepConnected,
 			});
-			runnerInstance.connect();
 			runnerInstance.on('close', () => {
 				if (joltronLogs) {
 					joltronOutLogger!.unwatch();
@@ -549,6 +548,7 @@ export class Controller extends TSEventEmitter<Events> {
 					joltronLogs = false;
 				}
 			});
+			runnerInstance.connect();
 
 			return runnerInstance;
 		} catch (e) {

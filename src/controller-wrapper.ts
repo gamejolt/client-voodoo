@@ -34,4 +34,8 @@ export class ControllerWrapper<E extends Events> extends TSEventEmitter<E> {
 		this.controller.removeListener(event as any, listener);
 		return this;
 	}
+
+	dispose() {
+		return this.controller.dispose();
+	}
 }

@@ -146,21 +146,26 @@ export class LaunchInstance extends ControllerWrapper<LaunchEvents> {
 		onReady: (err: Error | null, instance: LaunchInstance) => void
 	) {
 		super(controller);
-		this.on('gameClosed', () => {
-			this.controller.emit('gameOver');
-		})
+
+		this
+			.on('gameClosed', () => {
+				this.controller.emit('gameOver' as any);
+			})
 			.on('gameCrashed', err => {
-				this.controller.emit('gameOver', err);
+				this.controller.emit('gameOver' as any, err);
 			})
 			.on('gameLaunchFinished', () => {
-				this.controller.emit('gameOver');
+				this.controller.emit('gameOver' as any);
 			})
 			.on('gameLaunchFailed', err => {
-				this.controller.emit('gameOver', err);
+				this.controller.emit('gameOver' as any, err);
 			});
 
 		this.controller
-			.sendGetState(false, 2000)
+			// TODO: the timeout on initial messages sent to joltron has to be higher
+			// than the time it takes joltron to give up making a connection to a previous
+			// running instance of joltron. for some reason this takes around 3 seconds on Windows.
+			.sendGetState(false, 4000)
 			.then(state => {
 				this._pid = state.pid;
 				onReady(null, this);

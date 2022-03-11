@@ -207,7 +207,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 			// clear them specifically once a connection is made instead of removing all listeners for the socket.
 			const onError = (err: Error) => lastError = err;
 			const onClose = (hasError: boolean) => {
-				console.log('socket.close');
+				console.log('socket.close', lastError);
 				conn.removeListener('error', onError);
 				conn.removeListener('close', onClose);
 
