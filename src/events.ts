@@ -32,6 +32,6 @@ export class TSEventEmitter<E extends { [event: string]: EventListener }> extend
 	}
 
 	emit<T extends Extract<keyof E, string>>(event: T, ...args: Parameters<E[T]>) {
-		return super.emit(event, args);
+		return super.emit(event, ...args);
 	}
 }

@@ -237,12 +237,16 @@ export class Reconnector extends TSEventEmitter<Events> {
 						}
 					});
 
-					this._conn = conn;
-					this._connected = true;
-					this._state = ReconnectorState.CONNECTED;
-					this.emit('connected', conn);
-
-					resolve(conn);
+					console.log('socket.connect.ready');
+					try {
+						this._conn = conn;
+						this._connected = true;
+						this._state = ReconnectorState.CONNECTED;
+						this.emit('connected', conn);
+					} finally {
+						console.log('socket.connect resolved');
+						resolve(conn);
+					}
 				})
 				// These events handle the first reconnection.
 				// After a connection is made, we want to remove them.
