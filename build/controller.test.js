@@ -432,7 +432,7 @@ describe('Joltron Controller', function () {
         const inst = newController(1337);
         await inst.connect();
         console.log('connected, sending pause');
-        inst.sendPause().catch(() => { });
+        inst.sendPause();
         console.log('waiting for mock reader to finish');
         await mockPromise;
         console.log('waiting for controller to dispose');
@@ -449,7 +449,7 @@ describe('Joltron Controller', function () {
         });
         const inst = newController(1337);
         await inst.connect();
-        inst.sendResume().catch(() => { });
+        inst.sendResume();
         await mockPromise;
         await inst.dispose();
     });
@@ -702,14 +702,15 @@ describe('Joltron Controller', function () {
         const race = Promise.race([
             inst.sendUpdateBegin(1000).then(value => {
                 throw new Error('Sending message somehow worked');
-            }, err => err),
+            }),
             sleep(2000).then(() => {
                 throw new Error('Did not timeout in time');
             }),
-        ]);
+        ])
+            .catch(err => err);
         await expect(race, 'send operation with timeout').to.eventually.be.an('Error');
         const result = await race;
-        expect(result.message, 'result error message').to.equal('Message was not handled in time');
+        expect(result.message, 'result error message').to.match(/^Message was not sent in time/);
         await inst.dispose();
     });
     it('should not fail sending a message if not limited by a timeout', async () => {

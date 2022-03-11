@@ -30,5 +30,8 @@ class ControllerWrapper extends events_1.TSEventEmitter {
         this.controller.removeListener(event, listener);
         return this;
     }
+    dispose() {
+        return this.controller.dispose();
+    }
 }
 exports.ControllerWrapper = ControllerWrapper;

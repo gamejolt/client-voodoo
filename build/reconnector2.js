@@ -158,7 +158,7 @@ class Reconnector extends events_1.TSEventEmitter {
             // clear them specifically once a connection is made instead of removing all listeners for the socket.
             const onError = (err) => lastError = err;
             const onClose = (hasError) => {
-                console.log('socket.close');
+                console.log('socket.close', lastError);
                 conn.removeListener('error', onError);
                 conn.removeListener('close', onClose);
                 if (hasError) {
@@ -182,11 +182,17 @@ class Reconnector extends events_1.TSEventEmitter {
                         this._connect(options, true);
                     }
                 });
-                this._conn = conn;
-                this._connected = true;
-                this._state = ReconnectorState.CONNECTED;
-                this.emit('connected', conn);
-                resolve(conn);
+                console.log('socket.connect.ready');
+                try {
+                    this._conn = conn;
+                    this._connected = true;
+                    this._state = ReconnectorState.CONNECTED;
+                    this.emit('connected', conn);
+                }
+                finally {
+                    console.log('socket.connect resolved');
+                    resolve(conn);
+                }
             })
                 // These events handle the first reconnection.
                 // After a connection is made, we want to remove them.

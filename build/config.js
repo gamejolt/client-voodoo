@@ -65,4 +65,6 @@ Config.mutex_name = 'game-jolt-client';
 Config.pidDir = '';
 Config.clientMutexPromise = null;
 Config.clientMutex = null;
-Config.setClientMutex();
+// TODO: DO NOT DO THIS WHAT THE HELL??
+// gamejolt should call setClientMutex when its ready to do so.
+// Config.setClientMutex();

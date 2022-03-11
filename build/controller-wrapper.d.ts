@@ -9,4 +9,5 @@ export declare class ControllerWrapper<E extends Events> extends TSEventEmitter<
     once<T extends keyof E>(event: T, listener: E[T]): this;
     removeAllListeners(event?: keyof E): this;
     removeListener<T extends keyof E>(event: T, listener: E[T]): this;
+    dispose(): Promise<void>;
 }

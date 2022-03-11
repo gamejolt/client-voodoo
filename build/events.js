@@ -25,7 +25,7 @@ class TSEventEmitter extends EventEmitter {
         return super.removeListener(event + '', listener);
     }
     emit(event, ...args) {
-        return super.emit(event, args);
+        return super.emit(event, ...args);
     }
 }
 exports.TSEventEmitter = TSEventEmitter;

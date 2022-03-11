@@ -17,6 +17,10 @@ function getExecutable() {
     return path.resolve(__dirname, '..', 'bin', executable);
 }
 exports.getExecutable = getExecutable;
+class MessageNotSentError extends Error {
+}
+class MessageNotHandledError extends Error {
+}
 class SentMessage {
     constructor(msg, timeout) {
         this.msg = JSON.stringify(msg);
@@ -26,25 +30,26 @@ class SentMessage {
         this.resultPromise = new Promise((resolve, reject) => {
             this.resultResolver = resolve;
             this.resultRejector = reject;
-            if (timeout && timeout !== Infinity) {
-                setTimeout(() => {
-                    this._resultResolved = true;
-                    reject(new Error('Message was not handled in time'));
-                }, timeout);
-            }
         });
         // Initialize the request promise
+        // The request promise should never throw, but settle with an error.
+        // The same error is also used as a rejection for the result promise.
+        // This allows us to catch all errors for a send operation without having to
+        // specifically catch the send request promise.
         this._requestResolved = false;
-        this.requestPromise = new Promise((resolve, reject) => {
+        this.requestPromise = new Promise((resolve) => {
             this.requestResolver = resolve;
-            this.requestRejector = reject;
-            if (timeout && timeout !== Infinity) {
-                setTimeout(() => {
-                    this._requestResolved = true;
-                    reject(new Error('Message was not sent in time'));
-                }, timeout);
-            }
         });
+        if (timeout && timeout !== Infinity) {
+            setTimeout(() => {
+                if (!this._requestResolved) {
+                    this.rejectSend(new Error('Message was not sent in time: ' + this.msg));
+                }
+                else if (!this._resultResolved) {
+                    this.reject(new MessageNotHandledError('Message was not handled in time: ' + this.msg));
+                }
+            }, timeout);
+        }
     }
     get resolved() {
         return this._resultResolved;
@@ -62,12 +67,13 @@ class SentMessage {
     }
     resolveSend() {
         this._requestResolved = true;
-        this.requestResolver();
+        this.requestResolver(null);
     }
     rejectSend(reason) {
-        this.reject(reason);
+        const err = new MessageNotSentError(`${reason.message}\ncaused by: ${reason.stack}`);
         this._requestResolved = true;
-        this.requestRejector(reason);
+        this.requestResolver(err);
+        this.reject(err);
     }
 }
 class Controller extends events_1.TSEventEmitter {
@@ -351,7 +357,6 @@ class Controller extends events_1.TSEventEmitter {
                 process: runnerProc.pid,
                 keepConnected: !!options.keepConnected,
             });
-            runnerInstance.connect();
             runnerInstance.on('close', () => {
                 if (joltronLogs) {
                     joltronOutLogger.unwatch();
@@ -359,6 +364,7 @@ class Controller extends events_1.TSEventEmitter {
                     joltronLogs = false;
                 }
             });
+            runnerInstance.connect();
             return runnerInstance;
         }
         catch (e) {
@@ -460,7 +466,7 @@ class Controller extends events_1.TSEventEmitter {
     sendKillGame(timeout) {
         return this.sendControl('kill', undefined, timeout).resultPromise;
     }
-    async sendPause(options) {
+    sendPause(options) {
         options = options || {};
         const msg = this.sendControl('pause', undefined, options.timeout);
         if (options.queue) {
@@ -468,7 +474,7 @@ class Controller extends events_1.TSEventEmitter {
         }
         return msg.resultPromise;
     }
-    async sendResume(options) {
+    sendResume(options) {
         options = options || {};
         let extraData = {};
         if (options.authToken) {
@@ -485,7 +491,11 @@ class Controller extends events_1.TSEventEmitter {
     }
     sendCancel(timeout, waitOnlyForSend) {
         const msg = this.sendControl('cancel', undefined, timeout);
-        return waitOnlyForSend ? msg.requestPromise : msg.resultPromise;
+        if (waitOnlyForSend) {
+            // The request promise never throws, but settles with an error if the message was not sent.
+            return msg.requestPromise.then(err => { throw err; });
+        }
+        return msg.resultPromise;
     }
     sendGetState(includePatchInfo, timeout) {
         return this.send('state', { includePatchInfo }, timeout)
