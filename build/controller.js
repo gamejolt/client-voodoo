@@ -382,7 +382,7 @@ class Controller extends events_1.TSEventEmitter {
     async connect() {
         try {
             console.log('controller.connect waiting for reconnector.connect');
-            await this.reconnector.connect({ port: this.port });
+            await this.reconnector.connect({ family: 4, port: this.port });
             console.log('controller.connect is connected');
             this.consumeSendQueue();
         }
