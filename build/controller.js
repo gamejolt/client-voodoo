@@ -493,7 +493,11 @@ class Controller extends events_1.TSEventEmitter {
         const msg = this.sendControl('cancel', undefined, timeout);
         if (waitOnlyForSend) {
             // The request promise never throws, but settles with an error if the message was not sent.
-            return msg.requestPromise.then(err => { throw err; });
+            return msg.requestPromise.then(err => {
+                if (err) {
+                    throw err;
+                }
+            });
         }
         return msg.resultPromise;
     }

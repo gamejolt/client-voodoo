@@ -52,5 +52,5 @@ export declare class PatchInstance extends ControllerWrapper<PatchEvents> {
         extraMetadata?: string;
     }): Promise<data.MsgResultResponse>;
     pause(queue?: boolean): Promise<data.MsgResultResponse>;
-    cancel(waitOnlyForSend?: boolean): Promise<data.MsgResultResponse>;
+    cancel(waitOnlyForSend?: boolean): Promise<void> | Promise<data.MsgResultResponse>;
 }
