@@ -1,63 +1,63 @@
 {
-  "name": "client-voodoo",
-  "description": "This is an almighty package for anything that has to do with managing a library of games through the Game Jolt Client.",
-  "version": "2.5.3",
-  "bugs": {
-    "url": "https://github.com/gamejolt/client-voodoo/issues"
-  },
-  "licen": "MIT",
-  "author": "Game Jolt Team",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gamejolt/client-voodoo.git"
-  },
-  "scripts": {
-    "test": "mocha --timeout 999999 --colors \"./build/**/controller.test.js\"",
-    "build": "tsc",
-    "watch": "tsc -w",
-    "dev": "gulp watch",
-    "postinstall": "node ./build/postinstall.js"
-  },
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
-  "joltronVersion": "v2.2.8-beta.1",
-  "devDependencies": {
-    "@types/chai": "4.1.7",
-    "@types/chai-as-promised": "7.1.0",
-    "@types/mkdirp": "0.5.2",
-    "@types/mocha": "5.2.7",
-    "@types/node": "16.4.2",
-    "@types/tail": "1.2.1",
-    "@types/tmp": "0.1.0",
-    "@types/winreg": "1.2.30",
-    "@types/xdg-basedir": "2.0.0",
-    "chai": "4.2.0",
-    "chai-as-promised": "7.1.1",
-    "del": "5.0.0",
-    "gulp": "4.0.2",
-    "gulp-load-plugins": "2.0.0",
-    "gulp-shell": "0.7.1",
-    "mocha": "6.1.4",
-    "prettier": "1.18.2",
-    "run-sequence": "2.2.1",
-    "source-map-support": "0.5.12",
-    "ts-node": "8.3.0",
-    "tslint": "5.18.0",
-    "typescript": "4.5.5"
-  },
-  "optionalDependencies": {
-    "applescript": "1.0.0",
-    "ps-node": "0.1.6",
-    "winreg": "1.2.4",
-    "xdg-basedir": "4.0.0"
-  },
-  "dependencies": {
-    "JSONStream": "github:gamejolt/JSONStream#no-shebang",
-    "follow-redirects": "1.7.0",
-    "mkdirp": "0.5.1",
-    "shell-escape": "0.2.0",
-    "tail": "2.0.2",
-    "tmp": "0.1.0",
-    "winston": "3.2.1"
-  }
+	"name": "client-voodoo",
+	"description": "This is an almighty package for anything that has to do with managing a library of games through the Game Jolt Client.",
+	"version": "2.5.3",
+	"bugs": {
+		"url": "https://github.com/gamejolt/client-voodoo/issues"
+	},
+	"licen": "MIT",
+	"author": "Game Jolt Team",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/gamejolt/client-voodoo.git"
+	},
+	"scripts": {
+		"test": "mocha --timeout 999999 --colors \"./build/**/controller.test.js\"",
+		"build": "tsc",
+		"watch": "tsc -w",
+		"dev": "gulp watch",
+		"postinstall": "node ./build/postinstall.js"
+	},
+	"main": "build/index.js",
+	"types": "build/index.d.ts",
+	"joltronVersion": "v2.2.9-beta.1",
+	"devDependencies": {
+		"@types/chai": "4.1.7",
+		"@types/chai-as-promised": "7.1.0",
+		"@types/mkdirp": "0.5.2",
+		"@types/mocha": "5.2.7",
+		"@types/node": "16.4.2",
+		"@types/tail": "1.2.1",
+		"@types/tmp": "0.1.0",
+		"@types/winreg": "1.2.30",
+		"@types/xdg-basedir": "2.0.0",
+		"chai": "4.2.0",
+		"chai-as-promised": "7.1.1",
+		"del": "5.0.0",
+		"gulp": "4.0.2",
+		"gulp-load-plugins": "2.0.0",
+		"gulp-shell": "0.7.1",
+		"mocha": "6.1.4",
+		"prettier": "1.18.2",
+		"run-sequence": "2.2.1",
+		"source-map-support": "0.5.12",
+		"ts-node": "8.3.0",
+		"tslint": "5.18.0",
+		"typescript": "4.5.5"
+	},
+	"optionalDependencies": {
+		"applescript": "1.0.0",
+		"ps-node": "0.1.6",
+		"winreg": "1.2.4",
+		"xdg-basedir": "4.0.0"
+	},
+	"dependencies": {
+		"JSONStream": "github:gamejolt/JSONStream#no-shebang",
+		"follow-redirects": "1.7.0",
+		"mkdirp": "0.5.1",
+		"shell-escape": "0.2.0",
+		"tail": "2.0.2",
+		"tmp": "0.1.0",
+		"winston": "3.2.1"
+	}
 }

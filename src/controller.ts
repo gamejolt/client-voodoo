@@ -703,7 +703,11 @@ export class Controller extends TSEventEmitter<Events> {
 
 		if (waitOnlyForSend) {
 			// The request promise never throws, but settles with an error if the message was not sent.
-			return msg.requestPromise.then(err => { throw err });
+			return msg.requestPromise.then(err => {
+				if (err) {
+					throw err;
+				}
+			});
 		}
 
 		return msg.resultPromise;

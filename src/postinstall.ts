@@ -26,7 +26,7 @@ async function doTheThing() {
 	let remoteExecutable: string;
 	switch (process.platform) {
 		case 'win32':
-			remoteExecutable = 'joltron_win32.exe';
+			remoteExecutable = 'joltron_win64.exe';
 			break;
 		case 'linux':
 			remoteExecutable = 'joltron_linux';
