@@ -355,7 +355,7 @@ export class Controller extends TSEventEmitter<Events> {
 						payload = payload.payload; // lol
 						switch (message) {
 							case 'gameLaunchBegin':
-								return this.emit(message, payload.dir, ...payload.args);
+								return this.emit(message, payload.dir, ...(payload.args || []));
 							case 'gameLaunchFinished':
 								return this.emit(message);
 							case 'gameLaunchFailed':
@@ -367,7 +367,7 @@ export class Controller extends TSEventEmitter<Events> {
 							case 'gameKilled':
 								return this.emit(message);
 							case 'gameRelaunchBegin':
-								return this.emit(message, payload.dir, ...payload.args);
+								return this.emit(message, payload.dir, ...(payload.args || []));
 							case 'gameRelaunchFailed':
 								return this.emit(message, payload);
 							case 'noUpdateAvailable':
@@ -381,7 +381,7 @@ export class Controller extends TSEventEmitter<Events> {
 							case 'updateReady':
 								return this.emit(message);
 							case 'updateApply':
-								return this.emit(message, ...payload.args);
+								return this.emit(message, ...(payload.args || []));
 							case 'updateFailed':
 								return this.emit(message, payload);
 							case 'paused':
