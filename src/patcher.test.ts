@@ -5,7 +5,6 @@ import * as path from 'path';
 import * as os from 'os';
 import { Launcher } from './launcher';
 import * as GameJolt from './gamejolt';
-import { sleep } from './util';
 
 chai.use(chaiAsPromised);
 
