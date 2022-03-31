@@ -53,7 +53,7 @@
 	},
 	"dependencies": {
 		"JSONStream": "github:gamejolt/JSONStream#no-shebang",
-		"follow-redirects": "1.7.0",
+		"follow-redirects": "1.14.8",
 		"mkdirp": "0.5.1",
 		"shell-escape": "0.2.0",
 		"tail": "2.0.2",
