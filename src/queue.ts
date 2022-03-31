@@ -141,7 +141,7 @@ export abstract class Queue {
 		state: IQueueState,
 		progress: data.MsgProgress
 	) {
-		if (!state.managed) {
+		if (!state.managed || !progress.sample) {
 			return;
 		}
 
@@ -274,13 +274,13 @@ export abstract class Queue {
 		this._patches.set(patch, state);
 
 		patch
-			.on('progress', state.events.progress)
-			.on('state', state.events.state)
-			.on('paused', state.events.paused)
-			.on('resumed', state.events.resumed)
-			.on('canceled', state.events.canceled)
-			.on('done', state.events.done)
-			.on('fatal', state.events.fatal);
+			.on('progress', state.events.progress!)
+			.on('state', state.events.state!)
+			.on('paused', state.events.paused!)
+			.on('resumed', state.events.resumed!)
+			.on('canceled', state.events.canceled!)
+			.on('done', state.events.done!)
+			.on('fatal', state.events.fatal!);
 
 		if (state.queued) {
 			await this.pausePatch(patch, state);
@@ -297,13 +297,13 @@ export abstract class Queue {
 		}
 
 		patch
-			.removeListener('progress', state.events.progress)
-			.removeListener('state', state.events.state)
-			.removeListener('paused', state.events.paused)
-			.removeListener('resumed', state.events.resumed)
-			.removeListener('canceled', state.events.canceled)
-			.removeListener('done', state.events.done)
-			.removeListener('fatal', state.events.fatal);
+			.removeListener('progress', state.events.progress!)
+			.removeListener('state', state.events.state!)
+			.removeListener('paused', state.events.paused!)
+			.removeListener('resumed', state.events.resumed!)
+			.removeListener('canceled', state.events.canceled!)
+			.removeListener('done', state.events.done!)
+			.removeListener('fatal', state.events.fatal!);
 
 		state.managed = false;
 		this._patches.delete(patch);
@@ -317,7 +317,9 @@ export abstract class Queue {
 		this.log('Resuming patch', patch);
 		let result: boolean;
 		try {
+			// TODO: why is this not awaited?
 			patch.resume({ queue: true });
+			result = true;
 		} catch (err) {
 			result = false;
 		}
@@ -328,7 +330,9 @@ export abstract class Queue {
 		this.log('Pausing patch', patch);
 		let result: boolean;
 		try {
+			// TODO: why is this not awaited?
 			patch.pause(true);
+			result = true;
 		} catch (err) {
 			result = false;
 		}
@@ -407,7 +411,7 @@ export abstract class Queue {
 	}
 
 	static async setMaxExtractions(newMaxExtractions: number) {
-		this.log('Setting max extraccions to ' + newMaxExtractions);
+		this.log('Setting max extractions to ' + newMaxExtractions);
 		if (this._settingExtractions) {
 			this.log(`Can't set max extractions now because theres a setting in progress`);
 			return false;

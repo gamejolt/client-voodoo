@@ -19,7 +19,7 @@ export declare class RollbackInstance extends ControllerWrapper<RollbackEvents> 
     constructor(controller: Controller);
     private getState;
     private _getState;
-    readonly state: RollbackState;
+    get state(): RollbackState;
     isFinished(): boolean;
     isRunning(): boolean;
 }

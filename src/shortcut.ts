@@ -23,6 +23,10 @@ export abstract class Shortcut {
 	}
 
 	private static async createLinux(program: string, icon: string) {
+		if (!xdgBasedir.data) {
+			throw new Error('Could not resolve desktop shortcut dir using XDG');
+		}
+
 		let desktopFile = path.join(
 			xdgBasedir.data || '',
 			'applications',
@@ -47,6 +51,10 @@ Name[en_US]=Game Jolt Client`;
 	}
 
 	private static removeLinux() {
+		if (!xdgBasedir.data) {
+			throw new Error('Could not resolve desktop shortcut dir using XDG');
+		}
+
 		let desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
 		let oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
 		return Promise.all([fs.unlink(desktopFile), fs.unlink(oldDesktopFile)])

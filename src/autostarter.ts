@@ -3,7 +3,7 @@ import * as xdgBasedir from 'xdg-basedir';
 import * as Winreg from 'winreg';
 import fs from './fs';
 
-let applescript: (script: string) => Promise<any> = null;
+let applescript: (script: string) => Promise<any> = null as any;
 
 if (process.platform === 'darwin') {
 	const applescriptExecString = require('applescript').execString;
@@ -80,6 +80,10 @@ fi`;
 	}
 
 	async set(program: string, args?: string[], runner?: string) {
+		if (!runner) {
+			throw new Error(`'runner' argument must be provided for LinuxAutostarter.set`);
+		}
+
 		await this.createRunner(program, runner, args);
 		let desktopContents = `[Desktop Entry]
 Version=1.0
@@ -120,6 +124,10 @@ fi`;
 	}
 
 	async set(program: string, args?: string[], runner?: string) {
+		if (!runner) {
+			throw new Error(`'runner' argument must be provided for MacAutostarter.set`);
+		}
+
 		await this.createRunner(program, runner, args);
 
 		// tslint:disable-next-line:max-line-length
@@ -139,7 +147,7 @@ fi`;
 			'tell application "System Events" to get the name of every login item'
 		);
 
-		return loginItems && loginItems.indexOf(autostartId) !== -1;
+		return !!loginItems && loginItems.indexOf(autostartId) !== -1;
 	}
 }
 

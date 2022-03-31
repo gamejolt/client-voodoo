@@ -7,5 +7,5 @@ export declare class MutexInstance {
     private releasePromise;
     constructor(controller: Controller);
     release(): Promise<Error>;
-    readonly onReleased: Promise<Error>;
+    get onReleased(): Promise<Error>;
 }

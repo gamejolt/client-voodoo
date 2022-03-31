@@ -7,7 +7,7 @@ export async function findFreePort() {
 		server
 			.on('listening', () => {
 				const addrInfo = server.address();
-				if (typeof addrInfo === 'string') {
+				if (addrInfo === null || typeof addrInfo === 'string') {
 					// According to the docs this may only happen if listening on a pipe or unix domain socket.
 					// This should never be the case for us.
 					return reject(new Error('No address info returned'));

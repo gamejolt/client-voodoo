@@ -58,15 +58,16 @@ describe('Joltron Controller', function () {
 	}
 
 	function disposeMockRunner() {
-		return new Promise(resolve => {
+		return new Promise<void>(resolve => {
 			if (!currentMock) {
 				resolve();
+				return;
 			}
 
 			currentMock.close(() => {
 				console.log(`disposed mock #${(currentMock as any).mockId}`);
 				currentMock = null;
-				currentConns = null;
+				currentConns = [];
 				resolve();
 			});
 
@@ -78,34 +79,35 @@ describe('Joltron Controller', function () {
 	}
 
 	let nextMockId = 0;
-	let currentMock: net.Server;
+	let currentMock: net.Server | null;
 	let currentConns: net.Socket[];
 
 	beforeEach(disposeMockRunner);
+	this.afterAll(disposeMockRunner);
 
 	it(
 		'should attach to running instance',
 		async () => {
 			const inst = newController(1337);
 
-			let resolve = null;
-			const waitForConnect = new Promise(_resolve => {
-				resolve = _resolve;
+			let resolve: (() => void) | null = null;
+			const waitForConnect = new Promise<void>(_resolve => {
+				resolve = () => _resolve();
 			});
 
 			mockRunner(socket => {
 				// Connecting is enough
-				resolve();
+				console.log('mock server connect resolving');
+				resolve!();
 			});
 
 			inst.connect();
 			await waitForConnect;
+			console.log('mock server connect resolved');
 
-			// We sleep here so that the connection would fully go through before calling dispose.
-			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
-			// and we resolve the connection promise before the transition is finished fully.
-			await sleep(10);
+			console.log('disposing from test');
 			await inst.dispose();
+			console.log('disposed from test');
 		}
 	);
 
@@ -152,7 +154,7 @@ describe('Joltron Controller', function () {
 	);
 
 	it(
-		'should fail connecting twice in parallel',
+		'should connect only once even when parallel',
 		async () => {
 			let connectCount = 0;
 			mockRunner(socket => {
@@ -166,7 +168,7 @@ describe('Joltron Controller', function () {
 			const [result1, result2] = await wrapAll([conn1, conn2]);
 
 			expect(result1.success, 'first connection').to.equal(true);
-			expect(result2.success, 'second connection').to.equal(false);
+			expect(result2.success, 'second connection').to.equal(true);
 			expect(inst.connected, 'runner connection status').to.equal(true);
 
 			await sleep(0);
@@ -242,7 +244,7 @@ describe('Joltron Controller', function () {
 	);
 
 	it(
-		'should fail disconnecting twice in parallel',
+		'should not fail disconnecting twice in parallel',
 		async () => {
 			let disconnectCount = 0;
 			mockRunner(socket => {
@@ -267,7 +269,7 @@ describe('Joltron Controller', function () {
 			const [result1, result2] = await wrapAll([conn1, conn2]);
 
 			expect(result1.success, 'first disconnection').to.equal(true);
-			expect(result2.success, 'second disconnection').to.equal(false);
+			expect(result2.success, 'second disconnection').to.equal(true);
 			expect(inst.connected, 'runner connection status').to.equal(false);
 
 			await sleep(0);
@@ -278,7 +280,7 @@ describe('Joltron Controller', function () {
 	);
 
 	it(
-		'should fail connect and disconnect in parallel',
+		'should connect and disconnect in quick succession',
 		async () => {
 			let wasConnected: any = false;
 			mockRunner(socket => {
@@ -291,8 +293,8 @@ describe('Joltron Controller', function () {
 			const [result1, result2] = await wrapAll([conn1, conn2]);
 
 			expect(result1.success, 'first connection').to.equal(true);
-			expect(result2.success, 'second disconnection').to.equal(false);
-			expect(inst.connected, 'runner connection status').to.equal(true);
+			expect(result2.success, 'second disconnection').to.equal(true);
+			expect(inst.connected, 'runner connection status').to.equal(false);
 
 			await sleep(0);
 			expect(wasConnected, 'was socket connected').to.equal(true);
@@ -322,18 +324,18 @@ describe('Joltron Controller', function () {
 			const [result1, result2] = await wrapAll([conn1, conn2]);
 
 			expect(result1.success, 'first disconnection').to.equal(true);
-			expect(result2.success, 'second connection').to.equal(false);
-			expect(inst.connected, 'runner connection status').to.equal(false);
+			expect(result2.success, 'second connection').to.equal(true);
+			expect(inst.connected, 'runner connection status').to.equal(true);
 
 			await sleep(0);
-			expect(connectionCount, 'connection count').to.equal(1);
+			expect(connectionCount, 'connection count').to.equal(2);
 
 			await inst.dispose();
 		}
 	);
 
 	it(
-		'should retry the initial connection up to 5 seconds',
+		'should retry the initial connection up to 3 seconds',
 		async () => {
 			// Delay the mock runner creation by 2 seconds.
 			let connected: any = false;
@@ -355,17 +357,17 @@ describe('Joltron Controller', function () {
 	);
 
 	it(
-		'should timeout the connection attempt if over 5 seconds',
+		'should timeout the connection attempt if over 3 seconds',
 		async () => {
 			// Delay the mock runner creation by 7 seconds which is over the 5 second timeout.
 			let connected = false;
-			const runnerCreatePromise = new Promise(resolve => {
+			const runnerCreatePromise = new Promise<void>(resolve => {
 				setTimeout(() => {
 					mockRunner(socket => {
 						connected = true;
 					});
 					resolve();
-				}, 7000);
+				}, 4000);
 			});
 
 			const inst = newController(1337);
@@ -388,8 +390,8 @@ describe('Joltron Controller', function () {
 		async () => {
 			const inst = newController(1337);
 
-			let resolveConnected = null;
-			const waitForConnect = new Promise(_resolve => {
+			let resolveConnected: (() => void) = null as any;
+			const waitForConnect = new Promise<void>(_resolve => {
 				resolveConnected = _resolve;
 			});
 
@@ -400,8 +402,8 @@ describe('Joltron Controller', function () {
 
 			inst.connect();
 
-			let resolveDisconnected = null;
-			const waitForDisconnect = new Promise(_resolve => {
+			let resolveDisconnected: (() => void) = null as any;
+			const waitForDisconnect = new Promise<void>(_resolve => {
 				resolveDisconnected = _resolve;
 			});
 			inst.once('fatal', (err: Error) => {
@@ -410,7 +412,9 @@ describe('Joltron Controller', function () {
 			});
 
 			await waitForConnect;
+			console.log('connected');
 			await waitForDisconnect;
+			console.log('disconnected');
 
 			// We sleep here so that the connection would fully go through before calling dispose.
 			// This is because dispose needs to call disconnect which requires the connection to not be currently transitioning,
@@ -427,13 +431,13 @@ describe('Joltron Controller', function () {
 
 			let wasConnected = false;
 
-			let resolveConnected = null;
-			const waitForConnect = new Promise(_resolve => {
+			let resolveConnected: (() => void) = null as any;
+			const waitForConnect = new Promise<void>(_resolve => {
 				resolveConnected = _resolve;
 			});
 
-			let resolveConnectedAgain = null;
-			const waitForConnectAgain = new Promise(_resolve => {
+			let resolveConnectedAgain: (() => void) = null as any;
+			const waitForConnectAgain = new Promise<void>(_resolve => {
 				resolveConnectedAgain = _resolve;
 			});
 
@@ -449,8 +453,8 @@ describe('Joltron Controller', function () {
 
 			inst.connect();
 
-			let resolveDisconnected = null;
-			const waitForDisconnect = new Promise(_resolve => {
+			let resolveDisconnected: (() => void) = null as any;
+			const waitForDisconnect = new Promise<void>(_resolve => {
 				resolveDisconnected = _resolve;
 			});
 			inst.once('fatal', (err: Error) => {
@@ -477,8 +481,8 @@ describe('Joltron Controller', function () {
 
 			let connections = 0;
 
-			let resolveConnected = null;
-			const waitForConnect = new Promise(_resolve => {
+			let resolveConnected: (() => void) = null as any;
+			const waitForConnect = new Promise<void>(_resolve => {
 				resolveConnected = _resolve;
 			});
 
@@ -493,8 +497,8 @@ describe('Joltron Controller', function () {
 
 			inst.connect();
 
-			let resolveDisconnected = null;
-			const waitForDisconnect = new Promise(_resolve => {
+			let resolveDisconnected: (() => void) = null as any;
+			const waitForDisconnect = new Promise<void>(_resolve => {
 				resolveDisconnected = _resolve;
 			});
 			inst.once('fatal', (err: Error) => {
@@ -587,9 +591,13 @@ describe('Joltron Controller', function () {
 
 			const inst = newController(1337);
 			await inst.connect();
+			console.log('connected, sending pause');
 			inst.sendPause();
+			console.log('waiting for mock reader to finish');
 			await mockPromise;
+			console.log('waiting for controller to dispose');
 			await inst.dispose();
+			console.log('ok');
 		}
 	);
 
@@ -601,7 +609,6 @@ describe('Joltron Controller', function () {
 				msgId: '0',
 				payload: {
 					command: 'resume',
-					extraData: {},
 				},
 			});
 
@@ -934,16 +941,17 @@ describe('Joltron Controller', function () {
 			const race = Promise.race([
 				inst.sendUpdateBegin(1000).then(value => {
 					throw new Error('Sending message somehow worked');
-				}, err => err),
+				}),
 				sleep(2000).then(() => {
 					throw new Error('Did not timeout in time');
 				}),
-			]);
+			])
+			.catch(err => err);
 
 			await expect(race, 'send operation with timeout').to.eventually.be.an('Error');
 			const result = await race;
-			expect(result.message, 'result error message').to.equal(
-				'Message was not handled in time'
+			expect(result.message, 'result error message').to.match(
+				/^Message was not sent in time/
 			);
 			await inst.dispose();
 		}
@@ -973,7 +981,7 @@ describe('Joltron Controller', function () {
 	it(
 		'should fail receiving an invalid json',
 		async () => {
-			const mockPromise = new Promise((resolve, reject) => {
+			const mockPromise = new Promise<void>((resolve, reject) => {
 				mockRunner(socket => {
 					socket.write('this is not a valid json', (err?: Error) => {
 						if (err) {

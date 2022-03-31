@@ -13,7 +13,7 @@ export declare class OldLaunchInstance extends TSEventEmitter<OldLauncherEvents>
     private _interval;
     private _stable;
     constructor(_wrapperId: string);
-    readonly pid: IParsedWrapper;
+    get pid(): IParsedWrapper;
     tick(): Promise<boolean>;
     abort(): void;
 }

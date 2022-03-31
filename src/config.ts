@@ -11,8 +11,8 @@ export abstract class Config {
 	static readonly mutex_name = 'game-jolt-client';
 
 	private static pidDir = '';
-	private static clientMutexPromise: Promise<void> = null;
-	private static clientMutex: IMutexInstance = null;
+	private static clientMutexPromise: Promise<void> | null = null;
+	private static clientMutex: IMutexInstance | null = null;
 
 	static get domain() {
 		const isDev = this.env === 'development' || process.env['env'] === 'development' || process.env['ENV'] === 'development';
@@ -66,7 +66,7 @@ export abstract class Config {
 		return this.clientMutexPromise;
 	}
 
-	static async releaseClientMutex(): Promise<Error> {
+	static async releaseClientMutex(): Promise<Error | null> {
 		if (process.platform !== 'win32') {
 			return null;
 		}
@@ -79,4 +79,6 @@ export abstract class Config {
 	}
 }
 
-Config.setClientMutex();
+// TODO: DO NOT DO THIS WHAT THE HELL??
+// gamejolt should call setClientMutex when its ready to do so.
+// Config.setClientMutex();

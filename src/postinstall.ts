@@ -26,7 +26,7 @@ async function doTheThing() {
 	let remoteExecutable: string;
 	switch (process.platform) {
 		case 'win32':
-			remoteExecutable = 'joltron_win32.exe';
+			remoteExecutable = 'joltron_win64.exe';
 			break;
 		case 'linux':
 			remoteExecutable = 'joltron_linux';
@@ -34,6 +34,8 @@ async function doTheThing() {
 		case 'darwin':
 			remoteExecutable = 'joltron_osx';
 			break;
+		default:
+			throw new Error('Unsupported platform');
 	}
 	const options: _https.RequestOptions = {
 		host: 'github.com',

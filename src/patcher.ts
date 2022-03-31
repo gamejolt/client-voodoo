@@ -109,7 +109,7 @@ export class PatchInstance extends ControllerWrapper<PatchEvents> {
 			// Only emit state if it's changed
 			if (oldState !== this._state) {
 				console.log('patcher emitting state: ' + this._state);
-				this.controller.emit('state', this._state);
+				this.controller.emit('state' as any, this._state);
 			}
 		})
 			.on('updateFailed', reason => {
@@ -117,10 +117,10 @@ export class PatchInstance extends ControllerWrapper<PatchEvents> {
 				if (reason === 'context canceled') {
 					return;
 				}
-				this.controller.emit('done', reason);
+				this.controller.emit('done' as any, reason);
 			})
 			.on('updateFinished', () => {
-				this.controller.emit('done');
+				this.controller.emit('done' as any);
 			});
 
 		this._state = State.Starting;

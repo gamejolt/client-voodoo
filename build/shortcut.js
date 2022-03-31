@@ -1,93 +1,57 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var path = require("path");
-var fs_1 = require("./fs");
-var xdgBasedir = require("xdg-basedir");
-var shellEscape = require('shell-escape');
-var Shortcut = /** @class */ (function () {
-    function Shortcut() {
+exports.Shortcut = void 0;
+const path = require("path");
+const fs_1 = require("./fs");
+const xdgBasedir = require("xdg-basedir");
+const shellEscape = require('shell-escape');
+class Shortcut {
+    static async create(program, icon) {
+        if (process.platform === 'linux') {
+            await this.removeLinux();
+            return this.createLinux(program, icon);
+        }
+        else {
+            throw new Error('Not supported');
+        }
     }
-    Shortcut.create = function (program, icon) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!(process.platform === 'linux')) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.removeLinux()];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/, this.createLinux(program, icon)];
-                    case 2: throw new Error('Not supported');
-                }
-            });
-        });
-    };
-    Shortcut.remove = function () {
+    static remove() {
         if (process.platform === 'linux') {
             return this.removeLinux();
         }
         else {
             throw new Error('Not supported');
         }
-    };
-    Shortcut.createLinux = function (program, icon) {
-        return __awaiter(this, void 0, void 0, function () {
-            var desktopFile, desktopContents;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        desktopFile = path.join(xdgBasedir.data || '', 'applications', 'game-jolt-client.desktop');
-                        desktopContents = "[Desktop Entry]\nVersion=1.0\nType=Application\nName=Game Jolt Client\nGenericName=Game Client\nComment=The power of Game Jolt website in your desktop\nExec=" + shellEscape([program]) + "\nTerminal=false\nIcon=" + icon + "\nCategories=Game;\nKeywords=Play;Games;GJ;GameJolt;Indie;\nHidden=false\nName[en_US]=Game Jolt Client";
-                        return [4 /*yield*/, fs_1.default.writeFile(desktopFile, desktopContents, { mode: 493 })];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    Shortcut.removeLinux = function () {
-        var desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
-        var oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
+    }
+    static async createLinux(program, icon) {
+        if (!xdgBasedir.data) {
+            throw new Error('Could not resolve desktop shortcut dir using XDG');
+        }
+        let desktopFile = path.join(xdgBasedir.data || '', 'applications', 'game-jolt-client.desktop');
+        let desktopContents = `[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Game Jolt Client
+GenericName=Game Client
+Comment=The power of Game Jolt website in your desktop
+Exec=${shellEscape([program])}
+Terminal=false
+Icon=${icon}
+Categories=Game;
+Keywords=Play;Games;GJ;GameJolt;Indie;
+Hidden=false
+Name[en_US]=Game Jolt Client`;
+        await fs_1.default.writeFile(desktopFile, desktopContents, { mode: 0o755 });
+    }
+    static removeLinux() {
+        if (!xdgBasedir.data) {
+            throw new Error('Could not resolve desktop shortcut dir using XDG');
+        }
+        let desktopFile = path.join(xdgBasedir.data, 'applications', 'game-jolt-client.desktop');
+        let oldDesktopFile = path.join(xdgBasedir.data, 'applications', 'Game Jolt Client.desktop');
         return Promise.all([fs_1.default.unlink(desktopFile), fs_1.default.unlink(oldDesktopFile)])
-            .then(function () { return true; })
-            .catch(function (err) { return false; });
-    };
-    return Shortcut;
-}());
+            .then(() => true)
+            .catch(err => false);
+    }
+}
 exports.Shortcut = Shortcut;

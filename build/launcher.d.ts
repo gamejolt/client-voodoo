@@ -17,7 +17,7 @@ export declare type LaunchEvents = Events & {
 export declare class LaunchInstance extends ControllerWrapper<LaunchEvents> {
     private _pid;
     constructor(controller: Controller, onReady: (err: Error | null, instance: LaunchInstance) => void);
-    readonly pid: string;
+    get pid(): string;
     kill(): Promise<{
         success: boolean;
         err?: string;

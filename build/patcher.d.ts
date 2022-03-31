@@ -40,7 +40,7 @@ export declare class PatchInstance extends ControllerWrapper<PatchEvents> {
     constructor(controller: Controller, authTokenGetter: AuthTokenGetter);
     private getState;
     private _getState;
-    readonly state: State;
+    get state(): State;
     isDownloading(): boolean;
     isPatching(): boolean;
     isFinished(): boolean;

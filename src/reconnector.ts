@@ -1,134 +1,134 @@
-import * as net from 'net';
-import { TSEventEmitter } from './events';
-import { sleep } from './util';
+// import * as net from 'net';
+// import { TSEventEmitter } from './events';
+// import { sleep } from './util';
 
-export type Events = {
-	'attempt': (n: number) => void;
-};
+// export type Events = {
+// 	'attempt': (n: number) => void;
+// };
 
-export class Reconnector extends TSEventEmitter<Events> {
-	private _connected = false;
-	private conn: net.Socket;
-	private connectPromise: Promise<net.Socket> | null;
-	private disconnectPromise: Promise<Error | void> | null;
-	constructor(private interval: number, private timeout: number, private keepConnected: boolean) {
-		super();
-	}
+// export class Reconnector extends TSEventEmitter<Events> {
+// 	private _connected = false;
+// 	private conn: net.Socket;
+// 	private connectPromise: Promise<net.Socket> | null;
+// 	private disconnectPromise: Promise<Error | void> | null;
+// 	constructor(private interval: number, private timeout: number, private keepConnected: boolean) {
+// 		super();
+// 	}
 
-	get connected() {
-		return this._connected;
-	}
+// 	get connected() {
+// 		return this._connected;
+// 	}
 
-	connect(options: net.TcpNetConnectOpts): Promise<net.Socket> {
-		// If already connected return the current connection.
-		// Note: This will also return if we're in the process of disconnecting.
-		if (this._connected) {
-			return Promise.resolve(this.conn);
-		}
+// 	connect(options: net.TcpNetConnectOpts): Promise<net.Socket> {
+// 		// If already connected return the current connection.
+// 		// Note: This will also return if we're in the process of disconnecting.
+// 		if (this._connected) {
+// 			return Promise.resolve(this.conn);
+// 		}
 
-		// If we're in the process of connecting, return
-		if (this.connectPromise) {
-			return this.connectPromise;
-		}
+// 		// If we're in the process of connecting, return
+// 		if (this.connectPromise) {
+// 			return this.connectPromise;
+// 		}
 
-		this.connectPromise = new Promise<net.Socket>(async (resolve, reject) => {
-			const startTime = Date.now();
-			for (let i = 1; true; i++) {
-				this.emit('attempt', i);
+// 		this.connectPromise = new Promise<net.Socket>(async (resolve, reject) => {
+// 			const startTime = Date.now();
+// 			for (let i = 1; true; i++) {
+// 				this.emit('attempt', i);
 
-				try {
-					this.conn = await this.attempt(options);
-					this._connected = true;
-					this.connectPromise = null;
-					return resolve(this.conn);
-				} catch (err) { }
+// 				try {
+// 					this.conn = await this.attempt(options);
+// 					this._connected = true;
+// 					this.connectPromise = null;
+// 					return resolve(this.conn);
+// 				} catch (err) { }
 
-				if (Date.now() - startTime + this.interval > this.timeout) {
-					this.connectPromise = null;
-					return reject(new Error(`Couldn't connect in time`));
-				}
+// 				if (Date.now() - startTime + this.interval > this.timeout) {
+// 					this.connectPromise = null;
+// 					return reject(new Error(`Couldn't connect in time`));
+// 				}
 
-				await sleep(this.interval);
-			}
-		});
+// 				await sleep(this.interval);
+// 			}
+// 		});
 
-		return this.connectPromise;
-	}
+// 		return this.connectPromise;
+// 	}
 
-	private attempt(options: net.TcpNetConnectOpts): Promise<net.Socket> {
-		return new Promise<net.Socket>((resolve, reject) => {
-			let lastErr: Error = null;
+// 	private attempt(options: net.TcpNetConnectOpts): Promise<net.Socket> {
+// 		return new Promise<net.Socket>((resolve, reject) => {
+// 			let lastErr: Error = null;
 
-			// These are event handlers for the first connection event.
-			// If we couldn't even establish the first connection, we don't bother retrying
-			// since we only care about re-establishing a lost connection.
-			// We save them as functions instead of using them inline so that we could
-			// clear them specifically once a connection is made instead of removing all listeners for the socket.
-			const onError = (err: Error) => (lastErr = err);
-			const onClose = (hasError: boolean) => {
-				console.log('socket.close');
-				conn.removeListener('error', onError);
-				conn.removeListener('close', onClose);
+// 			// These are event handlers for the first connection event.
+// 			// If we couldn't even establish the first connection, we don't bother retrying
+// 			// since we only care about re-establishing a lost connection.
+// 			// We save them as functions instead of using them inline so that we could
+// 			// clear them specifically once a connection is made instead of removing all listeners for the socket.
+// 			const onError = (err: Error) => (lastErr = err);
+// 			const onClose = (hasError: boolean) => {
+// 				console.log('socket.close');
+// 				conn.removeListener('error', onError);
+// 				conn.removeListener('close', onClose);
 
-				if (hasError) {
-					reject(lastErr);
-				}
-			};
+// 				if (hasError) {
+// 					reject(lastErr);
+// 				}
+// 			};
 
-			const conn = net
-				.connect(options)
-				.on('connect', () => {
-					console.log('socket.connect.open');
+// 			const conn = net
+// 				.connect(options)
+// 				.on('connect', () => {
+// 					console.log('socket.connect.open');
 
-					conn.removeListener('error', onError);
-					conn.removeListener('close', onClose);
+// 					conn.removeListener('error', onError);
+// 					conn.removeListener('close', onClose);
 
-					conn.on('close', () => {
-						console.log('socket.connect.close');
-						this.conn = null;
-						this._connected = false;
+// 					conn.on('close', () => {
+// 						console.log('socket.connect.close');
+// 						this.conn = null;
+// 						this._connected = false;
 
-						// Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
-						if (this.keepConnected && !this.disconnectPromise) {
-							// TODO handle failure to reconnect, make it try for longer, emit events so that controller can propogate them to the client
-							this.connect(options);
-						}
-					});
-					resolve(conn);
-				})
-				// These events handle the first reconnection.
-				// After a connection is made, we want to remove them.
-				.once('error', onError)
-				.once('close', onClose);
-		});
-	}
+// 						// Only attempt to reconnect if this isn't a manual disconnection (this.disconnectPromise should be null)
+// 						if (this.keepConnected && !this.disconnectPromise) {
+// 							// TODO handle failure to reconnect, make it try for longer, emit events so that controller can propogate them to the client
+// 							this.connect(options);
+// 						}
+// 					});
+// 					resolve(conn);
+// 				})
+// 				// These events handle the first reconnection.
+// 				// After a connection is made, we want to remove them.
+// 				.once('error', onError)
+// 				.once('close', onClose);
+// 		});
+// 	}
 
-	disconnect(): Promise<Error | void> {
-		if (!this._connected) {
-			return Promise.resolve();
-		}
-		if (this.disconnectPromise) {
-			return this.disconnectPromise;
-		}
+// 	disconnect(): Promise<Error | void> {
+// 		if (!this._connected) {
+// 			return Promise.resolve();
+// 		}
+// 		if (this.disconnectPromise) {
+// 			return this.disconnectPromise;
+// 		}
 
-		this.disconnectPromise = new Promise<Error | void>(resolve => {
-			let lastErr: Error = null;
-			this.conn
-				.on('error', (err: Error) => (lastErr = err))
-				.on('close', (hasError: boolean) => {
-					console.log('disconnect.close');
-					this.conn = null;
-					this._connected = false;
-					this.disconnectPromise = null;
+// 		this.disconnectPromise = new Promise<Error | void>(resolve => {
+// 			let lastErr: Error = null;
+// 			this.conn
+// 				.on('error', (err: Error) => (lastErr = err))
+// 				.on('close', (hasError: boolean) => {
+// 					console.log('disconnect.close');
+// 					this.conn = null;
+// 					this._connected = false;
+// 					this.disconnectPromise = null;
 
-					if (hasError) {
-						return resolve(lastErr);
-					}
-					return resolve();
-				})
-				.end();
-		});
+// 					if (hasError) {
+// 						return resolve(lastErr);
+// 					}
+// 					return resolve();
+// 				})
+// 				.end();
+// 		});
 
-		return this.disconnectPromise;
-	}
-}
+// 		return this.disconnectPromise;
+// 	}
+// }
