@@ -97,7 +97,7 @@ class Controller extends events_1.TSEventEmitter {
         if (options.sequentialMessageId) {
             this.sequentialMessageId = true;
         }
-        this.reconnector = new reconnector2_1.Reconnector({ interval: 100, timeout: 3000, reconnect: !!options.keepConnected });
+        this.reconnector = new reconnector2_1.Reconnector({ interval: 100, timeout: options.connectionTimeout, reconnect: !!options.keepConnected });
         this.reconnector.on('connected', conn => {
             this.conn = conn;
             // Its possible the connection was aborted. If this is the case, do nothing.

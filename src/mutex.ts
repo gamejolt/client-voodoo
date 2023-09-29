@@ -8,7 +8,7 @@ export abstract class Mutex {
 			'--port',
 			port.toString(),
 			'--wait-for-connection',
-			'2',
+			'20',
 			'--symbiote',
 			'--mutex',
 			name,

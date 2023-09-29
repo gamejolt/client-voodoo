@@ -169,6 +169,7 @@ export type Events = {
 export type Options = {
 	process?: cp.ChildProcess | number;
 	keepConnected?: boolean;
+	connectionTimeout?: number;
 	sequentialMessageId?: boolean;
 };
 
@@ -203,7 +204,7 @@ export class Controller extends TSEventEmitter<Events> {
 			this.sequentialMessageId = true;
 		}
 
-		this.reconnector = new Reconnector({interval: 100, timeout: 3000, reconnect: !!options.keepConnected});
+		this.reconnector = new Reconnector({interval: 100, timeout: options.connectionTimeout, reconnect: !!options.keepConnected});
 		this.reconnector.on('connected', conn => {
 			this.conn = conn;
 

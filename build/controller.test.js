@@ -28,6 +28,7 @@ describe('Joltron Controller', function () {
     // We need sequential message ids to mock responses reliably.
     function newController(port, options) {
         options = options || {};
+        options.connectionTimeout = 3000; // 3 seconds to keep tests manageable.
         options.sequentialMessageId = true;
         return new controller_1.Controller(port, options);
     }

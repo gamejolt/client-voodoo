@@ -39,6 +39,7 @@ export declare type Events = {
 export declare type Options = {
     process?: cp.ChildProcess | number;
     keepConnected?: boolean;
+    connectionTimeout?: number;
     sequentialMessageId?: boolean;
 };
 export declare type LaunchOptions = cp.SpawnOptions & {

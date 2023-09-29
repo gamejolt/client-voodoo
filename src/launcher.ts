@@ -35,7 +35,7 @@ export abstract class Launcher {
 			'--game',
 			gameUid,
 			'--wait-for-connection',
-			'2',
+			'20',
 			'--no-self-update',
 			'run',
 		];

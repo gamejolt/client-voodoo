@@ -15,7 +15,7 @@ class Rollbacker {
             '--dir',
             dir,
             '--wait-for-connection',
-            '2',
+            '20',
             '--symbiote',
             '--no-self-update',
             'rollback',

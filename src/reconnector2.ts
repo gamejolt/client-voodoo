@@ -54,7 +54,7 @@ export class Reconnector extends TSEventEmitter<Events> {
 
 		const defaultOpts: ReconnectorOptions = {
 			interval: 100,
-			timeout: 3000,
+			timeout: 300_000, // 5 minutes
 			reconnect: true,
 		};
 

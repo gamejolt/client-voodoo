@@ -37,7 +37,7 @@ class Patcher {
             '--platform-url',
             config_1.Config.domain + '/x/updater/check-for-updates',
             '--wait-for-connection',
-            '5',
+            '20',
             '--symbiote',
             '--no-loader',
             '--no-self-update',

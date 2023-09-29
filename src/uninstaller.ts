@@ -14,7 +14,7 @@ export abstract class Uninstaller {
 			'--dir',
 			dir,
 			'--wait-for-connection',
-			'2',
+			'20',
 			'--symbiote',
 			'--no-self-update',
 			'uninstall',

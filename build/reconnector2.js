@@ -26,7 +26,7 @@ class Reconnector extends events_1.TSEventEmitter {
         this._conn = null;
         const defaultOpts = {
             interval: 100,
-            timeout: 3000,
+            timeout: 300000,
             reconnect: true,
         };
         this._interval = (_a = options === null || options === void 0 ? void 0 : options.interval) !== null && _a !== void 0 ? _a : defaultOpts.interval;
